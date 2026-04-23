@@ -206,7 +206,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [x] Install the Firebase client SDK (`firebase`)
 - [x] Install the server-side Firebase auth dependency (`firebase-admin`) needed for privileged auth operations
 - [x] Use the `firebase` CLI (`firebase projects:list`, `firebase apps:sdkconfig web`) to retrieve client-bundle values when populating `VITE_PUBLIC_FIREBASE_*` env vars
-- [ ] If `FIREBASE_SERVICE_ACCOUNT_JSON` is missing from `.env`, record the block in `PROGRESS.md` and skip to the next non-dependent step rather than generating or embedding credentials
+- [x] If `FIREBASE_SERVICE_ACCOUNT_JSON` is missing from `.env`, record the block in `PROGRESS.md` and skip to the next non-dependent step rather than generating or embedding credentials
 - [ ] Centralize Firebase environment reads from `.env`
 - [ ] Add a focused auth client module
 - [ ] Add a focused server auth module
