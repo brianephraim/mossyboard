@@ -92,3 +92,10 @@
 - **step**: sync preview env
 - **outcome**: done
 - **reason**: `vercel pull --environment=preview` succeeded and wrote `.vercel/.env.preview.local`
+
+## 2026-04-23T21:09:51Z
+
+- **phase**: 5
+- **step**: set vercel as deployment target
+- **outcome**: done
+- **reason**: configured Nitro `vercel` preset to emit `.vercel/output` on build for Vercel deploys

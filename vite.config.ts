@@ -2,6 +2,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { pinoHttp } from "pino-http";
+import { nitro } from "nitro/vite";
 
 import { logger } from "./src/server/logging/logger";
 
@@ -37,6 +38,7 @@ export default defineConfig({
     }),
     // react's vite plugin must come after start's vite plugin
     react(),
+    nitro({ preset: "vercel" }),
   ],
   server: {
     port: 5173,
