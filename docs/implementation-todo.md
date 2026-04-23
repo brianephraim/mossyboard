@@ -267,18 +267,27 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 
 ### Add the design system before broader product UI work
 
-- [ ] Install `@tamagui/core`
-- [ ] Install the minimum additional Tamagui packages actually needed
-- [ ] Keep all `@tamagui/*` packages on the same version
-- [ ] Add Tamagui configuration, tokens, and theme setup
-- [ ] Add the Tamagui provider at the app root
-- [ ] Convert the click counter and auth surfaces to Tamagui primitives
-- [ ] Avoid raw HTML JSX where Tamagui primitives can be used instead
+- [x] Install `@tamagui/core`
+- [x] Install the minimum additional Tamagui packages actually needed (`@tamagui/config`, `@tamagui/themes`, `@tamagui/shorthands`, `@tamagui/stacks`, `@tamagui/button`, `@tamagui/checkbox`, `@tamagui/linear-gradient`, dev `@tamagui/vite-plugin`)
+- [x] Keep all `@tamagui/*` packages on the same version (pinned to **1.141.5**)
+- [x] Add Tamagui configuration, tokens, and theme setup (`src/tamagui.config.ts` extending `@tamagui/config/v4` with counter-specific color + radius tokens)
+- [x] Add the Tamagui provider at the app root (`TamaguiRootProvider` in `src/routes/__root.tsx`)
+- [x] Wire `@tamagui/vite-plugin` in Vite and import generated `src/tamagui.css` from the root route
+- [ ] Convert the **legacy** `/` counter page and `/auth` surfaces to Tamagui primitives (optional follow-up; `/tamagui-counter` is the Tamagui-first counter slice)
+- [ ] Avoid raw HTML JSX where Tamagui primitives can be used instead (apply across `/`, `/auth`, `/other-page` when converting)
+
+### Tamagui counter page slice (`/tamagui-counter`)
+
+- [x] Add `/tamagui-counter` file route and regenerate `src/routeTree.gen.ts`
+- [x] Add shared `AppNav` (Tamagui layout + links to `/`, `/tamagui-counter`, `/other-page`, `/auth`) above `<Outlet />` in the root layout
+- [x] Implement `TamaguiCounterScreen`: shared tRPC counter, Redux-backed checkbox (same slice as `/`), mockup-adjacent glass card + gradient increment control
+- [x] Use Tamagui **tokens** (`$space`, `$radius`, custom `$counter*` colors) for spacing, radii, typography, and surfaces on the Tamagui counter page
+- [x] Track `docs/tamagui-counter-mockup.png` as the visual reference for the slice
 
 ### Verify the phase
 
-- [ ] Add a component test that renders a Tamagui-based screen successfully
-- [ ] Confirm the app shell and auth screens still work after the provider is introduced
+- [ ] Add a component test that renders a Tamagui-based screen successfully (e.g. `TamaguiCounterScreen` under `TamaguiProvider`)
+- [x] Confirm the app shell and auth screens still work after the Tamagui provider is introduced (build + existing Vitest suite green; spot-check `/auth` in browser when convenient)
 
 ## Phase 10: Kanban Product Buildout
 
