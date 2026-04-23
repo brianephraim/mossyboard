@@ -284,7 +284,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 
 ### Verify the phase
 
-- [ ] Add a component test that renders a Tamagui-based screen successfully (e.g. `TamaguiCounterScreen` under `TamaguiProvider`)
+- [x] Add a component test that renders a Tamagui-based screen successfully (e.g. `TamaguiCounterScreen` under `TamaguiProvider`)
 - [x] Confirm the app shell and auth screens still work after the Tamagui provider is introduced (build + existing Vitest suite green; spot-check `/auth` in browser when convenient)
 
 ## Phase 10: Kanban Product Buildout
