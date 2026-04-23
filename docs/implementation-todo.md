@@ -240,23 +240,28 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 
 ### Verify the phase
 
- - [x] Add tests that verify auth email payloads and action links are passed to the mail module correctly
+- [x] Add tests that verify auth email payloads and action links are passed to the mail module correctly
 - [x] Confirm a local auth email flow can be triggered with the existing `.env` values
 
 ## Phase 8: Shared Client State
 
-### Add Redux only when it becomes necessary
+### Redux counter-page demo (cross-route)
 
-- [ ] Install Redux Toolkit and React Redux only when a real shared client-state need appears
-- [ ] Add the Redux store bootstrap
-- [ ] Add the first slice for a real cross-feature concern such as filters, grouping mode, active selection, or workflow state
-- [ ] Keep remote data in TanStack Query rather than Redux
-- [ ] Keep local interaction state in React component state where possible
+- [x] Install Redux Toolkit and React Redux
+- [x] Add Redux store bootstrap and root `Provider`
+- [x] Add a slice that holds the counter-page checkbox checked state
+- [x] On `/`, render the checkbox (Redux-backed), shared counter UI, and a link to `/other-page`
+- [x] Add `/other-page` with a link back to `/`
+- [x] Keep remote counter data in TanStack Query (Redux holds only the checkbox)
+
+### Principles
+
+- [x] Keep local interaction state in component state when it does not need to survive navigation (this slice is intentionally cross-route)
 
 ### Verify the phase
 
-- [ ] Add unit tests for the first slice and selectors
-- [ ] Confirm Redux is solving a real shared-state problem rather than duplicating server data
+- [x] Add unit tests for the counter-page checkbox slice (and selectors if any)
+- [x] Confirm the checkbox survives `/` ↔ `/other-page` navigation after the counter route remounts (manual is fine; note in `PROGRESS.md` if so)
 
 ## Phase 9: Tamagui UI Foundation
 

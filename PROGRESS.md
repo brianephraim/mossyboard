@@ -136,3 +136,10 @@
 - **step**: local auth email trigger
 - **outcome**: done
 - **reason**: confirmed password reset email flow can be triggered locally via `authEmail.devSendPasswordResetTo` (dev-only), returning delivery id `2c97fdfa-d850-468f-a626-d1b8d65c65f7`
+
+## 2026-04-23T22:25:11Z
+
+- **phase**: 8
+- **step**: Redux checkbox survives route remount
+- **outcome**: done
+- **reason**: toggled the counter-page checkbox on `/`, opened `/other-page`, returned to `/`; checkbox stayed checked (Redux store outlives the counter route component tree)

@@ -13,16 +13,16 @@ export function CounterView({
   error: ReactNode | null;
   onIncrement: () => void;
 }>) {
-  if (isLoading) return <main>Loading…</main>;
+  if (isLoading) return <div>Loading…</div>;
 
-  if (error) return <main>Error: {error}</main>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <main>
+    <div>
       <div>Shared count: {value ?? "?"}</div>
       <button type="button" onClick={onIncrement} disabled={isIncrementing}>
         {isIncrementing ? "Incrementing…" : "Increment"}
       </button>
-    </main>
+    </div>
   );
 }

@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { TrpcProvider } from "../trpc/provider";
 import { startAuthSession } from "../auth/client";
+import { StoreProvider } from "../store/StoreProvider";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -52,7 +53,9 @@ function Providers({ children }: Readonly<{ children: ReactNode }>) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TrpcProvider queryClient={queryClient}>{children}</TrpcProvider>
+      <StoreProvider>
+        <TrpcProvider queryClient={queryClient}>{children}</TrpcProvider>
+      </StoreProvider>
     </QueryClientProvider>
   );
 }
