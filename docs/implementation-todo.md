@@ -273,8 +273,6 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [x] Add Tamagui configuration, tokens, and theme setup (`src/tamagui.config.ts` extending `@tamagui/config/v4` with counter-specific color + radius tokens)
 - [x] Add the Tamagui provider at the app root (`TamaguiRootProvider` in `src/routes/__root.tsx`)
 - [x] Wire `@tamagui/vite-plugin` in Vite and import generated `src/tamagui.css` from the root route
-- [ ] Convert the **legacy** `/` counter page and `/auth` surfaces to Tamagui primitives (optional follow-up; `/tamagui-counter` is the Tamagui-first counter slice)
-- [ ] Avoid raw HTML JSX where Tamagui primitives can be used instead (apply across `/`, `/auth`, `/other-page` when converting)
 
 ### Tamagui counter page slice (`/tamagui-counter`)
 
