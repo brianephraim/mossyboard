@@ -17,8 +17,8 @@ export async function sendPasswordResetEmail(email: string): Promise<{ deliveryI
   const { id } = await sendEmail({
     to: email,
     subject: "Reset your password",
-    html: `<p>Reset your password:</p><p><a href="${link}">Reset password</a></p>`,
-    text: `Reset your password: ${link}`,
+    html: `<p>Reset your password:</p><p><a href="${link}">Reset password</a></p><p>If you did not request this, you can ignore this email.</p>`,
+    text: `Reset your password: ${link}\n\nIf you did not request this, you can ignore this email.`,
   });
   return { deliveryId: id };
 }
