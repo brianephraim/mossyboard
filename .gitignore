@@ -14,6 +14,7 @@ drizzle/*
 !drizzle/pg/**
 .logs
 .playwright-mcp
+.tanstack
 playwright-report
 test-results
 .claude
