@@ -29,7 +29,11 @@ Follow the `Unattended Execution Rules` section of the todo exactly. The key rul
 
 - **Progress reporting**: `PROGRESS.md` is append-only. Add an entry every time a phase starts, a phase completes, or you get stuck. Each entry records phase, step, outcome (`done` / `skipped` / `blocked`), short reason, and any follow-ups.
 - **Keep-moving-forward**: if a step blocks for more than a reasonable attempt, append a `BLOCKED:` entry and continue with the next non-dependent step. Never skip verification silently. Never fabricate credentials, fake API responses, or stub missing infrastructure.
-- **Commit discipline**: one commit per completed phase with message `phase N: <phase title>`. Sub-commits mid-phase are allowed at natural seams; every commit must leave the tree building and passing typecheck. No amending, no force-push, no squashing.
+- **Commit discipline**: **one commit per completed checkbox item** in `docs/implementation-todo.md` (not one commit per phase).
+  - **Message format**: `<phase N>: <checkbox text (shortened)>`
+  - **Verification**: each commit must leave the tree building and passing typecheck/tests relevant to that checkbox (at minimum: `npm run test` and `npm run build` when applicable).
+  - **Docs-only checkbox updates**: if you only checked off items already completed (no code changes), use `docs: check off completed items` and include the phase(s) in the body.
+  - **No history rewriting**: no amending, rebasing, squashing, or force-push.
 - **Scope**: Phases 1–9 only. Do not begin Phase 10.
 
 ## Hard stops (do not do any of these without recorded human approval)
