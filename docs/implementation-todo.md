@@ -211,7 +211,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [x] Add a focused auth client module
 - [x] Add a focused server auth module
 - [x] Implement email/password sign-up
-- [ ] Implement email/password sign-in
+- [x] Implement email/password sign-in
 - [ ] Implement sign-out
 - [x] Add auth session observation for the frontend
 - [ ] Add a simple auth status surface or protected test route
