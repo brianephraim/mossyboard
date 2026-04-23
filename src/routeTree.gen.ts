@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TamaguiCounterRouteImport } from './routes/tamagui-counter'
 import { Route as OtherPageRouteImport } from './routes/other-page'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
 
+const TamaguiCounterRoute = TamaguiCounterRouteImport.update({
+  id: '/tamagui-counter',
+  path: '/tamagui-counter',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OtherPageRoute = OtherPageRouteImport.update({
   id: '/other-page',
   path: '/other-page',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/other-page': typeof OtherPageRoute
+  '/tamagui-counter': typeof TamaguiCounterRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/other-page': typeof OtherPageRoute
+  '/tamagui-counter': typeof TamaguiCounterRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesById {
@@ -52,25 +60,40 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/other-page': typeof OtherPageRoute
+  '/tamagui-counter': typeof TamaguiCounterRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/other-page' | '/api/trpc/$'
+  fullPaths: '/' | '/auth' | '/other-page' | '/tamagui-counter' | '/api/trpc/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/other-page' | '/api/trpc/$'
-  id: '__root__' | '/' | '/auth' | '/other-page' | '/api/trpc/$'
+  to: '/' | '/auth' | '/other-page' | '/tamagui-counter' | '/api/trpc/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/other-page'
+    | '/tamagui-counter'
+    | '/api/trpc/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   OtherPageRoute: typeof OtherPageRoute
+  TamaguiCounterRoute: typeof TamaguiCounterRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tamagui-counter': {
+      id: '/tamagui-counter'
+      path: '/tamagui-counter'
+      fullPath: '/tamagui-counter'
+      preLoaderRoute: typeof TamaguiCounterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/other-page': {
       id: '/other-page'
       path: '/other-page'
@@ -106,6 +129,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   OtherPageRoute: OtherPageRoute,
+  TamaguiCounterRoute: TamaguiCounterRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
 export const routeTree = rootRouteImport

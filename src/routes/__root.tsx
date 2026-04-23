@@ -4,9 +4,13 @@ import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-r
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 
+import "../tamagui.css";
+
+import { AppNav } from "../navigation/AppNav";
 import { TrpcProvider } from "../trpc/provider";
 import { startAuthSession } from "../auth/client";
 import { StoreProvider } from "../store/StoreProvider";
+import { TamaguiRootProvider } from "../tamagui/TamaguiRootProvider";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -23,7 +27,10 @@ function RootComponent() {
   return (
     <RootDocument>
       <Providers>
-        <Outlet />
+        <TamaguiRootProvider>
+          <AppNav />
+          <Outlet />
+        </TamaguiRootProvider>
       </Providers>
     </RootDocument>
   );

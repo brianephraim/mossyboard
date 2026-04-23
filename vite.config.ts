@@ -1,4 +1,5 @@
 import react from "@vitejs/plugin-react";
+import { tamaguiPlugin } from "@tamagui/vite-plugin";
 import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { pinoHttp } from "pino-http";
@@ -38,6 +39,18 @@ export default defineConfig({
     }),
     // react's vite plugin must come after start's vite plugin
     react(),
+    tamaguiPlugin({
+      config: "./src/tamagui.config.ts",
+      components: [
+        "@tamagui/core",
+        "@tamagui/stacks",
+        "@tamagui/button",
+        "@tamagui/checkbox",
+        "@tamagui/linear-gradient",
+      ],
+      outputCSS: "./src/tamagui.css",
+      optimize: process.env.NODE_ENV === "production",
+    }),
     nitro({ preset: "vercel" }),
   ],
   server: {
