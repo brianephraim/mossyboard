@@ -235,7 +235,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [x] Add a dedicated server-side mail delivery module
 - [x] Implement server-side generation of Firebase auth action links
 - [x] Send verification emails through Resend instead of provider-managed default templates
-- [x] Send password reset emails through Resend instead of provider-managed default templates
+- [ ] Send password reset emails through Resend instead of provider-managed default templates
 - [ ] Keep provider-specific email code isolated behind the mail delivery boundary
 
 ### Verify the phase
