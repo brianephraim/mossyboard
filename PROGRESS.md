@@ -99,3 +99,10 @@
 - **step**: set vercel as deployment target
 - **outcome**: done
 - **reason**: configured Nitro `vercel` preset to emit `.vercel/output` on build for Vercel deploys
+
+## 2026-04-23T21:12:01Z
+
+- **phase**: 5
+- **step**: set vercel env vars
+- **outcome**: done
+- **reason**: added required environment variables to Vercel via `vercel env add` for preview + production
