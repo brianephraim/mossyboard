@@ -43,6 +43,7 @@ describe("auth email service", () => {
     assert.equal(call.to, "a@example.com");
     assert.equal(call.subject, "Verify your email");
     assert.ok(String(call.text).includes("https://verify/link"));
+    assert.ok(String(call.html).includes("https://verify/link"));
   });
 
   it("sends password reset email with generated link", async () => {
@@ -57,5 +58,6 @@ describe("auth email service", () => {
     assert.equal(call.to, "a@example.com");
     assert.equal(call.subject, "Reset your password");
     assert.ok(String(call.text).includes("https://reset/link"));
+    assert.ok(String(call.html).includes("https://reset/link"));
   });
 });
