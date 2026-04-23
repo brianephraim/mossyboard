@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vitest --watch",
-    "build": "tsc -p tsconfig.json",
+    "dev": "vite",
+    "build": "vite build",
     "test": "vitest run",
     "format": "prettier --write ."
   },
@@ -12,12 +12,18 @@
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^5.0.3",
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
+    "vite": "^7.1.5",
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.85.5",
+    "@tanstack/react-router": "^1.167.22",
+    "@tanstack/router-plugin": "^1.167.22",
+    "@tanstack/start": "^1.120.20",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   }
