@@ -57,3 +57,10 @@
 - **step**: complete + verify
 - **outcome**: done
 - **reason**: shared click counter available via tRPC read/increment and rendered on `/` with loading/error states; verified via local dev HTTP calls
+
+## 2026-04-23T20:17:30Z
+
+- **phase**: 5
+- **step**: vercel link
+- **outcome**: blocked
+- **reason**: `vercel link` fails in non-interactive mode with `missing_scope` even when `--scope` is provided; needs an interactive link step or CLI configuration change
