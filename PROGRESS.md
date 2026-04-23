@@ -106,3 +106,12 @@
 - **step**: set vercel env vars
 - **outcome**: done
 - **reason**: added required environment variables to Vercel via `vercel env add` for preview + production
+
+## 2026-04-23T21:14:06Z
+
+- **phase**: 5
+- **step**: preview deploy + verify
+- **outcome**: done
+- **reason**: deployed via `vercel` and verified `counter.get` works on the deployed URL
+- **follow-ups**:
+  - **note**: `vercel` output indicated a production alias even without `--prod` (need to use an explicit preview target going forward)

@@ -190,14 +190,14 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [x] Confirm the build and runtime settings match the TanStack Start application needs
 - [x] Add or update deploy scripts as needed so they align with Vercel
 - [ ] Trigger the first deploy with `vercel --prod` only after human approval is recorded in `PROGRESS.md`
-- [ ] If human approval for production deploy is not available, deploy a preview with `vercel` (no `--prod`) and record the preview URL in `PROGRESS.md` as the closest verifiable artifact
+- [x] If human approval for production deploy is not available, deploy a preview with `vercel` (no `--prod`) and record the preview URL in `PROGRESS.md` as the closest verifiable artifact
 - [ ] Keep deployment behavior aligned with Vercel instead of Firebase hosting
 
 ### Verify the phase
 
-- [ ] Confirm the shared click counter app deploys successfully to Vercel
-- [ ] Confirm the deployed app can reach the Supabase-backed counter path
-- [ ] Confirm the deployed environment variables are wired correctly
+- [x] Confirm the shared click counter app deploys successfully to Vercel
+- [x] Confirm the deployed app can reach the Supabase-backed counter path
+- [x] Confirm the deployed environment variables are wired correctly
 
 ## Phase 6: Firebase Authentication Foundation
 
