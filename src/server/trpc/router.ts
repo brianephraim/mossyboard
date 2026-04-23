@@ -3,6 +3,7 @@ import { z } from "zod";
 import { protectedProcedure, publicProcedure, t } from "./init";
 import { incrementCounter, readCounter } from "../counter/service";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../auth/email-service";
+import { TRPCError } from "@trpc/server";
 
 export const appRouter = t.router({
   health: publicProcedure.input(z.object({})).query(() => ({ ok: true })),
@@ -17,7 +18,7 @@ export const appRouter = t.router({
   authEmail: t.router({
     sendVerification: protectedProcedure.input(z.object({})).mutation(async ({ ctx }) => {
       if (!ctx.userEmail) {
-        throw new Error("Missing email on auth token");
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Missing email on auth token" });
       }
       return sendVerificationEmail(ctx.userEmail);
     }),

@@ -19,6 +19,18 @@ function AuthPage() {
     { enabled: false, retry: false },
   );
 
+  const sendVerification = trpc.authEmail.sendVerification.useMutation({
+    retry: false,
+    onSuccess: () => setStatus("verification email sent"),
+    onError: (err) => setStatus(`verification email failed: ${err.message}`),
+  });
+
+  const sendPasswordReset = trpc.authEmail.sendPasswordReset.useMutation({
+    retry: false,
+    onSuccess: () => setStatus("password reset email sent"),
+    onError: (err) => setStatus(`password reset email failed: ${err.message}`),
+  });
+
   return (
     <main>
       <h1>Auth</h1>
@@ -79,6 +91,29 @@ function AuthPage() {
         {protectedEcho.isFetching ? <div>Calling…</div> : null}
         {protectedEcho.data ? <div>OK: {protectedEcho.data.userId}</div> : null}
         {protectedEcho.error ? <div>Error: {protectedEcho.error.message}</div> : null}
+      </div>
+
+      <div>
+        <button
+          type="button"
+          disabled={sendVerification.isPending || !user}
+          onClick={async () => {
+            setStatus(null);
+            await sendVerification.mutateAsync({});
+          }}
+        >
+          Send verification email
+        </button>
+        <button
+          type="button"
+          disabled={sendPasswordReset.isPending || !email}
+          onClick={async () => {
+            setStatus(null);
+            await sendPasswordReset.mutateAsync({ email });
+          }}
+        >
+          Send password reset email
+        </button>
       </div>
 
       {status ? <div aria-live="polite">{status}</div> : null}

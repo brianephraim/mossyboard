@@ -12,7 +12,12 @@ vi.mock("../auth/admin", () => {
 describe("protectedProcedure", () => {
   it("rejects missing token", async () => {
     const { appRouter } = await import("./router");
-    const caller = appRouter.createCaller({ requestId: "r", authHeader: null, userId: null });
+    const caller = appRouter.createCaller({
+      requestId: "r",
+      authHeader: null,
+      userId: null,
+      userEmail: null,
+    });
 
     await assert.rejects(
       () => caller.protectedEcho({ message: "hi" }),
@@ -31,6 +36,7 @@ describe("protectedProcedure", () => {
       requestId: "r",
       authHeader: "Bearer bad",
       userId: null,
+      userEmail: null,
     });
 
     await assert.rejects(
@@ -50,6 +56,7 @@ describe("protectedProcedure", () => {
       requestId: "r",
       authHeader: "Bearer good",
       userId: null,
+      userEmail: null,
     });
 
     const result = await caller.protectedEcho({ message: "hi" });
