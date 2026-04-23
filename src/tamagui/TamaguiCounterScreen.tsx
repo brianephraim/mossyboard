@@ -162,9 +162,9 @@ export function TamaguiCounterScreen() {
             >
               <XStack alignItems="center" gap="$2">
                 <Stack
-                  circular
                   width="$5"
                   height="$5"
+                  borderRadius={9999}
                   backgroundColor="$counterIconPurple"
                   alignItems="center"
                   justifyContent="center"
