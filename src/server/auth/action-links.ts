@@ -8,7 +8,7 @@ function getActionCodeSettings(): ActionCodeSettings {
   const baseUrl = APP_BASE_URL ?? "http://localhost:5173";
 
   return {
-    url: `${baseUrl}/auth`,
+    url: new URL("/auth", baseUrl).toString(),
     handleCodeInApp: false,
   };
 }
