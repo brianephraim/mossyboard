@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { TrpcProvider } from "../trpc/provider";
+import { startAuthSession } from "../auth/client";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -44,6 +45,10 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 
 function Providers({ children }: Readonly<{ children: ReactNode }>) {
   const [queryClient] = useState(() => new QueryClient());
+  useState(() => {
+    startAuthSession();
+    return null;
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
