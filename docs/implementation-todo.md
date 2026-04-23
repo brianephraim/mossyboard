@@ -209,7 +209,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [x] If `FIREBASE_SERVICE_ACCOUNT_JSON` is missing from `.env`, record the block in `PROGRESS.md` and skip to the next non-dependent step rather than generating or embedding credentials
 - [x] Centralize Firebase environment reads from `.env`
 - [x] Add a focused auth client module
-- [ ] Add a focused server auth module
+- [x] Add a focused server auth module
 - [ ] Implement email/password sign-up
 - [ ] Implement email/password sign-in
 - [ ] Implement sign-out
@@ -217,9 +217,9 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [ ] Add a simple auth status surface or protected test route
 - [ ] Keep Firebase usage inside auth-focused modules rather than scattering SDK calls through feature UI
 - [x] Forward the Firebase ID token from the frontend on every tRPC request via the `Authorization` header
-- [ ] Add a tRPC `protectedProcedure` middleware that verifies the Firebase ID token with `firebase-admin`
-- [ ] Place the verified Firebase UID on the tRPC `ctx` as `ctx.userId`
-- [ ] Reject unauthenticated calls to protected procedures with a consistent `TRPCError` code
+- [x] Add a tRPC `protectedProcedure` middleware that verifies the Firebase ID token with `firebase-admin`
+- [x] Place the verified Firebase UID on the tRPC `ctx` as `ctx.userId`
+- [x] Reject unauthenticated calls to protected procedures with a consistent `TRPCError` code
 
 ### Verify the phase
 

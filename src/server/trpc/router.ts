@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { publicProcedure, t } from "./init";
+import { protectedProcedure, publicProcedure, t } from "./init";
 import { incrementCounter, readCounter } from "../counter/service";
 
 export const appRouter = t.router({
@@ -10,6 +10,9 @@ export const appRouter = t.router({
     get: publicProcedure.input(z.object({})).query(() => readCounter()),
     increment: publicProcedure.input(z.object({})).mutation(() => incrementCounter()),
   }),
+  protectedEcho: protectedProcedure
+    .input(z.object({ message: z.string().min(1) }))
+    .query(({ input, ctx }) => ({ message: input.message, userId: ctx.userId })),
 });
 
 export type AppRouter = typeof appRouter;

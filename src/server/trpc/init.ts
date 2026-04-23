@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 
 import type { TrpcContext } from "./context";
 import { logger } from "../logging/logger";
+import { adminAuth } from "../auth/admin";
 
 export const t = initTRPC.context<TrpcContext>().create({
   errorFormatter({ shape, error }) {
@@ -49,6 +50,21 @@ export const trpcMiddleware = t.middleware(async ({ ctx, next, path, type }) => 
 });
 
 export const publicProcedure = t.procedure.use(trpcMiddleware);
+
+export const protectedProcedure = publicProcedure.use(async ({ ctx, next }) => {
+  const header = ctx.authHeader;
+  const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : null;
+  if (!token) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Missing Authorization token" });
+  }
+
+  try {
+    const decoded = await adminAuth.verifyIdToken(token);
+    return next({ ctx: { ...ctx, userId: decoded.uid } });
+  } catch {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid token" });
+  }
+});
 
 // Initial code set (extend as needed):
 // - BAD_REQUEST: validation and client input issues
