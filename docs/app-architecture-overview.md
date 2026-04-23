@@ -181,7 +181,7 @@
 - Database access
 - Repositories or query modules
 - Isolated from transport layer
-- Schema changes are managed through migrations
+- Schema changes are managed through committed database migrations, with Drizzle as the default migration workflow unless another tool proves to be a better fit
 - Any new or altered tables in schema `public` require RLS enablement and explicit policies
 - The first persistence-backed proof of wiring is an unauthenticated all-visitor-shared click counter
 

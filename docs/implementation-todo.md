@@ -46,8 +46,8 @@ This checklist is intentionally phase-based.
 
 - [ ] Confirm Supabase Postgres as the application database platform
 - [ ] Centralize Supabase environment reads from `.env`
-- [ ] Confirm the migration workflow to use with the existing database setup
-- [ ] Reconcile the existing `drizzle/pg` migrations with the Supabase-backed schema workflow
+- [ ] Set up a database migration workflow for ongoing schema changes during development, with Drizzle as the default choice unless another tool proves a better fit
+- [ ] Verify the chosen migration workflow can create and apply migrations cleanly against the Supabase-backed database
 - [ ] Wire the runtime database connection into the app
 - [ ] Add any required Supabase database tooling or server-side dependencies for the chosen access path
 - [ ] Add request validation at server entry points
