@@ -9,7 +9,10 @@
     "test": "vitest run",
     "format": "prettier --write .",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "vercel:pull:preview": "vercel pull --yes --environment=preview --scope brianephraims-projects",
+    "vercel:build": "vercel build --yes --scope brianephraims-projects",
+    "vercel:deploy:preview": "vercel --yes --scope brianephraims-projects"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",
