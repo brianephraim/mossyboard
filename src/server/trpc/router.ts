@@ -5,6 +5,7 @@ import { incrementCounter, readCounter } from "../counter/service";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../auth/email-service";
 import { TRPCError } from "@trpc/server";
 import { adminAuth } from "../auth/admin";
+import { logger } from "../logging/logger";
 
 export const appRouter = t.router({
   health: publicProcedure.input(z.object({})).query(() => ({ ok: true })),
@@ -21,11 +22,33 @@ export const appRouter = t.router({
       if (!ctx.userEmail) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Missing email on auth token" });
       }
+      logger.debug(
+        {
+          requestId: ctx.requestId,
+          to: {
+            hasPlus: ctx.userEmail.includes("+"),
+            domain: ctx.userEmail.split("@")[1] ?? null,
+          },
+        },
+        "authEmail.sendVerification.request",
+      );
       return sendVerificationEmail(ctx.userEmail);
     }),
     sendPasswordReset: publicProcedure
       .input(z.object({ email: z.string().email() }))
-      .mutation(async ({ input }) => sendPasswordResetEmail(input.email)),
+      .mutation(async ({ input, ctx }) => {
+        logger.debug(
+          {
+            requestId: ctx.requestId,
+            to: {
+              hasPlus: input.email.includes("+"),
+              domain: input.email.split("@")[1] ?? null,
+            },
+          },
+          "authEmail.sendPasswordReset.request",
+        );
+        return sendPasswordResetEmail(input.email);
+      }),
     devSendPasswordResetTo: publicProcedure
       .input(z.object({ email: z.string().email() }))
       .mutation(async ({ input }) => {
