@@ -240,7 +240,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 
 ### Verify the phase
 
-- [x] Add tests that verify auth email payloads and action links are passed to the mail module correctly
+ - [ ] Add tests that verify auth email payloads and action links are passed to the mail module correctly
 - [ ] Confirm a local auth email flow can be triggered with the existing `.env` values
 
 ## Phase 8: Shared Client State
