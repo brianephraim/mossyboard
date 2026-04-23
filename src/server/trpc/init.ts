@@ -60,7 +60,9 @@ export const protectedProcedure = publicProcedure.use(async ({ ctx, next }) => {
 
   try {
     const decoded = await adminAuth.verifyIdToken(token);
-    return next({ ctx: { ...ctx, userId: decoded.uid } });
+    return next({
+      ctx: { ...ctx, userId: decoded.uid, userEmail: decoded.email ?? null },
+    });
   } catch {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid token" });
   }
