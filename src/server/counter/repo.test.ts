@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { beforeAll, describe, it, vi } from "vitest";
 
 async function migrateTestDb() {
-  const testUrl = process.env.DATABASE_URL_TEST;
+  const testUrl = process.env.DATABASE_URL_TEST_POOLER ?? process.env.DATABASE_URL_TEST;
   assert.ok(testUrl, "DATABASE_URL_TEST must be set");
 
   // Reuse the normal drizzle config by temporarily pointing DATABASE_URL at the test DB.
@@ -46,7 +46,8 @@ describe("shared counter repo", () => {
 
   it("increments persistently", async () => {
     if (!canRun) return;
-    process.env.DATABASE_URL = process.env.DATABASE_URL_TEST;
+    process.env.DATABASE_URL =
+      process.env.DATABASE_URL_TEST_POOLER ?? process.env.DATABASE_URL_TEST;
     const { getSharedCounter, incrementSharedCounter } = await import("./repo");
 
     const before = await getSharedCounter();

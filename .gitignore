@@ -7,6 +7,8 @@ dist
 *.db
 *.db-shm
 *.db-wal
+supabase/.temp
+supabase/.temp/**
 drizzle/*
 !drizzle/pg/
 !drizzle/pg/**

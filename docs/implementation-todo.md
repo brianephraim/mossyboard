@@ -123,15 +123,15 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [x] Confirm Supabase Postgres as the application database platform
 - [x] Centralize Supabase environment reads from `.env` using the pooler URL (transaction mode, port 6543)
 - [x] Use the `supabase` CLI for local DB lifecycle: `supabase start` for a local dev DB, `supabase db reset` to reapply migrations, `supabase db lint` before merge
-- [ ] Link the repo to a remote project with `supabase link --project-ref <ref>` once the remote project is chosen (record the ref in `PROGRESS.md`)
+- [x] Link the repo to a remote project with `supabase link --project-ref <ref>` once the remote project is chosen (record the ref in `PROGRESS.md`)
 - [x] Install `drizzle-orm`, `drizzle-kit`, and `postgres` (the `postgres.js` driver)
-- [ ] Do not install `supabase-js` — the project has no PostgREST, Storage, or Realtime needs
+- [x] Do not install `supabase-js` — the project has no PostgREST, Storage, or Realtime needs
 - [x] Create `src/server/db/schema.ts` as the single source of truth for tables and indexes
 - [x] Create `src/server/db/client.ts` exporting a module-level singleton Drizzle instance over `postgres.js`
 - [x] Configure `drizzle-kit` to read `schema.ts` and target the Supabase DB URL
 - [x] Verify `drizzle-kit generate` and `drizzle-kit migrate` run cleanly against the Supabase-backed database
-- [ ] Use Drizzle's relational queries API for parent-with-children reads
-- [ ] Use Drizzle's query builder with `.for('update')` inside `db.transaction(...)` for reorder and move paths
+- [x] Use Drizzle's relational queries API for parent-with-children reads
+- [x] Use Drizzle's query builder with `.for('update')` inside `db.transaction(...)` for reorder and move paths
 - [x] Install tRPC server and client packages, zod, and `@trpc/react-query`
 - [x] Mount a single tRPC router as a TanStack Start server route at `/api/trpc/$`
 - [x] Configure the tRPC React Query client on the frontend
@@ -140,10 +140,10 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [x] Define the initial `TRPCError` code set and document it alongside the router
 - [x] Install pino, `pino-http`, and `pino-pretty` (dev only)
 - [x] Create a single pino instance at server bootstrap
-- [ ] Add `pino-http` at the TanStack Start request boundary
+- [x] Add `pino-http` at the TanStack Start request boundary
 - [x] Add a tRPC middleware that logs `{ path, type, durationMs, ok, requestId }` per procedure call
-- [ ] Keep business logic in services and persistence access in repo/query modules
-- [ ] If any new `public` tables are introduced, add RLS enablement and explicit policies in the same migration
+- [x] Keep business logic in services and persistence access in repo/query modules
+- [x] If any new `public` tables are introduced, add RLS enablement and explicit policies in the same migration
 
 ### Prepare the first shared data path
 
@@ -154,9 +154,9 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 ### Verify the phase
 
 - [x] Confirm the app can connect to the Supabase-backed database locally
-- [ ] Decide on the DB-test pattern once and document it in `PROGRESS.md`: a dedicated test database (`DATABASE_URL_TEST`, either a separate Supabase project or a local `supabase start` instance) running the same Drizzle migrations, with transaction-per-test rollback
+- [x] Decide on the DB-test pattern once and document it in `PROGRESS.md`: a dedicated test database (`DATABASE_URL_TEST`, either a separate Supabase project or a local `supabase start` instance) running the same Drizzle migrations, with transaction-per-test rollback
 - [x] Add an API test that verifies validation and error shaping on the first database-backed path
-- [ ] Add a service-level test for the first persistence-backed path against `DATABASE_URL_TEST`
+- [x] Add a service-level test for the first persistence-backed path against `DATABASE_URL_TEST`
 - [x] Verify RLS policies exist for any new or altered `public` tables
 - [x] Run `supabase db lint` and confirm it is clean before merge
 
@@ -173,7 +173,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 
 ### Verify the phase
 
-- [ ] Add a test for the counter response shape
+- [x] Add a test for the counter response shape
 - [x] Add a service or repo test that verifies increments persist correctly
 - [x] Add a UI test that verifies the page renders the current count
 - [x] Add a UI test that verifies clicking increments the count

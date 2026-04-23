@@ -48,8 +48,8 @@
 - **outcome**: done
 - **reason**: Drizzle migrations + RLS policies in place; TanStack Start SPA mode enabled; tRPC router mounted at `/api/trpc/$`; `supabase db lint` clean
 - **follow-ups**:
-  - **BLOCKED:** `supabase link --project-ref <ref>` (no chosen ref recorded yet)
-  - **BLOCKED:** DB-test pattern (attempting to run `drizzle-kit migrate` against `DATABASE_URL_TEST` exits non-zero; need a working dedicated test DB or switch to local `supabase start`)
+  - **RESOLVED:** `supabase link --project-ref <ref>` → `bjhyorcqtjuetmlnmvky` (see 2026-04-23T20:23:46Z)
+  - **RESOLVED:** DB-test pattern → pooler-based `DATABASE_URL_TEST_POOLER` (see 2026-04-23T20:23:46Z)
 
 ## 2026-04-23T20:15:40Z
 
@@ -64,3 +64,17 @@
 - **step**: vercel link
 - **outcome**: blocked
 - **reason**: `vercel link` fails in non-interactive mode with `missing_scope` even when `--scope` is provided; needs an interactive link step or CLI configuration change
+
+## 2026-04-23T20:23:46Z
+
+- **phase**: follow-ups
+- **step**: resolve supabase link + test DB URL
+- **outcome**: done
+- **reason**: linked Supabase project ref recorded as `bjhyorcqtjuetmlnmvky`; DB test migrations now use a pooler-based `DATABASE_URL_TEST_POOLER`
+
+## 2026-04-23T20:35:57Z
+
+- **phase**: 3
+- **step**: complete remaining DB patterns
+- **outcome**: done
+- **reason**: added relational parent-with-children read and a tx + `FOR UPDATE` move/reorder example using Drizzle query builder; `supabase db lint` remains clean

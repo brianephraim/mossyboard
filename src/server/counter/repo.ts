@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
 import { db } from "../db/client";
-import { sharedCounter } from "../db/schema";
+import { sharedCounter, sharedCounterEvent } from "../db/schema";
 
 const SINGLETON_KEY = "singleton" as const;
 
@@ -13,6 +13,8 @@ export async function getSharedCounter() {
 
 export async function incrementSharedCounter() {
   await ensureRow();
+
+  await db.insert(sharedCounterEvent).values({ counterKey: SINGLETON_KEY, delta: 1 });
 
   const [updated] = await db
     .update(sharedCounter)
@@ -25,6 +27,31 @@ export async function incrementSharedCounter() {
 
   if (!updated) throw new Error("Failed to increment shared counter");
   return { value: updated.value };
+}
+
+export async function getSharedCounterWithRecentEvents(limit = 10) {
+  const row = await ensureRow();
+
+  const withChildren = await db.query.sharedCounter.findFirst({
+    where: eq(sharedCounter.key, SINGLETON_KEY),
+    with: {
+      events: {
+        where: eq(sharedCounterEvent.counterKey, SINGLETON_KEY),
+        orderBy: [desc(sharedCounterEvent.createdAt)],
+        limit,
+      },
+    },
+  });
+
+  if (!withChildren) throw new Error("Missing shared counter row");
+
+  return {
+    value: withChildren.value,
+    events: withChildren.events.map((e) => ({
+      delta: e.delta,
+      createdAt: e.createdAt,
+    })),
+  };
 }
 
 async function ensureRow() {
