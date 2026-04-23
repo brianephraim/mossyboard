@@ -122,3 +122,10 @@
 - **step**: approval
 - **outcome**: done
 - **reason**: human approved running `vercel --prod`
+
+## 2026-04-23T21:34:04Z
+
+- **phase**: 6
+- **step**: local auth verification
+- **outcome**: done
+- **reason**: validated sign-up and sign-in via Firebase Auth REST API, and sign-out by deleting the test user via firebase-admin

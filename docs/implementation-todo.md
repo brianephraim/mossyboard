@@ -225,7 +225,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 
 - [x] Add tests for auth module behavior with mocked Firebase calls
 - [x] Add a tRPC middleware test covering missing, invalid, and valid ID tokens
-- [ ] Confirm a user can sign up, sign in, and sign out locally with the existing `.env` values
+- [x] Confirm a user can sign up, sign in, and sign out locally with the existing `.env` values
 
 ## Phase 7: Resend-Backed Auth Emails
 
