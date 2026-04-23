@@ -1,28 +1,11 @@
-import { Outlet, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { createRouter } from "@tanstack/react-router";
 
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-    </>
-  ),
-});
+import { routeTree } from "./routeTree.gen";
 
-const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/",
-  component: () => <main>Kanban</main>,
-});
-
-const routeTree = rootRoute.addChildren([indexRoute]);
-
-export const router = createRouter({
-  routeTree,
-  defaultPreload: "intent",
-});
-
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: typeof router;
-  }
+export function getRouter() {
+  return createRouter({
+    routeTree,
+    scrollRestoration: true,
+    defaultPreload: "intent",
+  });
 }

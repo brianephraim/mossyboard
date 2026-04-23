@@ -78,87 +78,87 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 ### Repo state
 
 - [ ] Confirm the working tree is clean (`git status`) before starting
-- [ ] Create and check out a feature branch (e.g. `feat/phases-1-to-9`) for all work
-- [ ] Create the initial `PROGRESS.md` with a `Started phase 1 at <timestamp>` entry
+- [x] Create and check out a feature branch (e.g. `feat/phases-1-to-9`) for all work
+- [x] Create the initial `PROGRESS.md` with a `Started phase 1 at <timestamp>` entry
 
 ## Phase 1: Package and Tooling Baseline
 
 ### Build the baseline
 
-- [ ] Create the root `package.json`
-- [ ] Add scripts for `dev`, `build`, `test`, and `format`
-- [ ] Add TypeScript and the initial `tsconfig`
-- [ ] Add Prettier support if any required config file is still missing
-- [ ] Add Vitest as the initial test runner
-- [ ] Add `@testing-library/react` and `jsdom` for component testing
-- [ ] Add the initial Vitest setup file if needed
+- [x] Create the root `package.json`
+- [x] Add scripts for `dev`, `build`, `test`, and `format`
+- [x] Add TypeScript and the initial `tsconfig`
+- [x] Add Prettier support if any required config file is still missing
+- [x] Add Vitest as the initial test runner
+- [x] Add `@testing-library/react` and `jsdom` for component testing
+- [x] Add the initial Vitest setup file if needed
 
 ### Verify the phase
 
-- [ ] Add one trivial smoke test using Vitest and `node:assert/strict`
-- [ ] Confirm `npm install` succeeds
-- [ ] Confirm `npm run test` passes
+- [x] Add one trivial smoke test using Vitest and `node:assert/strict`
+- [x] Confirm `npm install` succeeds
+- [x] Confirm `npm run test` passes
 
 ## Phase 2: TanStack Start App Shell
 
 ### Build the app shell
 
-- [ ] Install TanStack Start and its required React dependencies
-- [ ] Scaffold the TanStack Start application structure
-- [ ] Add the root app entrypoints
-- [ ] Configure TanStack Router in the app shell
-- [ ] Configure TanStack Query in the app shell
-- [ ] Add the root route
-- [ ] Confirm local development starts successfully
+- [x] Install TanStack Start and its required React dependencies
+- [x] Scaffold the TanStack Start application structure
+- [x] Add the root app entrypoints
+- [x] Configure TanStack Router in the app shell
+- [x] Configure TanStack Query in the app shell
+- [x] Add the root route
+- [x] Confirm local development starts successfully
 
 ### Verify the phase
 
-- [ ] Confirm the app boots locally without feature code
-- [ ] Add or update a smoke test that the root app can render
+- [x] Confirm the app boots locally without feature code
+- [x] Add or update a smoke test that the root app can render
 
 ## Phase 3: Supabase and Server Foundation
 
 ### Build the persistence baseline
 
-- [ ] Confirm Supabase Postgres as the application database platform
-- [ ] Centralize Supabase environment reads from `.env` using the pooler URL (transaction mode, port 6543)
-- [ ] Use the `supabase` CLI for local DB lifecycle: `supabase start` for a local dev DB, `supabase db reset` to reapply migrations, `supabase db lint` before merge
+- [x] Confirm Supabase Postgres as the application database platform
+- [x] Centralize Supabase environment reads from `.env` using the pooler URL (transaction mode, port 6543)
+- [x] Use the `supabase` CLI for local DB lifecycle: `supabase start` for a local dev DB, `supabase db reset` to reapply migrations, `supabase db lint` before merge
 - [ ] Link the repo to a remote project with `supabase link --project-ref <ref>` once the remote project is chosen (record the ref in `PROGRESS.md`)
-- [ ] Install `drizzle-orm`, `drizzle-kit`, and `postgres` (the `postgres.js` driver)
+- [x] Install `drizzle-orm`, `drizzle-kit`, and `postgres` (the `postgres.js` driver)
 - [ ] Do not install `supabase-js` — the project has no PostgREST, Storage, or Realtime needs
-- [ ] Create `src/server/db/schema.ts` as the single source of truth for tables and indexes
-- [ ] Create `src/server/db/client.ts` exporting a module-level singleton Drizzle instance over `postgres.js`
-- [ ] Configure `drizzle-kit` to read `schema.ts` and target the Supabase DB URL
-- [ ] Verify `drizzle-kit generate` and `drizzle-kit migrate` run cleanly against the Supabase-backed database
+- [x] Create `src/server/db/schema.ts` as the single source of truth for tables and indexes
+- [x] Create `src/server/db/client.ts` exporting a module-level singleton Drizzle instance over `postgres.js`
+- [x] Configure `drizzle-kit` to read `schema.ts` and target the Supabase DB URL
+- [x] Verify `drizzle-kit generate` and `drizzle-kit migrate` run cleanly against the Supabase-backed database
 - [ ] Use Drizzle's relational queries API for parent-with-children reads
 - [ ] Use Drizzle's query builder with `.for('update')` inside `db.transaction(...)` for reorder and move paths
-- [ ] Install tRPC server and client packages, zod, and `@trpc/react-query`
-- [ ] Mount a single tRPC router as a TanStack Start server route at `/api/trpc/$`
-- [ ] Configure the tRPC React Query client on the frontend
-- [ ] Require zod `.input(...)` validation on every procedure
-- [ ] Add a tRPC `errorFormatter` that surfaces `zodError.flatten()` in the error `data` field
-- [ ] Define the initial `TRPCError` code set and document it alongside the router
-- [ ] Install pino, `pino-http`, and `pino-pretty` (dev only)
-- [ ] Create a single pino instance at server bootstrap
+- [x] Install tRPC server and client packages, zod, and `@trpc/react-query`
+- [x] Mount a single tRPC router as a TanStack Start server route at `/api/trpc/$`
+- [x] Configure the tRPC React Query client on the frontend
+- [x] Require zod `.input(...)` validation on every procedure
+- [x] Add a tRPC `errorFormatter` that surfaces `zodError.flatten()` in the error `data` field
+- [x] Define the initial `TRPCError` code set and document it alongside the router
+- [x] Install pino, `pino-http`, and `pino-pretty` (dev only)
+- [x] Create a single pino instance at server bootstrap
 - [ ] Add `pino-http` at the TanStack Start request boundary
-- [ ] Add a tRPC middleware that logs `{ path, type, durationMs, ok, requestId }` per procedure call
+- [x] Add a tRPC middleware that logs `{ path, type, durationMs, ok, requestId }` per procedure call
 - [ ] Keep business logic in services and persistence access in repo/query modules
 - [ ] If any new `public` tables are introduced, add RLS enablement and explicit policies in the same migration
 
 ### Prepare the first shared data path
 
-- [ ] Add a simple shared counter table for the first persisted feature
-- [ ] Add the required RLS enablement and explicit policies for that table
-- [ ] Decide whether the counter path uses a server route or server function and keep the database access behind the server boundary
+- [x] Add a simple shared counter table for the first persisted feature
+- [x] Add the required RLS enablement and explicit policies for that table
+- [x] Decide whether the counter path uses a server route or server function and keep the database access behind the server boundary
 
 ### Verify the phase
 
-- [ ] Confirm the app can connect to the Supabase-backed database locally
+- [x] Confirm the app can connect to the Supabase-backed database locally
 - [ ] Decide on the DB-test pattern once and document it in `PROGRESS.md`: a dedicated test database (`DATABASE_URL_TEST`, either a separate Supabase project or a local `supabase start` instance) running the same Drizzle migrations, with transaction-per-test rollback
-- [ ] Add an API test that verifies validation and error shaping on the first database-backed path
+- [x] Add an API test that verifies validation and error shaping on the first database-backed path
 - [ ] Add a service-level test for the first persistence-backed path against `DATABASE_URL_TEST`
-- [ ] Verify RLS policies exist for any new or altered `public` tables
-- [ ] Run `supabase db lint` and confirm it is clean before merge
+- [x] Verify RLS policies exist for any new or altered `public` tables
+- [x] Run `supabase db lint` and confirm it is clean before merge
 
 ## Phase 4: Shared Click Counter Vertical Slice
 

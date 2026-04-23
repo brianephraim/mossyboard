@@ -34,3 +34,19 @@
 - **outcome**: done
 - **reason**: app shell boots (`npm run dev`), tests pass, and production build succeeds
 
+## 2026-04-23T19:59:55Z
+
+- **phase**: meta
+- **step**: docs upkeep
+- **outcome**: done
+- **reason**: check off completed items in `docs/implementation-todo.md` as work progresses
+
+## 2026-04-23T20:10:56Z
+
+- **phase**: 3
+- **step**: in progress
+- **outcome**: done
+- **reason**: Drizzle migrations + RLS policies in place; TanStack Start SPA mode enabled; tRPC router mounted at `/api/trpc/$`; `supabase db lint` clean
+- **follow-ups**:
+  - **BLOCKED:** `supabase link --project-ref <ref>` (no chosen ref recorded yet)
+  - **BLOCKED:** DB-test pattern (attempting to run `drizzle-kit migrate` against `DATABASE_URL_TEST` exits non-zero; need a working dedicated test DB or switch to local `supabase start`)
