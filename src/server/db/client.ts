@@ -2,6 +2,7 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 
 import { serverEnv } from "../config";
+import * as schema from "./schema";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -13,5 +14,5 @@ declare global {
 const sql = globalThis.__sql__ ?? postgres(serverEnv.DATABASE_URL, { max: 5 });
 globalThis.__sql__ = sql;
 
-export const db = globalThis.__db__ ?? drizzle(sql);
+export const db = globalThis.__db__ ?? drizzle(sql, { schema });
 globalThis.__db__ = db;

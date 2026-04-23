@@ -1,4 +1,6 @@
 import "@testing-library/react";
+import { cleanup } from "@testing-library/react";
+import { afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -7,6 +9,10 @@ import { resolve } from "node:path";
 Object.defineProperty(window, "scrollTo", {
   value: () => {},
   writable: true,
+});
+
+afterEach(() => {
+  cleanup();
 });
 
 // Load `.env` for local test runs (gitignored).

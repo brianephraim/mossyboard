@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 import { db } from "../db/client";
 import { sharedCounter } from "../db/schema";
@@ -16,7 +17,7 @@ export async function incrementSharedCounter() {
   const [updated] = await db
     .update(sharedCounter)
     .set({
-      value: sharedCounter.value + 1,
+      value: sql`${sharedCounter.value} + 1`,
       updatedAt: new Date(),
     })
     .where(eq(sharedCounter.key, SINGLETON_KEY))

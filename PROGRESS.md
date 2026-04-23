@@ -50,3 +50,10 @@
 - **follow-ups**:
   - **BLOCKED:** `supabase link --project-ref <ref>` (no chosen ref recorded yet)
   - **BLOCKED:** DB-test pattern (attempting to run `drizzle-kit migrate` against `DATABASE_URL_TEST` exits non-zero; need a working dedicated test DB or switch to local `supabase start`)
+
+## 2026-04-23T20:15:40Z
+
+- **phase**: 4
+- **step**: complete + verify
+- **outcome**: done
+- **reason**: shared click counter available via tRPC read/increment and rendered on `/` with loading/error states; verified via local dev HTTP calls

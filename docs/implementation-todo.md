@@ -164,20 +164,20 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 
 ### Build the first real feature slice
 
-- [ ] Add a typed read endpoint or server function for the shared counter
-- [ ] Add a typed increment endpoint or server function for the shared counter
-- [ ] Add a simple page that displays the current shared count
-- [ ] Add a button that increments the shared count through the real backend path
-- [ ] Show loading, success, and error states for the counter interactions
-- [ ] Keep the counter intentionally unauthenticated and shared across all visitors
+- [x] Add a typed read endpoint or server function for the shared counter
+- [x] Add a typed increment endpoint or server function for the shared counter
+- [x] Add a simple page that displays the current shared count
+- [x] Add a button that increments the shared count through the real backend path
+- [x] Show loading, success, and error states for the counter interactions
+- [x] Keep the counter intentionally unauthenticated and shared across all visitors
 
 ### Verify the phase
 
 - [ ] Add a test for the counter response shape
-- [ ] Add a service or repo test that verifies increments persist correctly
-- [ ] Add a UI test that verifies the page renders the current count
-- [ ] Add a UI test that verifies clicking increments the count
-- [ ] Confirm the browser shows the same shared count updating through the real backend path
+- [x] Add a service or repo test that verifies increments persist correctly
+- [x] Add a UI test that verifies the page renders the current count
+- [x] Add a UI test that verifies clicking increments the count
+- [x] Confirm the browser shows the same shared count updating through the real backend path
 
 ## Phase 5: Vercel Deployment Setup
 
