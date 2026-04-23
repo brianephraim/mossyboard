@@ -11,7 +11,7 @@ vi.mock("../mail/config", () => {
   };
 });
 
-vi.mock("../mail/resend", () => {
+vi.mock("../mail/delivery", () => {
   return {
     sendEmail: vi.fn(async () => ({ id: "email_123" })),
   };
@@ -32,7 +32,7 @@ describe("auth email service", () => {
   });
 
   it("sends verification email with generated link", async () => {
-    const { sendEmail } = await import("../mail/resend");
+    const { sendEmail } = await import("../mail/delivery");
     const { sendVerificationEmail } = await import("./email-service");
 
     const result = await sendVerificationEmail("a@example.com");
@@ -46,7 +46,7 @@ describe("auth email service", () => {
   });
 
   it("sends password reset email with generated link", async () => {
-    const { sendEmail } = await import("../mail/resend");
+    const { sendEmail } = await import("../mail/delivery");
     const { sendPasswordResetEmail } = await import("./email-service");
 
     const result = await sendPasswordResetEmail("a@example.com");

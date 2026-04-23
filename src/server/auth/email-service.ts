@@ -1,5 +1,5 @@
 import { createEmailVerificationLink, createPasswordResetLink } from "./action-links";
-import { sendEmail } from "../mail/resend";
+import { sendEmail } from "../mail/delivery";
 
 export async function sendVerificationEmail(email: string): Promise<{ deliveryId: string }> {
   const link = await createEmailVerificationLink(email);
