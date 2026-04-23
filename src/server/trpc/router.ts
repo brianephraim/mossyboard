@@ -4,6 +4,7 @@ import { protectedProcedure, publicProcedure, t } from "./init";
 import { incrementCounter, readCounter } from "../counter/service";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../auth/email-service";
 import { TRPCError } from "@trpc/server";
+import { adminAuth } from "../auth/admin";
 
 export const appRouter = t.router({
   health: publicProcedure.input(z.object({})).query(() => ({ ok: true })),
@@ -25,6 +26,33 @@ export const appRouter = t.router({
     sendPasswordReset: publicProcedure
       .input(z.object({ email: z.string().email() }))
       .mutation(async ({ input }) => sendPasswordResetEmail(input.email)),
+    devSendPasswordResetTo: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .mutation(async ({ input }) => {
+        if (process.env.NODE_ENV === "production") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "dev-only procedure" });
+        }
+
+        let createdUserUid: string | null = null;
+        try {
+          const existing = await adminAuth.getUserByEmail(input.email);
+          createdUserUid = existing.uid;
+        } catch (err: any) {
+          if (String(err?.code) !== "auth/user-not-found") {
+            throw err;
+          }
+          const created = await adminAuth.createUser({ email: input.email });
+          createdUserUid = created.uid;
+        }
+
+        try {
+          return await sendPasswordResetEmail(input.email);
+        } finally {
+          if (createdUserUid) {
+            await adminAuth.deleteUser(createdUserUid);
+          }
+        }
+      }),
   }),
 });
 

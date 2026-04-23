@@ -129,3 +129,10 @@
 - **step**: local auth verification
 - **outcome**: done
 - **reason**: validated sign-up and sign-in via Firebase Auth REST API, and sign-out by deleting the test user via firebase-admin
+
+## 2026-04-23T21:50:00Z
+
+- **phase**: 7
+- **step**: local auth email trigger
+- **outcome**: done
+- **reason**: confirmed password reset email flow can be triggered locally via `authEmail.devSendPasswordResetTo` (dev-only), returning delivery id `2c97fdfa-d850-468f-a626-d1b8d65c65f7`
