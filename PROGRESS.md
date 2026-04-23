@@ -78,3 +78,17 @@
 - **step**: complete remaining DB patterns
 - **outcome**: done
 - **reason**: added relational parent-with-children read and a tx + `FOR UPDATE` move/reorder example using Drizzle query builder; `supabase db lint` remains clean
+
+## 2026-04-23T20:48:04Z
+
+- **phase**: 5
+- **step**: unblock vercel link
+- **outcome**: done
+- **reason**: created Vercel project `kanban` under `brianephraims-projects` and linked locally via `.vercel/project.json`
+
+## 2026-04-23T20:48:04Z
+
+- **phase**: 5
+- **step**: sync preview env
+- **outcome**: done
+- **reason**: `vercel pull --environment=preview` succeeded and wrote `.vercel/.env.preview.local`
