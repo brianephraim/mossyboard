@@ -231,7 +231,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 
 ### Build the mail flow
 
-- [ ] Install the Resend SDK
+- [x] Install the Resend SDK
 - [ ] Add a dedicated server-side mail delivery module
 - [ ] Implement server-side generation of Firebase auth action links
 - [ ] Send verification emails through Resend instead of provider-managed default templates
