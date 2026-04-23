@@ -186,7 +186,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [ ] Add Vercel as the canonical deployment target for the app
 - [x] Use `vercel link` from the repo root to associate it with a Vercel project (create the project through `vercel link` if it does not yet exist; record the project name in `PROGRESS.md`)
 - [ ] Use `vercel env add <NAME> production` and `vercel env add <NAME> preview` for each required environment variable rather than setting them through the dashboard
-- [ ] Use `vercel pull` to sync environment variables into `.vercel/.env.*.local` for local verification
+- [x] Use `vercel pull` to sync environment variables into `.vercel/.env.*.local` for local verification
 - [ ] Confirm the build and runtime settings match the TanStack Start application needs
 - [ ] Add or update deploy scripts as needed so they align with Vercel
 - [ ] Trigger the first deploy with `vercel --prod` only after human approval is recorded in `PROGRESS.md`
