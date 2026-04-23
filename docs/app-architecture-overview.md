@@ -210,6 +210,21 @@
 
 ---
 
+## Hosting and Deployment
+
+### Deployment Platform
+
+- Vercel is the canonical hosting and deployment platform for production
+- Deployment setup happens after the shared click counter slice is working end to end
+- Firebase is not used as the hosting platform in this project
+
+### Deployment Configuration
+
+- Runtime environment variables are managed through Vercel environment configuration for deployed environments
+- Deployment scripts, workflows, and README instructions should stay aligned with Vercel as the source of truth
+
+---
+
 ## Bootstrap Sequence
 
 ### Initial Setup Order
@@ -218,6 +233,7 @@
 - Set up TanStack Start as the first framework milestone, including routing and query bootstrapping in the app shell
 - Set up Supabase-backed persistence before authentication work begins
 - Add the first persistence-backed vertical slice as an unauthenticated all-visitor-shared click counter
+- Set up Vercel deployment after the counter slice is working end to end
 - Layer in Firebase authentication after the database-backed request path is working
 - Add Resend-backed auth email flows after the Firebase auth baseline is working
 - Add shared client state only when a concrete cross-feature need appears

@@ -89,7 +89,24 @@ This checklist is intentionally phase-based.
 - [ ] Add a UI test that verifies clicking increments the count
 - [ ] Confirm the browser shows the same shared count updating through the real backend path
 
-## Phase 5: Firebase Authentication Foundation
+## Phase 5: Vercel Deployment Setup
+
+### Prepare deployment after the counter slice is ready
+
+- [ ] Add Vercel as the canonical deployment target for the app
+- [ ] Add the project to Vercel
+- [ ] Configure the required Vercel environment variables for the counter slice
+- [ ] Confirm the build and runtime settings match the TanStack Start application needs
+- [ ] Add or update deploy scripts as needed so they align with Vercel
+- [ ] Keep deployment behavior aligned with Vercel instead of Firebase hosting
+
+### Verify the phase
+
+- [ ] Confirm the shared click counter app deploys successfully to Vercel
+- [ ] Confirm the deployed app can reach the Supabase-backed counter path
+- [ ] Confirm the deployed environment variables are wired correctly
+
+## Phase 6: Firebase Authentication Foundation
 
 ### Build the auth baseline
 
@@ -110,7 +127,7 @@ This checklist is intentionally phase-based.
 - [ ] Add tests for auth module behavior with mocked Firebase calls
 - [ ] Confirm a user can sign up, sign in, and sign out locally with the existing `.env` values
 
-## Phase 6: Resend-Backed Auth Emails
+## Phase 7: Resend-Backed Auth Emails
 
 ### Build the mail flow
 
@@ -126,7 +143,7 @@ This checklist is intentionally phase-based.
 - [ ] Add tests that verify auth email payloads and action links are passed to the mail module correctly
 - [ ] Confirm a local auth email flow can be triggered with the existing `.env` values
 
-## Phase 7: Shared Client State
+## Phase 8: Shared Client State
 
 ### Add Redux only when it becomes necessary
 
@@ -141,7 +158,7 @@ This checklist is intentionally phase-based.
 - [ ] Add unit tests for the first slice and selectors
 - [ ] Confirm Redux is solving a real shared-state problem rather than duplicating server data
 
-## Phase 8: Tamagui UI Foundation
+## Phase 9: Tamagui UI Foundation
 
 ### Add the design system before broader product UI work
 
@@ -158,7 +175,7 @@ This checklist is intentionally phase-based.
 - [ ] Add a component test that renders a Tamagui-based screen successfully
 - [ ] Confirm the app shell and auth screens still work after the provider is introduced
 
-## Phase 9: Kanban Product Buildout
+## Phase 10: Kanban Product Buildout
 
 ### Build the product features
 
@@ -184,7 +201,7 @@ This checklist is intentionally phase-based.
 - [ ] Add component tests for key board interactions
 - [ ] Add API and service tests for core backend paths
 
-## Phase 10: End-to-End Coverage
+## Phase 11: End-to-End Coverage
 
 ### Add browser-level coverage
 
@@ -197,7 +214,7 @@ This checklist is intentionally phase-based.
 
 - [ ] Confirm the happy-path Playwright test passes locally
 
-## Phase 11: Documentation Completion
+## Phase 12: Documentation Completion
 
 ### Finish the project docs
 
@@ -207,6 +224,7 @@ This checklist is intentionally phase-based.
 - [ ] Document that Firebase is auth-only in this project
 - [ ] Document that auth emails are delivered through Resend-backed server flows
 - [ ] Document that Supabase Postgres is the application database platform
+- [ ] Document that Vercel is the canonical deployment target
 - [ ] Document the final state management approach in the README
 - [ ] Add setup and run instructions
 - [ ] Add database and schema overview
@@ -219,10 +237,11 @@ This checklist is intentionally phase-based.
 - [ ] Phase 2: TanStack Start App Shell
 - [ ] Phase 3: Supabase and Server Foundation
 - [ ] Phase 4: Shared Click Counter Vertical Slice
-- [ ] Phase 5: Firebase Authentication Foundation
-- [ ] Phase 6: Resend-Backed Auth Emails
-- [ ] Phase 7: Shared Client State
-- [ ] Phase 8: Tamagui UI Foundation
-- [ ] Phase 9: Kanban Product Buildout
-- [ ] Phase 10: End-to-End Coverage
-- [ ] Phase 11: Documentation Completion
+- [ ] Phase 5: Vercel Deployment Setup
+- [ ] Phase 6: Firebase Authentication Foundation
+- [ ] Phase 7: Resend-Backed Auth Emails
+- [ ] Phase 8: Shared Client State
+- [ ] Phase 9: Tamagui UI Foundation
+- [ ] Phase 10: Kanban Product Buildout
+- [ ] Phase 11: End-to-End Coverage
+- [ ] Phase 12: Documentation Completion
