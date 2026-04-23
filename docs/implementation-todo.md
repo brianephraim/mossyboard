@@ -5,6 +5,72 @@ This checklist is intentionally phase-based.
 - [ ] Install only the dependency group needed for the current phase
 - [ ] Keep the architecture docs and README aligned as decisions become real
 
+## Unattended Execution Rules
+
+These rules apply to any agent executing this checklist without human supervision.
+
+### Progress reporting
+
+- Maintain a top-level `PROGRESS.md` file from the very first action
+- Append a new dated entry every time a phase starts, a phase completes, or the agent gets stuck
+- Each entry records: phase, step, outcome (`done` / `skipped` / `blocked`), short reason, and any follow-ups
+- Never rewrite history in `PROGRESS.md`; only append
+- End every session with a final `PROGRESS.md` entry summarizing the current state
+
+### Keep-moving-forward policy
+
+- Prefer completing work sequentially within a phase
+- If a single step blocks for more than a reasonable attempt, log the block in `PROGRESS.md` with a `BLOCKED:` prefix, then continue with the next step that is not strictly dependent on the blocked one
+- If an entire phase's verification steps fail after a real attempt, record the failure and move to the next phase only if later phases do not strictly require the broken capability
+- Never skip a phase's verification steps silently — either they pass, or the failure is recorded before moving on
+- Do not invent credentials, fake API responses, or stub away missing infrastructure; record the block and move forward
+
+### Scope
+
+- Execute phases 1 through 9 only
+- Do not begin phase 10 (Kanban Product Buildout) or later without explicit human approval
+- Do not open pull requests, push to `main`, or deploy to Vercel production without explicit human approval
+- Local commits on a feature branch are allowed once per completed phase
+
+### Safety boundaries
+
+- Do not run destructive database operations against any environment other than the dedicated local or test database
+- Do not overwrite or delete existing `.env` values; if a required value is missing, record the block and continue
+- Do not install a global package without recording the install in `PROGRESS.md`
+- Do not modify `AGENTS.md`, `CLAUDE.md`, or files under `docs/` without recording the reason in `PROGRESS.md`
+
+## Pre-Flight Checklist
+
+Complete these before starting Phase 1. If any step fails, record the failure in `PROGRESS.md` and continue past the failure only where possible.
+
+### Required CLIs
+
+- [ ] Confirm `node --version` is 20 or newer
+- [ ] Confirm `npm --version` is present
+- [ ] Confirm `git --version` is present
+- [ ] Confirm `gh` is installed and `gh auth status` reports a logged-in account
+- [ ] Confirm `firebase --version` is present and `firebase projects:list` succeeds
+- [ ] Confirm `vercel --version` is present and `vercel whoami` succeeds (run `vercel login` if needed)
+- [ ] Confirm `supabase --version` is present (install with `brew install supabase/tap/supabase` if missing)
+- [ ] Confirm `jq --version` is present
+
+### Environment values
+
+- [ ] Confirm `.env` contains a value for `DATABASE_URL` and that it is the Supabase **pooler** URL on port 6543 in transaction mode
+- [ ] Confirm `.env` contains a value for `SUPABASE_DB_PASSWORD`
+- [ ] Confirm `.env` contains a value for `FIREBASE_WEB_API_KEY` and `FIREBASE_AUTH_USERNAME_DOMAIN`
+- [ ] Record in `PROGRESS.md` any of these additional values that are still missing and will be needed by later phases:
+  - [ ] Firebase client bundle for the browser (`VITE_PUBLIC_FIREBASE_PROJECT_ID`, `VITE_PUBLIC_FIREBASE_AUTH_DOMAIN`, `VITE_PUBLIC_FIREBASE_APP_ID`, `VITE_PUBLIC_FIREBASE_API_KEY`, and messaging sender id if used)
+  - [ ] Firebase service account JSON as `FIREBASE_SERVICE_ACCOUNT_JSON` (one-line stringified JSON) for `firebase-admin`
+  - [ ] `RESEND_FROM_EMAIL` for the Resend sender address
+  - [ ] `DATABASE_URL_TEST` pointing at a dedicated test database or local `supabase start` instance
+
+### Repo state
+
+- [ ] Confirm the working tree is clean (`git status`) before starting
+- [ ] Create and check out a feature branch (e.g. `feat/phases-1-to-9`) for all work
+- [ ] Create the initial `PROGRESS.md` with a `Started phase 1 at <timestamp>` entry
+
 ## Phase 1: Package and Tooling Baseline
 
 ### Build the baseline
@@ -46,6 +112,8 @@ This checklist is intentionally phase-based.
 
 - [ ] Confirm Supabase Postgres as the application database platform
 - [ ] Centralize Supabase environment reads from `.env` using the pooler URL (transaction mode, port 6543)
+- [ ] Use the `supabase` CLI for local DB lifecycle: `supabase start` for a local dev DB, `supabase db reset` to reapply migrations, `supabase db lint` before merge
+- [ ] Link the repo to a remote project with `supabase link --project-ref <ref>` once the remote project is chosen (record the ref in `PROGRESS.md`)
 - [ ] Install `drizzle-orm`, `drizzle-kit`, and `postgres` (the `postgres.js` driver)
 - [ ] Do not install `supabase-js` — the project has no PostgREST, Storage, or Realtime needs
 - [ ] Create `src/server/db/schema.ts` as the single source of truth for tables and indexes
@@ -76,10 +144,11 @@ This checklist is intentionally phase-based.
 ### Verify the phase
 
 - [ ] Confirm the app can connect to the Supabase-backed database locally
+- [ ] Decide on the DB-test pattern once and document it in `PROGRESS.md`: a dedicated test database (`DATABASE_URL_TEST`, either a separate Supabase project or a local `supabase start` instance) running the same Drizzle migrations, with transaction-per-test rollback
 - [ ] Add an API test that verifies validation and error shaping on the first database-backed path
-- [ ] Add a service-level test for the first persistence-backed path
+- [ ] Add a service-level test for the first persistence-backed path against `DATABASE_URL_TEST`
 - [ ] Verify RLS policies exist for any new or altered `public` tables
-- [ ] Verify Supabase security lint is clean before merge
+- [ ] Run `supabase db lint` and confirm it is clean before merge
 
 ## Phase 4: Shared Click Counter Vertical Slice
 
@@ -105,10 +174,13 @@ This checklist is intentionally phase-based.
 ### Prepare deployment after the counter slice is ready
 
 - [ ] Add Vercel as the canonical deployment target for the app
-- [ ] Add the project to Vercel
-- [ ] Configure the required Vercel environment variables for the counter slice
+- [ ] Use `vercel link` from the repo root to associate it with a Vercel project (create the project through `vercel link` if it does not yet exist; record the project name in `PROGRESS.md`)
+- [ ] Use `vercel env add <NAME> production` and `vercel env add <NAME> preview` for each required environment variable rather than setting them through the dashboard
+- [ ] Use `vercel pull` to sync environment variables into `.vercel/.env.*.local` for local verification
 - [ ] Confirm the build and runtime settings match the TanStack Start application needs
 - [ ] Add or update deploy scripts as needed so they align with Vercel
+- [ ] Trigger the first deploy with `vercel --prod` only after human approval is recorded in `PROGRESS.md`
+- [ ] If human approval for production deploy is not available, deploy a preview with `vercel` (no `--prod`) and record the preview URL in `PROGRESS.md` as the closest verifiable artifact
 - [ ] Keep deployment behavior aligned with Vercel instead of Firebase hosting
 
 ### Verify the phase
@@ -121,8 +193,10 @@ This checklist is intentionally phase-based.
 
 ### Build the auth baseline
 
-- [ ] Install the Firebase client SDK
-- [ ] Install the server-side Firebase auth dependency needed for privileged auth operations
+- [ ] Install the Firebase client SDK (`firebase`)
+- [ ] Install the server-side Firebase auth dependency (`firebase-admin`) needed for privileged auth operations
+- [ ] Use the `firebase` CLI (`firebase projects:list`, `firebase apps:sdkconfig web`) to retrieve client-bundle values when populating `VITE_PUBLIC_FIREBASE_*` env vars
+- [ ] If `FIREBASE_SERVICE_ACCOUNT_JSON` is missing from `.env`, record the block in `PROGRESS.md` and skip to the next non-dependent step rather than generating or embedding credentials
 - [ ] Centralize Firebase environment reads from `.env`
 - [ ] Add a focused auth client module
 - [ ] Add a focused server auth module
