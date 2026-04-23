@@ -107,68 +107,99 @@
 
 ## Data Access Layer
 
-### Domain API
+### Router Modules as Domain API
 
-- Abstracts business operations
-- Examples:
-  - `getResource(id)`
-  - `getPageData(input)`
-  - `updateThing(input)`
-- Shields UI from transport details
+- tRPC router modules under `server/trpc/routers/` are the domain API
+- Examples: `card.create`, `card.move`, `card.reorder`, `board.get`
+- Feature UI does not go through a separate domain wrapper layer
 
-### Query Hooks
+### Generated Query and Mutation Hooks
 
-- Wrap domain API using TanStack Query
-- Handle:
-  - caching
-  - stale time
-  - retries
-  - invalidation
-  - background refetching
+- `@trpc/react-query` generates typed query and mutation hooks directly from the router
+- Feature code calls generated hooks directly (for example `trpc.card.list.useQuery(...)`)
+- TanStack Query owns caching, stale time, retries, invalidation, and background refetching
+- Query keys are derived from procedure paths; no hand-authored key constants
 
-### Mutation Hooks
+### Hand-Written Wrapper Hooks
 
-- Wrap write operations
-- Handle:
-  - success flows
-  - invalidation
-  - optimistic updates
-  - optional Redux coordination
+- Hand-written wrappers exist only for narrowly defined cases:
+  - optimistic update coordination for moves and reorders
+  - Redux side effects that must fire on mutation success
+- Wrappers live in `features/<feature>/hooks/` and internally call the generated tRPC hooks
 
 ---
 
 ## Transport Layer
 
-### Aggregate Fetches
+### Request Transport
 
-- Used for initial page loads
-- Single request returns composed payload
+- Transport is tRPC over HTTP, using `httpBatchLink` for automatic request batching
+- The client never issues ad hoc `fetch` calls to the backend
 
-### Client-Side Batchers
+### Page-Entry Composition
 
-- Used for repeated fine-grained lookups
-- Responsibilities:
-  - collect calls briefly
-  - send one backend request
-  - resolve individual promises
-- Important:
-  - batching is hidden below domain API
+- Route loaders call a single procedure that returns the joined payload for the page
+- Example: `board.getWithColumnsAndCards` for the board route
+- Avoids N parallel small calls at route entry while keeping individual procedures available for on-demand reads
 
 ### Mutation Transport
 
-- Prefer explicit operation endpoints
-- Use bulk endpoints where appropriate
-- Avoid generic mutation batching
+- One explicit procedure per operation (`card.create`, `card.move`, `card.reorder`, `card.softDelete`)
+- No generic mutation endpoint
+- Bulk operations are modeled as their own named procedures when genuinely needed
+
+### Deduping and Batching
+
+- TanStack Query dedupes identical in-flight queries on the client
+- `httpBatchLink` coalesces distinct concurrent procedure calls into a single HTTP request
+- No hand-written client-side batchers
+
+---
+
+## API Contract, Validation, and Logging
+
+### Contract Layer
+
+- tRPC is the API contract between the frontend and backend
+- A single tRPC router is mounted as a TanStack Start server route at `/api/trpc/$`
+- The tRPC router is the domain API — feature code does not call transport primitives directly
+- Procedure types are shared end-to-end through TypeScript inference rather than a generated schema
+- External OpenAPI generation is deferred; if ever needed, it can be produced from the same router via `trpc-openapi`
+
+### Input Validation
+
+- zod schemas validate every procedure input via `.input(...)`
+- Input schemas are co-located with their procedures
+- Inferred zod types are the single source of truth for request shapes
+- No separate DTO or hand-written type layer sits alongside the schema
+
+### Error Shape
+
+- Server errors are thrown as `TRPCError` with a documented code set
+- A server-side `errorFormatter` produces the consistent response envelope
+- zod validation failures surface `zodError.flatten()` inside the error `data` field so the client receives field-level errors in one pass
+- The client relies on tRPC's envelope rather than a hand-rolled error shape
+
+### Structured Logging
+
+- pino is the structured logger
+- A single pino instance is created at server bootstrap and imported where needed
+- `pino-http` logs HTTP-level request and response events at the TanStack Start boundary
+- A tRPC middleware logs each procedure call with `{ path, type, durationMs, ok, requestId, userId? }`
+- `pino-pretty` is used in development only; production logs remain JSON
+
+### Client Integration
+
+- `@trpc/react-query` exposes typed query and mutation hooks directly from the router
+- TanStack Query continues to own caching, invalidation, and background refetching
+- Query and mutation hook wrappers remain thin; most feature code uses generated hooks directly
+- Optimistic updates and Redux coordination still live at the mutation-hook layer when needed
 
 ---
 
 ## Backend Layer
 
-### Server Functions / Server Routes
-
-- Entry points from frontend
-- Validate input
-- Shape responses
+Entry points are defined in the API Contract section. This section covers what sits behind them.
 
 ### Application Services
 
@@ -178,12 +209,58 @@
 ### Persistence Layer
 
 - Supabase Postgres is the system of record for application data
-- Database access
-- Repositories or query modules
-- Isolated from transport layer
-- Schema changes are managed through committed database migrations, with Drizzle as the default migration workflow unless another tool proves to be a better fit
-- Any new or altered tables in schema `public` require RLS enablement and explicit policies
+- Drizzle is the single database client for both migrations and runtime queries
+- `postgres.js` (via `drizzle-orm/postgres-js`) is the underlying driver
+- `supabase-js` is intentionally not installed; the project has no use for PostgREST, Storage, or Realtime
+- The server connects to Supabase via the **pooler** URL (transaction mode, port 6543) as the project's DB role
+- The Drizzle schema in `src/server/db/schema.ts` is the single source of truth for tables and indexes
+- The `postgres.js` client and Drizzle instance live as a module-level singleton in `src/server/db/client.ts`
+- Repositories import the shared `db` instance and do not open their own connections
+- Reads that compose parent + children use Drizzle's relational queries API (`db.query.boards.findFirst({ with: { columns: { with: { cards: true } } } })`)
+- Writes and locking reads use Drizzle's query builder, including `.for('update')` for row-level locks
+- Transactions use `db.transaction(async (tx) => ...)`; the reorder path selects `.for('update')` and updates inside the same transaction
+- Schema changes are managed through committed migrations generated with `drizzle-kit generate` and applied with `drizzle-kit migrate`
+- Any new or altered tables in schema `public` require RLS enablement and explicit policies in the same migration
 - The first persistence-backed proof of wiring is an unauthenticated all-visitor-shared click counter
+
+---
+
+## Ordering and Concurrency Safety
+
+### Ordering Model
+
+- Cards carry a fractional string `position` key (LexoRank-style base62)
+- A move computes a key strictly between the target neighbors via a `keyBetween(prev, next)` helper
+- New keys are generated in O(1) without renumbering sibling rows
+- Listing a column is `ORDER BY position ASC`
+- The same model applies to column ordering within a board
+
+### Conflict Detection
+
+- Cards and columns carry a monotonically increasing `version` integer
+- Reorder and move mutations require the client to pass the last-known `version`
+- The server rejects the write if `version` does not match current state
+- On rejection the client refetches and retries against the latest order
+
+### Transactional Boundary
+
+- Each move or reorder runs inside a single database transaction
+- The transaction performs `SELECT ... FOR UPDATE` on the affected card row
+- The transaction writes the new `column_id`, `position`, and bumped `version` together
+- No sibling rows are updated on the common path
+
+### Rebalancing
+
+- Key length grows under adversarial reordering patterns
+- A lazy per-column rebalance rewrites sibling `position` values when keys exceed a threshold
+- Rebalance runs inside its own transaction and bumps the affected rows' `version` values
+- Rebalance is not required for correctness, only for long-term key length
+
+### Why This Approach
+
+- Fractional indexing is the idiomatic approach used by Jira, Trello, and Linear
+- Version-based optimistic locking earns the "basic concurrency safety" requirement without pessimistic column-wide locks
+- Transactional single-row writes keep the hot path O(1) for the common move operation
 
 ---
 
@@ -207,6 +284,51 @@
 - Email delivery should be triggered through explicit server-side flows rather than directly from UI components
 - Provider-specific email logic should stay isolated behind a mail delivery module
 - When the application owns Firebase auth email delivery, a server-side auth module generates the required action links and delegates delivery to Resend
+
+---
+
+## Data Ownership
+
+### Ownership Column
+
+- `boards` carries an `owner_id TEXT NOT NULL` column holding the Firebase UID
+- `columns` and `cards` do not carry their own `owner_id`; ownership is transitive through the parent board
+- Denormalizing `owner_id` onto `cards` is a future optimization, not a day-one schema choice
+
+### Identity Propagation
+
+- A tRPC `protectedProcedure` middleware verifies the incoming Firebase ID token using `firebase-admin`
+- The verified Firebase UID is placed on the tRPC `ctx` as `ctx.userId`
+- Services accept `ownerId` as an explicit argument rather than reading it from a global
+- Repositories accept `ownerId` and include it in every query predicate
+
+### Enforcement Boundary
+
+- Ownership is enforced in the application services layer, not in the database
+- Every read filters by `owner_id` through the board join
+- Every write verifies that every referenced row (board, source column, target column) belongs to the caller
+- Cross-owner identifier smuggling is prevented by validating every incoming ID against the caller's ownership before acting on it
+
+### Supabase Access Pattern
+
+- The server is the only client of Supabase and connects via `postgres.js` (through Drizzle) as the project's DB role
+- PostgREST and `supabase-js` are not used
+- The frontend never talks to Supabase directly; all reads and writes go through tRPC
+- Row Level Security remains enabled on all `public` tables as defense-in-depth
+- Default-deny policies apply to the `anon` and `authenticated` PostgREST roles
+- The server's DB role bypasses RLS because Postgres superuser-equivalent roles are not subject to policies; ownership is therefore enforced in the services layer, not by RLS
+- The shared click counter remains publicly readable and incrementable through its own explicit RLS policies for any future PostgREST-based client path
+
+### Soft Delete Composition
+
+- Cards and boards carry `deleted_at TIMESTAMPTZ` for soft delete
+- Soft-deleting a board soft-deletes its columns and cards through the service layer
+- Every read filters `deleted_at IS NULL AND owner_id = ctx.userId`
+
+### Test Coverage Implication
+
+- Because RLS is not the primary gate, service-level tests must cover the ownership boundary directly
+- Tests assert that user A cannot read, move, reorder, or delete user B's boards, columns, or cards
 
 ---
 
@@ -260,24 +382,28 @@
 
 ## Caching Strategy
 
-### Page-Level Data
+### Query Keys
 
-- Cached via aggregate queries
+- Keys are derived from tRPC procedure paths
+  - `trpc.card.list.queryKey({ boardId })`
+  - `trpc.card.byId.queryKey({ id })`
+- No hand-authored key constants
 
-### Resource-Level Data
+### Page-Entry Caching
 
-- Cached per entity
-  - `['resource', id]`
-  - `['collection', params]`
-
-### Deduping
-
-- TanStack Query dedupes identical in-flight requests
-- Batchers merge distinct requests within a short window
+- Route loaders populate the cache via the page-entry composition procedure
+- Subsequent reads within the route reuse the hydrated cache entries
 
 ### Invalidation
 
-- Mutations invalidate only affected data
+- Invalidation goes through `utils` helpers (`utils.card.list.invalidate({ boardId })`)
+- Invalidation is scoped to the procedure and args that actually changed
+- Mutations never invalidate unrelated procedure keys
+
+### Deduping and Batching
+
+- TanStack Query dedupes identical in-flight queries on the client
+- `httpBatchLink` coalesces distinct concurrent procedure calls into a single HTTP request
 
 ### Redux Boundary
 
@@ -325,31 +451,30 @@
 
 ## Recommended Folder Structure
 
+```
 src/
-routes/
-route definitions and loaders
-
-features/
-<feature>/
-components/
-api/
-queries/
-state/ # Redux slices, selectors
-
-app/
-store/ # Redux store setup
-
-lib/
-batching/ # batcher utilities
-query/ # query client and helpers
-
-server/
-functions/ # server entry points
-services/ # business logic
-repos/ # data access
-
-ui/
-shared UI components (Tamagui-based)
+  routes/                   # TanStack Router route files and loaders
+  features/
+    <feature>/
+      components/
+      hooks/                # hand-written wrapper hooks (optimistic, Redux coord)
+      state/                # Redux slices and selectors (only when needed)
+  app/
+    store/                  # Redux store setup
+    trpc.ts                 # client-side tRPC + React Query setup
+  lib/
+    query/                  # query client config
+    ordering/               # keyBetween helper, rebalance utilities
+  server/
+    trpc/
+      appRouter.ts          # root router
+      routers/              # per-domain sub-routers (card, column, board, counter)
+      context.ts            # ctx factory, auth middleware, logger binding
+    services/               # business logic, takes ownerId explicitly
+    repos/                  # Drizzle-based data access
+    logger.ts               # pino instance
+  ui/                       # shared Tamagui components
+```
 
 ---
 

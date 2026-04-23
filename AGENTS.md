@@ -22,6 +22,30 @@
 - Keep styling in Tamagui props/tokens where possible instead of ad hoc inline CSS patterns designed for HTML tags.
 - Avoid `className` and `style` props on Tamagui-based components when possible; prefer Tamagui style props (for example `backgroundColor="red"`).
 
+## Accessibility
+
+- Every interactive element must be reachable and operable by keyboard alone (Tab, Shift+Tab, Enter/Space to activate, Esc to dismiss).
+- Modals and dialogs must trap focus while open, return focus to the invoking element on close, and close on Esc. Use `src/Modal/PrettyModalWrap.tsx` rather than hand-rolled overlays.
+- Drag-and-drop interactions must have a non-drag keyboard alternative (for example, move-card buttons or a keyboard reorder affordance) — never ship drag-only reordering.
+- Prefer semantic Tamagui primitives and HTML semantics (`button`, `nav`, `main`, heading levels) over generic containers with ARIA bolted on. Reach for ARIA only when no semantic primitive fits.
+- Every form control has an associated label (visible label preferred, `aria-label` only when a visible label is not possible). Error messages are associated with their input via `aria-describedby`.
+- Every non-decorative image or icon has an accessible name. Icon-only buttons carry an `aria-label`.
+- Color is never the sole carrier of meaning (pair with text, shape, or iconography). Meet WCAG AA contrast on text and interactive surfaces.
+- Respect `prefers-reduced-motion` for any non-trivial animation or transition.
+- Live regions announce asynchronous state changes that matter (for example, "card moved", "save failed") via `aria-live="polite"` on a dedicated region rather than on the changing content itself.
+
+## Backend Conventions
+
+- Every tRPC procedure declares a zod `.input(...)` schema. No procedure accepts unvalidated input.
+- Every service method that touches `boards`, `columns`, or `cards` takes `ownerId` as an explicit argument sourced from `ctx.userId` and filters by it. Never infer ownership from a global or cache.
+- Every read of owned data filters `deleted_at IS NULL AND owner_id = ?`. Never return soft-deleted rows by default.
+- On every write that references another row's id (target column, parent board, etc.), validate that row belongs to the caller before acting on it — prevents cross-owner id smuggling.
+- Every reorder or move mutation runs inside a transaction, performs `SELECT ... FOR UPDATE` on the moved row, and bumps `version` alongside the write. Clients pass last-known `version`; mismatch returns a consistent conflict `TRPCError`.
+- New fractional-key inserts use the `keyBetween(prev, next)` helper. Do not hand-compute keys.
+- Server errors are thrown as `TRPCError` with a documented code. Do not invent parallel error shapes.
+- Sensitive values (ID tokens, passwords, full card bodies) never appear in log lines. Log `userId`, `requestId`, `path`, and outcome — not payloads.
+- See `docs/app-architecture-overview.md` for the full rationale behind these rules.
+
 ## Formatting
 
 - Run `npx prettier --write <file>` on every file you create or modify before committing.

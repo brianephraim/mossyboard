@@ -45,14 +45,25 @@ This checklist is intentionally phase-based.
 ### Build the persistence baseline
 
 - [ ] Confirm Supabase Postgres as the application database platform
-- [ ] Centralize Supabase environment reads from `.env`
-- [ ] Set up a database migration workflow for ongoing schema changes during development, with Drizzle as the default choice unless another tool proves a better fit
-- [ ] Verify the chosen migration workflow can create and apply migrations cleanly against the Supabase-backed database
-- [ ] Wire the runtime database connection into the app
-- [ ] Add any required Supabase database tooling or server-side dependencies for the chosen access path
-- [ ] Add request validation at server entry points
-- [ ] Add a consistent error response shape
-- [ ] Add structured logging at server entry points
+- [ ] Centralize Supabase environment reads from `.env` using the pooler URL (transaction mode, port 6543)
+- [ ] Install `drizzle-orm`, `drizzle-kit`, and `postgres` (the `postgres.js` driver)
+- [ ] Do not install `supabase-js` — the project has no PostgREST, Storage, or Realtime needs
+- [ ] Create `src/server/db/schema.ts` as the single source of truth for tables and indexes
+- [ ] Create `src/server/db/client.ts` exporting a module-level singleton Drizzle instance over `postgres.js`
+- [ ] Configure `drizzle-kit` to read `schema.ts` and target the Supabase DB URL
+- [ ] Verify `drizzle-kit generate` and `drizzle-kit migrate` run cleanly against the Supabase-backed database
+- [ ] Use Drizzle's relational queries API for parent-with-children reads
+- [ ] Use Drizzle's query builder with `.for('update')` inside `db.transaction(...)` for reorder and move paths
+- [ ] Install tRPC server and client packages, zod, and `@trpc/react-query`
+- [ ] Mount a single tRPC router as a TanStack Start server route at `/api/trpc/$`
+- [ ] Configure the tRPC React Query client on the frontend
+- [ ] Require zod `.input(...)` validation on every procedure
+- [ ] Add a tRPC `errorFormatter` that surfaces `zodError.flatten()` in the error `data` field
+- [ ] Define the initial `TRPCError` code set and document it alongside the router
+- [ ] Install pino, `pino-http`, and `pino-pretty` (dev only)
+- [ ] Create a single pino instance at server bootstrap
+- [ ] Add `pino-http` at the TanStack Start request boundary
+- [ ] Add a tRPC middleware that logs `{ path, type, durationMs, ok, requestId }` per procedure call
 - [ ] Keep business logic in services and persistence access in repo/query modules
 - [ ] If any new `public` tables are introduced, add RLS enablement and explicit policies in the same migration
 
@@ -121,10 +132,15 @@ This checklist is intentionally phase-based.
 - [ ] Add auth session observation for the frontend
 - [ ] Add a simple auth status surface or protected test route
 - [ ] Keep Firebase usage inside auth-focused modules rather than scattering SDK calls through feature UI
+- [ ] Forward the Firebase ID token from the frontend on every tRPC request via the `Authorization` header
+- [ ] Add a tRPC `protectedProcedure` middleware that verifies the Firebase ID token with `firebase-admin`
+- [ ] Place the verified Firebase UID on the tRPC `ctx` as `ctx.userId`
+- [ ] Reject unauthenticated calls to protected procedures with a consistent `TRPCError` code
 
 ### Verify the phase
 
 - [ ] Add tests for auth module behavior with mocked Firebase calls
+- [ ] Add a tRPC middleware test covering missing, invalid, and valid ID tokens
 - [ ] Confirm a user can sign up, sign in, and sign out locally with the existing `.env` values
 
 ## Phase 7: Resend-Backed Auth Emails
@@ -180,14 +196,26 @@ This checklist is intentionally phase-based.
 ### Build the product features
 
 - [ ] Add the board, column, and card data model
+- [ ] Add an `owner_id TEXT NOT NULL` column on `boards` holding the Firebase UID
+- [ ] Add a `deleted_at TIMESTAMPTZ` column on `boards` and `cards` for soft delete
+- [ ] Add RLS enablement on `boards`, `columns`, and `cards` with default-deny policies for `anon` and `authenticated` roles
+- [ ] Add a fractional string `position` key column to cards and columns
+- [ ] Add a `version` integer column to cards and columns for optimistic concurrency
+- [ ] Add a `keyBetween(prev, next)` helper for generating fractional keys
+- [ ] Make every service method accept `ownerId` as an explicit argument sourced from `ctx.userId`
+- [ ] Make every read filter by `owner_id` through the board join and by `deleted_at IS NULL`
+- [ ] Validate on every write that every referenced board, source column, and target column belongs to `ownerId`
 - [ ] Add APIs for card CRUD
 - [ ] Add card movement between columns
 - [ ] Add card reordering within a column
 - [ ] Add column creation
 - [ ] Add column reordering
 - [ ] Add soft delete for cards
-- [ ] Add listing with filters and pagination
-- [ ] Add basic concurrency safety for reorder operations
+- [ ] Add listing with filters and pagination ordered by `position ASC`
+- [ ] Wrap each move and reorder in a transaction with `SELECT ... FOR UPDATE` on the moved row
+- [ ] Require clients to pass the last-known `version` on reorder and move mutations
+- [ ] Reject mismatched-version writes with a consistent conflict error shape
+- [ ] Add a lazy per-column rebalance path triggered when `position` keys exceed a length threshold
 - [ ] Add at least one card detail surface such as comments, tags, or subtasks
 - [ ] Add filtering by at least one attribute
 - [ ] Add grouping by at least one attribute
@@ -200,6 +228,7 @@ This checklist is intentionally phase-based.
 - [ ] Add unit tests for create, move, filter, and group logic
 - [ ] Add component tests for key board interactions
 - [ ] Add API and service tests for core backend paths
+- [ ] Add ownership-boundary tests asserting user A cannot read, move, reorder, or delete user B's boards, columns, or cards
 
 ## Phase 11: End-to-End Coverage
 
