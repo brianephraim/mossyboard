@@ -115,3 +115,10 @@
 - **reason**: deployed via `vercel` and verified `counter.get` works on the deployed URL
 - **follow-ups**:
   - **note**: `vercel` output indicated a production alias even without `--prod` (need to use an explicit preview target going forward)
+
+## 2026-04-23T21:17:04Z
+
+- **phase**: 5
+- **step**: approval
+- **outcome**: done
+- **reason**: human approved running `vercel --prod`
