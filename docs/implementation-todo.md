@@ -216,7 +216,7 @@ Complete these before starting Phase 1. If any step fails, record the failure in
 - [x] Add auth session observation for the frontend
 - [ ] Add a simple auth status surface or protected test route
 - [ ] Keep Firebase usage inside auth-focused modules rather than scattering SDK calls through feature UI
-- [ ] Forward the Firebase ID token from the frontend on every tRPC request via the `Authorization` header
+- [x] Forward the Firebase ID token from the frontend on every tRPC request via the `Authorization` header
 - [ ] Add a tRPC `protectedProcedure` middleware that verifies the Firebase ID token with `firebase-admin`
 - [ ] Place the verified Firebase UID on the tRPC `ctx` as `ctx.userId`
 - [ ] Reject unauthenticated calls to protected procedures with a consistent `TRPCError` code

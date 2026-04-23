@@ -4,6 +4,7 @@ import { httpBatchLink } from "@trpc/client";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { trpc } from "./client";
+import { getAuthToken } from "../auth/token-store";
 
 export function TrpcProvider({
   children,
@@ -14,6 +15,11 @@ export function TrpcProvider({
       links: [
         httpBatchLink({
           url: "/api/trpc",
+          headers() {
+            const token = getAuthToken();
+            if (!token) return {};
+            return { authorization: `Bearer ${token}` };
+          },
         }),
       ],
     }),
