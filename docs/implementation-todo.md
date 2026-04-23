@@ -30,7 +30,17 @@ These rules apply to any agent executing this checklist without human supervisio
 - Execute phases 1 through 9 only
 - Do not begin phase 10 (Kanban Product Buildout) or later without explicit human approval
 - Do not open pull requests, push to `main`, or deploy to Vercel production without explicit human approval
-- Local commits on a feature branch are allowed once per completed phase
+
+### Commit discipline
+
+- Make one commit at the end of each phase, after that phase's verification steps pass
+- Commit message format:
+  - Subject: `phase N: <phase title>` (for example `phase 3: Supabase and Server Foundation`)
+  - Body: short bullet list of what landed, plus any `BLOCKED:` carryovers for that phase
+- If a phase ends with unresolved blocks, still commit the completed work; append `(partial — see PROGRESS.md)` to the subject
+- Sub-commits inside a phase are allowed when a large phase has natural seams (for example schema before services); every sub-commit must leave the tree building and passing typecheck
+- Never commit: `.env`, `.vercel/`, generated artifacts already covered by `.gitignore`, credentials in any form, or a tree where typecheck or existing tests are red
+- Do not amend, force-push, rebase, or squash — per-phase history must be preserved for human review
 
 ### Safety boundaries
 
