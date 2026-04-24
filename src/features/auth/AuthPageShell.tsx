@@ -31,11 +31,12 @@ export function AuthPageShell({
       tag="main"
       minHeight="100vh"
       padding="$5"
+      $sm={{ paddingHorizontal: "$4" }}
       backgroundColor="$background"
       alignItems="center"
       gap="$5"
     >
-      <YStack width="100%" maxWidth={480} gap="$5">
+      <YStack width="100%" maxWidth={480} $sm={{ maxWidth: "100%" }} gap="$5">
         <Text tag="h1" fontSize="$9" fontWeight="800" color="$color12">
           Kanban access
         </Text>
