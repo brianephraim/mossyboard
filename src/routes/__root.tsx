@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import type { ReactNode } from "react";
+import { lazy, Suspense } from "react";
 import {
   HeadContent,
   Outlet,
@@ -19,6 +20,10 @@ import { AppNav } from "../navigation/AppNav";
 import { StoreProvider } from "../store/StoreProvider";
 import { TamaguiRootProvider } from "../tamagui/TamaguiRootProvider";
 import { TrpcProvider } from "../trpc/provider";
+
+const TrpcAuthErrorBridge = lazy(() =>
+  import("../trpc/TrpcAuthErrorBridge").then((m) => ({ default: m.TrpcAuthErrorBridge })),
+);
 
 export const Route = createRootRoute({
   head: () => ({
@@ -49,6 +54,9 @@ function RootComponent() {
             <PortalProvider shouldAddRootHost>
               {shouldHideScaffoldNav ? null : <AppNav />}
               <Outlet />
+              <Suspense fallback={null}>
+                <TrpcAuthErrorBridge />
+              </Suspense>
             </PortalProvider>
           </AuthAnnounceProvider>
         </TamaguiRootProvider>
