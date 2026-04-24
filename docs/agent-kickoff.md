@@ -17,7 +17,7 @@ When a conflict appears, the precedence is: explicit human instructions > `AGENT
 
 ## First actions (in order)
 
-1. Create `PROGRESS.md` at the repo root with an opening entry that records the start timestamp and the commit hash of `HEAD`.
+1. Create `PROGRESS.md` at the repo root with an opening entry that records the start timestamp (and branch name if relevant).
 2. Run the **Pre-Flight Checklist** in `docs/implementation-todo.md`. Record any failures to `PROGRESS.md` as `BLOCKED:` entries, then continue where possible.
 3. Verify the working tree is clean. If it is not, stop and record the block — do not discard or stash unknown work.
 4. Create and check out a feature branch named `feat/phases-1-to-9` from `main`.
@@ -62,7 +62,6 @@ Phase 9 completes, all phase verification steps are recorded as passed or `BLOCK
 
 - Which phases fully passed.
 - Which phases completed with blocks (and what remains).
-- The current commit hash on `feat/phases-1-to-9`.
 - Any recommendations for the human before Phase 10 starts.
 
 Stop after writing that summary. Do not merge, push, or open a PR.
