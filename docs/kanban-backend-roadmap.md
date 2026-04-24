@@ -728,7 +728,6 @@ Add a separate grouped-board procedure only if later UX or performance needs req
 
 ## 10. What This Plan Deliberately Leaves Open
 
-- whether card details open in a modal or side panel
 - how column deletion should behave
 - whether the product eventually prefers tags or comments in addition to subtasks
 - whether the board index should evolve into a richer dashboard

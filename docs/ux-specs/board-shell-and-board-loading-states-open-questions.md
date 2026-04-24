@@ -36,11 +36,13 @@ These are the active decisions carried into this slice:
 
 ## 3. Future-Slice Coordination Questions
 
-### Question: When card detail is added, should card activation open a modal or a side panel?
+### Resolved in later slice: card detail surface
 
-- Current assumption: card tiles are read-only in this slice
-- Status: open
-- Blocking: no for the shell slice, yes for the card-detail slice
+- Card activation is now defined in [`docs/ux-specs/card-detail-panel-or-modal.md`](./card-detail-panel-or-modal.md).
+- Desktop uses a right-side panel.
+- Mobile uses a full-screen modal.
+- Status: resolved
+- Blocking: no
 
 ### Question: Where should future board-level settings live?
 
@@ -62,4 +64,4 @@ These are the active decisions carried into this slice:
 - Blocking questions: none
 - Non-blocking product questions: 2
 - Non-blocking engineering sign-offs: 0
-- Non-blocking future-slice coordination questions: 3
+- Non-blocking future-slice coordination questions: 2

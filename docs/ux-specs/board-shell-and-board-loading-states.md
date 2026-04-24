@@ -871,8 +871,7 @@ Handle board ids that are invalid for the current user without exposing ownershi
 
 1. Should `/boards` eventually gain search, sorting controls, or a recent-boards section beyond the current updated-descending list?
 2. Should new boards always start with the fixed `To do / In progress / Done` template, or should later slices introduce selectable templates?
-3. When the future card-detail slice arrives, should card activation open a modal or a side panel?
-4. Should future board-level settings live in the shell header or on a separate board-settings route?
+3. Should future board-level settings live in the shell header or on a separate board-settings route?
 
 ## 19. Acceptance Criteria
 
