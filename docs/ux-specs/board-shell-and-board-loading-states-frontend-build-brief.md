@@ -47,7 +47,7 @@ Responsibilities:
 
 Responsibilities:
 
-- visible header actions: `Create board`, `Sign out`
+- visible header actions: `Create board`, `Board settings` when present on `/boards/$boardId`, `Sign out`
 - dedicated polite live region for create, loading, and refresh announcements
 - consistent placement for inherited auth reminder behavior
 
@@ -60,7 +60,7 @@ Responsibilities:
 
 ### `BoardsShellHeader`
 
-- renders `Kanban`, `Boards`, `Create board`, and `Sign out`
+- renders `Kanban`, `Boards`, `Create board`, `Board settings` when present on `/boards/$boardId`, and `Sign out`
 - stays mounted during route transitions inside `/boards*`
 
 ### `BoardsHomeScreen`

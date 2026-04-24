@@ -97,7 +97,7 @@ The loaded board is read-only in this slice. Card tiles are visible content summ
 
 - Brand link: `Kanban`
 - Primary nav: `Boards`
-- Header actions: `Create board`, `Sign out`
+- Header actions: `Create board`, `Board settings` when present on `/boards/$boardId`, `Sign out`
 - A clear main content container below the header
 - Verification reminder banner placement directly below the header when shown
 

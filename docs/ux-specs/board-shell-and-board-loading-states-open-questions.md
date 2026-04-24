@@ -44,13 +44,11 @@ These are the active decisions carried into this slice:
 - Status: resolved
 - Blocking: no
 
-### Question: Where should future board-level settings live?
+### Resolved in later slice: board settings location
 
-- Current assumption: this slice exposes only `Create board` and `Sign out` in the shell header
-- Alternatives:
-  - board settings in the header
-  - board settings on a separate route
-- Status: open
+- Board settings are now defined in [`docs/ux-specs/board-management-and-lifecycle.md`](./board-management-and-lifecycle.md).
+- The action lives in the loaded board header on `/boards/$boardId`.
+- Status: resolved
 - Blocking: no
 
 ### Question: Will the mobile board-detail layout stay vertically stacked once reorder and detail interactions exist?
@@ -64,4 +62,4 @@ These are the active decisions carried into this slice:
 - Blocking questions: none
 - Non-blocking product questions: 2
 - Non-blocking engineering sign-offs: 0
-- Non-blocking future-slice coordination questions: 2
+- Non-blocking future-slice coordination questions: 1

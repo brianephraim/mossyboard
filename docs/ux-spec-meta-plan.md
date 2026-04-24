@@ -156,6 +156,150 @@ Inputs used for this slice
 - [ ] existing screenshots, sketches, or reference products
 - [x] the specific feature slice being defined
 
+### Slice: Column structure management
+
+Artifacts
+
+- [x] canonical UX spec: [`docs/ux-specs/column-structure-management.md`](./ux-specs/column-structure-management.md)
+- [x] wireframe brief: [`docs/ux-specs/column-structure-management-wireframe-brief.md`](./ux-specs/column-structure-management-wireframe-brief.md)
+- [x] frontend dependency exploration memo: [`docs/ux-specs/column-structure-management-frontend-dependency-exploration.md`](./ux-specs/column-structure-management-frontend-dependency-exploration.md)
+- [x] frontend implementation brief: [`docs/ux-specs/column-structure-management-frontend-build-brief.md`](./ux-specs/column-structure-management-frontend-build-brief.md)
+- [x] backend implementation brief: [`docs/ux-specs/column-structure-management-backend-build-brief.md`](./ux-specs/column-structure-management-backend-build-brief.md)
+- [x] open-questions log as a separate sibling artifact: [`docs/ux-specs/column-structure-management-open-questions.md`](./ux-specs/column-structure-management-open-questions.md)
+- [x] readiness audit: [`docs/ux-specs/column-structure-management-readiness-audit.md`](./ux-specs/column-structure-management-readiness-audit.md)
+
+Workflow status
+
+- [x] Phase 1: constrain the problem
+- [x] Phase 2: define the slice being specified
+- [x] Phase 3: define user jobs and flows
+- [x] Phase 4: build the screen inventory
+- [x] Phase 5: turn each screen into a precise UX spec
+- [x] Phase 6: define cross-screen interaction rules
+- [x] Phase 7: add implementation-facing annotations
+- [x] Phase 8: derive the wireframe brief
+- [x] Phase 9: explore frontend library decisions
+- [x] Phase 10: derive the frontend build brief
+- [x] Phase 11: derive the backend build brief
+- [x] Phase 12: run ambiguity and completeness checks
+
+Inputs used for this slice
+
+- [x] [`AGENTS.md`](../AGENTS.md)
+- [x] [`docs/kanban-app-requirements.md`](./kanban-app-requirements.md)
+- [x] [`docs/app-architecture-overview.md`](./app-architecture-overview.md)
+- [x] `package.json`
+- [ ] existing screenshots, sketches, or reference products
+- [x] the specific feature slice being defined
+
+### Slice: Move and reorder behavior
+
+Artifacts
+
+- [x] canonical UX spec: [`docs/ux-specs/move-and-reorder-behavior.md`](./ux-specs/move-and-reorder-behavior.md)
+- [x] wireframe brief: [`docs/ux-specs/move-and-reorder-behavior-wireframe-brief.md`](./ux-specs/move-and-reorder-behavior-wireframe-brief.md)
+- [x] frontend dependency exploration memo: [`docs/ux-specs/move-and-reorder-behavior-frontend-dependency-exploration.md`](./ux-specs/move-and-reorder-behavior-frontend-dependency-exploration.md)
+- [x] frontend implementation brief: [`docs/ux-specs/move-and-reorder-behavior-frontend-build-brief.md`](./ux-specs/move-and-reorder-behavior-frontend-build-brief.md)
+- [x] backend implementation brief: [`docs/ux-specs/move-and-reorder-behavior-backend-build-brief.md`](./ux-specs/move-and-reorder-behavior-backend-build-brief.md)
+- [x] open-questions log as a separate sibling artifact: [`docs/ux-specs/move-and-reorder-behavior-open-questions.md`](./ux-specs/move-and-reorder-behavior-open-questions.md)
+- [x] readiness audit: [`docs/ux-specs/move-and-reorder-behavior-readiness-audit.md`](./ux-specs/move-and-reorder-behavior-readiness-audit.md)
+
+Workflow status
+
+- [x] Phase 1: constrain the problem
+- [x] Phase 2: define the slice being specified
+- [x] Phase 3: define user jobs and flows
+- [x] Phase 4: build the screen inventory
+- [x] Phase 5: turn each screen into a precise UX spec
+- [x] Phase 6: define cross-screen interaction rules
+- [x] Phase 7: add implementation-facing annotations
+- [x] Phase 8: derive the wireframe brief
+- [x] Phase 9: explore frontend library decisions
+- [x] Phase 10: derive the frontend build brief
+- [x] Phase 11: derive the backend build brief
+- [x] Phase 12: run ambiguity and completeness checks
+
+Inputs used for this slice
+
+- [x] [`AGENTS.md`](../AGENTS.md)
+- [x] [`docs/kanban-app-requirements.md`](./kanban-app-requirements.md)
+- [x] [`docs/app-architecture-overview.md`](./app-architecture-overview.md)
+- [x] `package.json`
+- [ ] existing screenshots, sketches, or reference products
+- [x] the specific feature slice being defined
+
+### Slice: Filters and grouping
+
+Artifacts
+
+- [x] canonical UX spec: [`docs/ux-specs/filters-and-grouping.md`](./ux-specs/filters-and-grouping.md)
+- [x] wireframe brief: [`docs/ux-specs/filters-and-grouping-wireframe-brief.md`](./ux-specs/filters-and-grouping-wireframe-brief.md)
+- [x] frontend dependency exploration memo: [`docs/ux-specs/filters-and-grouping-frontend-dependency-exploration.md`](./ux-specs/filters-and-grouping-frontend-dependency-exploration.md)
+- [x] frontend implementation brief: [`docs/ux-specs/filters-and-grouping-frontend-build-brief.md`](./ux-specs/filters-and-grouping-frontend-build-brief.md)
+- [x] backend implementation brief: [`docs/ux-specs/filters-and-grouping-backend-build-brief.md`](./ux-specs/filters-and-grouping-backend-build-brief.md)
+- [x] open-questions log as a separate sibling artifact: [`docs/ux-specs/filters-and-grouping-open-questions.md`](./ux-specs/filters-and-grouping-open-questions.md)
+- [x] readiness audit: [`docs/ux-specs/filters-and-grouping-readiness-audit.md`](./ux-specs/filters-and-grouping-readiness-audit.md)
+
+Workflow status
+
+- [x] Phase 1: constrain the problem
+- [x] Phase 2: define the slice being specified
+- [x] Phase 3: define user jobs and flows
+- [x] Phase 4: build the screen inventory
+- [x] Phase 5: turn each screen into a precise UX spec
+- [x] Phase 6: define cross-screen interaction rules
+- [x] Phase 7: add implementation-facing annotations
+- [x] Phase 8: derive the wireframe brief
+- [x] Phase 9: explore frontend library decisions
+- [x] Phase 10: derive the frontend build brief
+- [x] Phase 11: derive the backend build brief
+- [x] Phase 12: run ambiguity and completeness checks
+
+Inputs used for this slice
+
+- [x] [`AGENTS.md`](../AGENTS.md)
+- [x] [`docs/kanban-app-requirements.md`](./kanban-app-requirements.md)
+- [x] [`docs/app-architecture-overview.md`](./app-architecture-overview.md)
+- [x] `package.json`
+- [ ] existing screenshots, sketches, or reference products
+- [x] the specific feature slice being defined
+
+### Slice: Board management and lifecycle
+
+Artifacts
+
+- [x] canonical UX spec: [`docs/ux-specs/board-management-and-lifecycle.md`](./ux-specs/board-management-and-lifecycle.md)
+- [x] wireframe brief: [`docs/ux-specs/board-management-and-lifecycle-wireframe-brief.md`](./ux-specs/board-management-and-lifecycle-wireframe-brief.md)
+- [x] frontend dependency exploration memo: [`docs/ux-specs/board-management-and-lifecycle-frontend-dependency-exploration.md`](./ux-specs/board-management-and-lifecycle-frontend-dependency-exploration.md)
+- [x] frontend implementation brief: [`docs/ux-specs/board-management-and-lifecycle-frontend-build-brief.md`](./ux-specs/board-management-and-lifecycle-frontend-build-brief.md)
+- [x] backend implementation brief: [`docs/ux-specs/board-management-and-lifecycle-backend-build-brief.md`](./ux-specs/board-management-and-lifecycle-backend-build-brief.md)
+- [x] open-questions log as a separate sibling artifact: [`docs/ux-specs/board-management-and-lifecycle-open-questions.md`](./ux-specs/board-management-and-lifecycle-open-questions.md)
+- [x] readiness audit: [`docs/ux-specs/board-management-and-lifecycle-readiness-audit.md`](./ux-specs/board-management-and-lifecycle-readiness-audit.md)
+
+Workflow status
+
+- [x] Phase 1: constrain the problem
+- [x] Phase 2: define the slice being specified
+- [x] Phase 3: define user jobs and flows
+- [x] Phase 4: build the screen inventory
+- [x] Phase 5: turn each screen into a precise UX spec
+- [x] Phase 6: define cross-screen interaction rules
+- [x] Phase 7: add implementation-facing annotations
+- [x] Phase 8: derive the wireframe brief
+- [x] Phase 9: explore frontend library decisions
+- [x] Phase 10: derive the frontend build brief
+- [x] Phase 11: derive the backend build brief
+- [x] Phase 12: run ambiguity and completeness checks
+
+Inputs used for this slice
+
+- [x] [`AGENTS.md`](../AGENTS.md)
+- [x] [`docs/kanban-app-requirements.md`](./kanban-app-requirements.md)
+- [x] [`docs/app-architecture-overview.md`](./app-architecture-overview.md)
+- [x] `package.json`
+- [ ] existing screenshots, sketches, or reference products
+- [x] the specific feature slice being defined
+
 ---
 
 ## Why this exists

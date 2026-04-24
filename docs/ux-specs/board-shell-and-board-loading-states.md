@@ -293,18 +293,20 @@ Provide the shared protected frame for all board routes and resolve the final pl
 
 #### Header content
 
-| Region        | Content / control | Label          | Behavior                            |
-| ------------- | ----------------- | -------------- | ----------------------------------- |
-| Brand link    | link              | `Kanban`       | Routes to `/boards`                 |
-| Primary nav   | link              | `Boards`       | Routes to `/boards`                 |
-| Header action | button            | `Create board` | Opens the create-board dialog       |
-| Header action | button            | `Sign out`     | Uses the auth/session sign-out flow |
+| Region        | Content / control | Label            | Behavior                                                               |
+| ------------- | ----------------- | ---------------- | ---------------------------------------------------------------------- |
+| Brand link    | link              | `Kanban`         | Routes to `/boards`                                                    |
+| Primary nav   | link              | `Boards`         | Routes to `/boards`                                                    |
+| Header action | button            | `Create board`   | Opens the create-board dialog                                          |
+| Header action | action            | `Board settings` | Loaded-board only; defined in the board-management-and-lifecycle slice |
+| Header action | button            | `Sign out`       | Uses the auth/session sign-out flow                                    |
 
 #### Interaction rules
 
 - The shell header stays mounted while main content moves between loading, loaded, empty, error, and not-available states.
 - The verification reminder banner, when applicable, renders immediately below the header and above the page-specific main content.
 - The shell never invents a separate account menu in this slice. `Sign out` is a visible header action.
+- Later slices may add board-specific header actions on `/boards/$boardId`. [`docs/ux-specs/board-management-and-lifecycle.md`](./board-management-and-lifecycle.md) defines `Board settings` in that location.
 - The shell reuses the exact verification reminder strings and behaviors from the auth/session spec.
 
 #### Loading / error / success behavior
@@ -315,7 +317,7 @@ Provide the shared protected frame for all board routes and resolve the final pl
 
 #### Keyboard behavior
 
-- Header tab order: `Kanban`, `Boards`, `Create board`, `Sign out`
+- Header tab order: `Kanban`, `Boards`, `Create board`, `Board settings` when present, `Sign out`
 - The verification banner appears in tab order after the header when visible.
 
 #### Focus behavior
@@ -871,7 +873,6 @@ Handle board ids that are invalid for the current user without exposing ownershi
 
 1. Should `/boards` eventually gain search, sorting controls, or a recent-boards section beyond the current updated-descending list?
 2. Should new boards always start with the fixed `To do / In progress / Done` template, or should later slices introduce selectable templates?
-3. Should future board-level settings live in the shell header or on a separate board-settings route?
 
 ## 19. Acceptance Criteria
 

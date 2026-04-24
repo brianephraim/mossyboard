@@ -7,6 +7,12 @@
 - [`docs/ux-specs/auth-session-boundaries.md`](./ux-specs/auth-session-boundaries.md)
 - [`docs/ux-specs/board-shell-and-board-loading-states.md`](./ux-specs/board-shell-and-board-loading-states.md)
 - [`docs/ux-specs/board-shell-and-board-loading-states-backend-build-brief.md`](./ux-specs/board-shell-and-board-loading-states-backend-build-brief.md)
+- [`docs/ux-specs/card-create-and-edit-flows-backend-build-brief.md`](./ux-specs/card-create-and-edit-flows-backend-build-brief.md)
+- [`docs/ux-specs/card-detail-panel-or-modal-backend-build-brief.md`](./ux-specs/card-detail-panel-or-modal-backend-build-brief.md)
+- [`docs/ux-specs/column-structure-management-backend-build-brief.md`](./ux-specs/column-structure-management-backend-build-brief.md)
+- [`docs/ux-specs/move-and-reorder-behavior-backend-build-brief.md`](./ux-specs/move-and-reorder-behavior-backend-build-brief.md)
+- [`docs/ux-specs/filters-and-grouping-backend-build-brief.md`](./ux-specs/filters-and-grouping-backend-build-brief.md)
+- [`docs/ux-specs/board-management-and-lifecycle-backend-build-brief.md`](./ux-specs/board-management-and-lifecycle-backend-build-brief.md)
 
 ## 2. Current Status
 
@@ -39,6 +45,15 @@ It is not yet enough for:
 - card detail data
 - filter and grouping support
 - full board lifecycle management
+
+The UX spec package now covers the remaining major backend-facing slices for:
+
+- card core
+- card detail and subtasks
+- column create and rename
+- move and reorder behavior
+- filters, grouping, and paginated list mode
+- board rename and soft delete
 
 ## 3. Recommended Locked Decisions
 
