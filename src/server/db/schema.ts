@@ -1,12 +1,14 @@
 import { relations } from "drizzle-orm";
 import {
   bigint,
+  index,
   integer,
   pgTable,
   serial,
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 export const sharedCounter = pgTable(
@@ -55,3 +57,76 @@ export const demoItem = pgTable(
     uniqueInBucket: uniqueIndex("demo_item_bucket_order_unique").on(t.bucket, t.order),
   }),
 );
+
+export const boards = pgTable(
+  "boards",
+  {
+    id: uuid("id").primaryKey(),
+    ownerId: text("owner_id").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({
+    ownerUpdatedAtIdx: index("boards_owner_updated_at_idx").on(t.ownerId, t.updatedAt),
+  }),
+);
+
+export const columns = pgTable(
+  "columns",
+  {
+    id: uuid("id").primaryKey(),
+    boardId: uuid("board_id")
+      .notNull()
+      .references(() => boards.id),
+    title: text("title").notNull(),
+    position: text("position").notNull(),
+    version: integer("version").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({
+    boardPositionIdx: index("columns_board_position_idx").on(t.boardId, t.position),
+  }),
+);
+
+export const cards = pgTable(
+  "cards",
+  {
+    id: uuid("id").primaryKey(),
+    columnId: uuid("column_id")
+      .notNull()
+      .references(() => columns.id),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    position: text("position").notNull(),
+    version: integer("version").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({
+    columnPositionIdx: index("cards_column_position_idx").on(t.columnId, t.position),
+  }),
+);
+
+export const boardsRelations = relations(boards, ({ many }) => ({
+  columns: many(columns),
+}));
+
+export const columnsRelations = relations(columns, ({ one, many }) => ({
+  board: one(boards, {
+    fields: [columns.boardId],
+    references: [boards.id],
+  }),
+  cards: many(cards),
+}));
+
+export const cardsRelations = relations(cards, ({ one }) => ({
+  column: one(columns, {
+    fields: [cards.columnId],
+    references: [columns.id],
+  }),
+}));

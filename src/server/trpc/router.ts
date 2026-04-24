@@ -6,10 +6,12 @@ import { sendPasswordResetEmail, sendVerificationEmail } from "../auth/email-ser
 import { TRPCError } from "@trpc/server";
 import { adminAuth } from "../auth/admin";
 import { logger } from "../logging/logger";
+import { boardRouter } from "./routers/board";
 
 export const appRouter = t.router({
   health: publicProcedure.input(z.object({})).query(() => ({ ok: true })),
   echo: publicProcedure.input(z.object({ message: z.string().min(1) })).query(({ input }) => input),
+  board: boardRouter,
   counter: t.router({
     get: publicProcedure.input(z.object({})).query(() => readCounter()),
     increment: publicProcedure.input(z.object({})).mutation(() => incrementCounter()),

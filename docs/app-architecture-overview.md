@@ -229,7 +229,7 @@ Entry points are defined in the API Contract section. This section covers what s
 
 ### Ordering Model
 
-- Cards carry a fractional string `position` key (LexoRank-style base62)
+- Cards carry a fixed-width numeric string `position` key
 - A move computes a key strictly between the target neighbors via a `keyBetween(prev, next)` helper
 - New keys are generated in O(1) without renumbering sibling rows
 - Listing a column is `ORDER BY position ASC`

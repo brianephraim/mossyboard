@@ -123,28 +123,184 @@ All server-side failures must use `TRPCError` with documented codes rather than 
   - raw request bodies that contain sensitive values
 - board create failures may log safe metadata such as user id, path, and outcome, but not sensitive payload dumps
 
-## 11. Required Schema and Query Implications
+## 11. Concrete Schema Proposal
 
-- this slice requires the Kanban domain schema to exist, at minimum for:
-  - `boards`
-  - `columns`
-  - `cards`
-- `boards` must support:
-  - ownership
-  - soft delete
-  - updated ordering for the `/boards` list
-- `columns` must support:
-  - parent board linkage
-  - stored order position
-  - version
-- `cards` must support:
-  - parent column linkage
-  - stored order position
-  - version
-  - soft delete
-- any new or altered `public` tables still require RLS enablement and explicit policies in the same migration
+This is the concrete first-pass schema for the board-shell slice.
 
-## 12. Backend Acceptance Criteria
+### `boards`
+
+Required columns:
+
+- `id UUID PRIMARY KEY`
+- `owner_id TEXT NOT NULL`
+- `name TEXT NOT NULL`
+- `created_at TIMESTAMPTZ NOT NULL`
+- `updated_at TIMESTAMPTZ NOT NULL`
+- `deleted_at TIMESTAMPTZ NULL`
+
+Required index:
+
+- `(owner_id, updated_at)` for the `/boards` list
+
+### `columns`
+
+Required columns:
+
+- `id UUID PRIMARY KEY`
+- `board_id UUID NOT NULL REFERENCES boards(id)`
+- `title TEXT NOT NULL`
+- `position TEXT NOT NULL`
+- `version INTEGER NOT NULL DEFAULT 0`
+- `created_at TIMESTAMPTZ NOT NULL`
+- `updated_at TIMESTAMPTZ NOT NULL`
+- `deleted_at TIMESTAMPTZ NULL`
+
+Required index:
+
+- `(board_id, position)` for ordered board reads
+
+### `cards`
+
+Required columns:
+
+- `id UUID PRIMARY KEY`
+- `column_id UUID NOT NULL REFERENCES columns(id)`
+- `title TEXT NOT NULL`
+- `description TEXT NOT NULL DEFAULT ''`
+- `position TEXT NOT NULL`
+- `version INTEGER NOT NULL DEFAULT 0`
+- `created_at TIMESTAMPTZ NOT NULL`
+- `updated_at TIMESTAMPTZ NOT NULL`
+- `deleted_at TIMESTAMPTZ NULL`
+
+Required index:
+
+- `(column_id, position)` for ordered column reads
+
+### Ownership and soft-delete notes
+
+- `boards` carries the direct ownership column
+- `columns` and `cards` inherit ownership transitively through the parent board
+- `cards` and `boards` use soft delete in this slice
+- `columns` also carry `deleted_at` now so later board-structure changes do not require a second schema correction pass
+
+### Ordering notes
+
+- `columns.position` and `cards.position` are fixed-width numeric text ordering keys
+- new keys are created through the `keyBetween(prev, next)` helper
+- this slice needs starter-column ordering only, but the same schema is future-ready for reorder and move work
+
+### RLS requirement
+
+- any new or altered `public` tables still require `ENABLE ROW LEVEL SECURITY`
+- the same migration must also create explicit policies
+- for these Kanban tables, the expected policy stance is default-deny for `anon` and `authenticated`
+
+## 12. Initial tRPC Procedure Contract
+
+These are the concrete first procedures for this slice.
+
+### `board.list`
+
+Input:
+
+```ts
+{
+}
+```
+
+Output:
+
+```ts
+{
+  boards: Array<{
+    id: string;
+    name: string;
+    updatedAt: string;
+    columnCount: number;
+    cardCount: number;
+  }>;
+}
+```
+
+Behavior:
+
+- protected procedure
+- returns only owned, non-deleted boards
+- orders by most recently updated first
+
+### `board.create`
+
+Input:
+
+```ts
+{
+  name: string; // trim-aware, min 1, max 80
+}
+```
+
+Output:
+
+```ts
+{
+  boardId: string;
+}
+```
+
+Behavior:
+
+- protected procedure
+- creates the board for `ctx.userId`
+- creates starter columns `To do`, `In progress`, and `Done` in the same transaction
+- does not require unique board names
+
+### `board.getWithColumnsAndCards`
+
+Input:
+
+```ts
+{
+  boardId: string; // uuid
+}
+```
+
+Output:
+
+```ts
+{
+  board: {
+    id: string;
+    name: string;
+    updatedAt: string;
+    columnCount: number;
+    cardCount: number;
+    columns: Array<{
+      id: string;
+      title: string;
+      position: string;
+      version: number;
+      cardCount: number;
+      cards: Array<{
+        id: string;
+        title: string;
+        description: string;
+        position: string;
+        version: number;
+      }>;
+    }>;
+  }
+}
+```
+
+Behavior:
+
+- protected procedure
+- returns only one owned, non-deleted board
+- returns ordered, non-deleted columns
+- returns ordered, non-deleted cards within each column
+- collapses not-found, deleted, and foreign-owned board ids into the same not-found-style outcome
+
+## 13. Backend Acceptance Criteria
 
 - An authenticated user can list only their own non-deleted boards.
 - `/boards` data returns enough summary information for the board list and empty-state decisions.
