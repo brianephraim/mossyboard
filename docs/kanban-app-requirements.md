@@ -60,7 +60,6 @@ The server must:
 - Soft delete for cards
 - Basic concurrency safety for reordering operations
 
-You may assume a single user (no auth required).
 
 ---
 
