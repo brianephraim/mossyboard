@@ -27,7 +27,7 @@ export function BoardRouteGate({ children }: Readonly<{ children: ReactNode }>) 
     if (!session.isSignedIn) {
       void navigate({
         to: "/auth",
-        search: { redirect: redirectTarget },
+        search: { mode: "signin", redirectTo: redirectTarget },
         replace: true,
       });
       return;
@@ -36,7 +36,7 @@ export function BoardRouteGate({ children }: Readonly<{ children: ReactNode }>) 
     if (requiresEmailVerification && !session.user?.emailVerified) {
       void navigate({
         to: "/verify-email",
-        search: { redirect: redirectTarget },
+        search: { redirectTo: redirectTarget },
         replace: true,
       });
     }

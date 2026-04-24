@@ -13,11 +13,12 @@ import { PortalProvider } from "@tamagui/portal";
 
 import "../tamagui.css";
 
-import { AppNav } from "../navigation/AppNav";
-import { TrpcProvider } from "../trpc/provider";
 import { startAuthSession } from "../auth/client";
+import { AuthAnnounceProvider } from "../features/auth/AuthAnnounceContext";
+import { AppNav } from "../navigation/AppNav";
 import { StoreProvider } from "../store/StoreProvider";
 import { TamaguiRootProvider } from "../tamagui/TamaguiRootProvider";
+import { TrpcProvider } from "../trpc/provider";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -35,16 +36,21 @@ function RootComponent() {
     select: (state) => state.location.pathname,
   });
   const shouldHideScaffoldNav =
-    pathname.startsWith("/boards") || pathname.startsWith("/verify-email");
+    pathname === "/" ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/boards") ||
+    pathname.startsWith("/verify-email");
 
   return (
     <RootDocument>
       <Providers>
         <TamaguiRootProvider>
-          <PortalProvider shouldAddRootHost>
-            {shouldHideScaffoldNav ? null : <AppNav />}
-            <Outlet />
-          </PortalProvider>
+          <AuthAnnounceProvider>
+            <PortalProvider shouldAddRootHost>
+              {shouldHideScaffoldNav ? null : <AppNav />}
+              <Outlet />
+            </PortalProvider>
+          </AuthAnnounceProvider>
         </TamaguiRootProvider>
       </Providers>
     </RootDocument>

@@ -1,51 +1,26 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
-import { CounterView } from "../counter/CounterView";
-import {
-  selectCounterPageCheckboxChecked,
-  toggleChecked,
-} from "../store/counter-page-checkbox-slice";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { trpc } from "../trpc/client";
+import { parseSafeRedirectTo } from "../auth/searchParams";
+import { PublicAuthLanding } from "../features/auth/PublicAuthLanding";
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search) => {
+    const raw =
+      typeof search.redirectTo === "string"
+        ? search.redirectTo
+        : typeof search.redirect === "string"
+          ? search.redirect
+          : undefined;
+
+    return {
+      redirectTo: raw !== undefined ? parseSafeRedirectTo(raw, undefined) : undefined,
+    };
+  },
   component: Home,
 });
 
 function Home() {
-  const dispatch = useAppDispatch();
-  const checkboxChecked = useAppSelector(selectCounterPageCheckboxChecked);
+  const search = Route.useSearch();
 
-  const counterQuery = trpc.counter.get.useQuery({});
-  const increment = trpc.counter.increment.useMutation({
-    onSuccess: async () => {
-      await counterQuery.refetch();
-    },
-  });
-
-  return (
-    <main>
-      <CounterView
-        value={counterQuery.data?.value ?? null}
-        isLoading={counterQuery.isLoading}
-        isIncrementing={increment.isPending}
-        error={counterQuery.error?.message ?? increment.error?.message ?? null}
-        onIncrement={() => increment.mutate({})}
-      />
-      <section aria-label="Counter page options">
-        <label htmlFor="counter-page-option">
-          <input
-            id="counter-page-option"
-            type="checkbox"
-            checked={checkboxChecked}
-            onChange={() => dispatch(toggleChecked())}
-          />{" "}
-          Counter page option (Redux)
-        </label>
-        <div>
-          <Link to="/other-page">Other page</Link>
-        </div>
-      </section>
-    </main>
-  );
+  return <PublicAuthLanding redirectTo={search.redirectTo} />;
 }

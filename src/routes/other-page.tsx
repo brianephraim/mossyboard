@@ -8,9 +8,11 @@ function OtherPage() {
   return (
     <main>
       <h1>Other page</h1>
-      <p>Navigate back to the counter route; the counter page unmounts while you are here.</p>
       <p>
-        <Link to="/">Back to counter</Link>
+        Navigate back to the Tamagui counter route; the counter page unmounts while you are here.
+      </p>
+      <p>
+        <Link to="/tamagui-counter">Back to counter</Link>
       </p>
     </main>
   );

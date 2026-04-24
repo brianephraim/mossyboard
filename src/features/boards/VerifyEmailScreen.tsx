@@ -12,15 +12,15 @@ import { BoardActionButton, BoardInlineNotice } from "./ui";
 import { CenteredBoardState } from "./access";
 
 export function VerifyEmailScreen({
-  redirect,
+  redirectTo,
 }: Readonly<{
-  redirect?: string;
+  redirectTo?: string;
 }>) {
   const navigate = useNavigate();
   const session = useAuthSession();
   const requiresEmailVerification = useRequiresEmailVerification();
   const [status, setStatus] = useState<string | null>(null);
-  const target = redirect && redirect.startsWith("/") ? redirect : "/boards";
+  const target = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/boards";
 
   const sendVerification = trpc.authEmail.sendVerification.useMutation({
     onSuccess: () => {
@@ -39,7 +39,7 @@ export function VerifyEmailScreen({
     if (!session.isSignedIn) {
       void navigate({
         to: "/auth",
-        search: { redirect: target },
+        search: { mode: "signin", redirectTo: target },
         replace: true,
       });
       return;

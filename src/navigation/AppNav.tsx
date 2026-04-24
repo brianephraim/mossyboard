@@ -4,7 +4,7 @@ import { XStack } from "@tamagui/stacks";
 
 const links = [
   { to: "/boards", label: "Boards" },
-  { to: "/", label: "Counter" },
+  { to: "/", label: "Home" },
   { to: "/tamagui-counter", label: "Tamagui counter" },
   { to: "/other-page", label: "Other page" },
   { to: "/auth", label: "Auth" },
