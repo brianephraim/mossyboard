@@ -10,6 +10,7 @@ import { useAuthSession, useRequiresEmailVerification } from "../auth/session";
 import { AuthFormsPlaceholder } from "../features/auth/AuthFormsPlaceholder";
 import { AuthPageShell } from "../features/auth/AuthPageShell";
 import { SignInForm } from "../features/auth/SignInForm";
+import { SignUpForm } from "../features/auth/SignUpForm";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search) => ({
@@ -63,6 +64,8 @@ function AuthRoute() {
   const form =
     search.mode === "signin" ? (
       <SignInForm redirectTo={search.redirectTo} formHeadingRef={headingRef} />
+    ) : search.mode === "signup" ? (
+      <SignUpForm redirectTo={search.redirectTo} formHeadingRef={headingRef} />
     ) : (
       <AuthFormsPlaceholder mode={search.mode} />
     );
