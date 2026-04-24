@@ -189,5 +189,5 @@
 - **outcome**: partial — Session 02 not executed in browser (credentials missing)
 - **completed**: Session 01 (already on branch), Session 03 (frontend tests), Session 04 (inline column rename), Session 05 (lazy board detail + Rollup manualChunks)
 - **partial / blocked**: Session 02 — signed-in QA; see `docs/kanban-frontend-implementation-blockers.md`
-- **head**: HEAD_PLACEHOLDER
+- **head**: 55d84946136a866a97ffe5c8ec2cfade1898f0dd
 - **recommendations before Session 06**: add `AGENT_LOGIN_EMAIL` / `AGENT_LOGIN_PASSWORD` to `.env`, complete Session 02 under both `VITE_PUBLIC_REQUIRE_EMAIL_VERIFICATION` values, tick the signed-in milestone checkbox in `docs/kanban-next-steps.md`, then open Session 06 polish
