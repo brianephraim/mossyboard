@@ -1,5 +1,7 @@
 import type { DropResult } from "@hello-pangea/dnd";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { Input } from "@tamagui/input";
 import { Stack, Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
@@ -14,7 +16,12 @@ type BoardCanvasProps = {
   onDragEnd: (result: DropResult) => void;
   onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (columnId: string) => void;
-  onOpenRenameColumn: (columnId: string) => void;
+  onRenameColumn: (input: {
+    columnId: string;
+    title: string;
+    expectedVersion: number;
+  }) => Promise<void>;
+  renamePendingColumnId: string | null;
   onOpenCreateColumnAfter: (columnId?: string | null) => void;
   onMoveColumn: (columnId: string, direction: "left" | "right") => void;
   onMoveCard: (cardId: string, direction: "up" | "down" | "left" | "right") => void;
@@ -27,7 +34,8 @@ export function BoardCanvas({
   onDragEnd,
   onOpenCard,
   onOpenCreateCard,
-  onOpenRenameColumn,
+  onRenameColumn,
+  renamePendingColumnId,
   onOpenCreateColumnAfter,
   onMoveColumn,
   onMoveCard,
@@ -76,6 +84,7 @@ export function BoardCanvas({
                               title: column.title,
                               laneKind: "column",
                               originalColumnId: column.id,
+                              columnVersion: column.version,
                               cards: column.cards.map((card) => ({
                                 ...card,
                                 originalColumnId: column.id,
@@ -86,7 +95,9 @@ export function BoardCanvas({
                             dragHandleProps={columnProvided.dragHandleProps}
                             onOpenCard={onOpenCard}
                             onOpenCreateCard={onOpenCreateCard}
-                            onOpenRenameColumn={onOpenRenameColumn}
+                            onRenameColumn={onRenameColumn}
+                            renamePendingColumnId={renamePendingColumnId}
+                            onOpenCreateColumnAfter={onOpenCreateColumnAfter}
                             onMoveColumn={onMoveColumn}
                             onMoveCard={onMoveCard}
                           />
@@ -109,7 +120,8 @@ export function BoardCanvas({
                   canReorder={false}
                   onOpenCard={onOpenCard}
                   onOpenCreateCard={onOpenCreateCard}
-                  onOpenRenameColumn={onOpenRenameColumn}
+                  onRenameColumn={onRenameColumn}
+                  renamePendingColumnId={renamePendingColumnId}
                   onOpenCreateColumnAfter={onOpenCreateColumnAfter}
                   onMoveColumn={onMoveColumn}
                   onMoveCard={onMoveCard}
@@ -126,13 +138,184 @@ export function BoardCanvas({
   );
 }
 
+function ColumnHeaderWithInlineRename({
+  lane,
+  columnId,
+  dragHandleProps,
+  onMoveColumn,
+  onOpenCreateColumnAfter,
+  onRenameColumn,
+  renamePendingColumnId,
+}: Readonly<{
+  lane: BoardLane;
+  columnId: string;
+  dragHandleProps?: Record<string, unknown>;
+  onMoveColumn: (columnId: string, direction: "left" | "right") => void;
+  onOpenCreateColumnAfter: (columnId?: string | null) => void;
+  onRenameColumn: (input: {
+    columnId: string;
+    title: string;
+    expectedVersion: number;
+  }) => Promise<void>;
+  renamePendingColumnId: string | null;
+}>) {
+  const version = lane.columnVersion ?? 0;
+  const labelId = `column-title-${columnId}`;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(lane.title);
+  const skipBlurSave = useRef(false);
+
+  useEffect(() => {
+    setDraft(lane.title);
+  }, [lane.title]);
+
+  const saving = renamePendingColumnId === columnId;
+  const blockActions = Boolean(renamePendingColumnId);
+
+  const cancel = () => {
+    skipBlurSave.current = true;
+    setDraft(lane.title);
+    setEditing(false);
+    window.setTimeout(() => {
+      skipBlurSave.current = false;
+    }, 0);
+  };
+
+  const commit = async () => {
+    const next = draft.trim();
+    if (!next) {
+      return;
+    }
+
+    if (next === lane.title) {
+      cancel();
+      return;
+    }
+
+    try {
+      await onRenameColumn({
+        columnId,
+        title: next,
+        expectedVersion: version,
+      });
+      setEditing(false);
+    } catch {
+      /* BoardDetailScreen surfaces conflicts via board refetch. */
+    }
+  };
+
+  return (
+    <YStack gap="$2">
+      <XStack alignItems="flex-start" justifyContent="space-between" gap="$3" {...dragHandleProps}>
+        <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
+          <Stack
+            width={12}
+            height={12}
+            marginTop={4}
+            borderRadius={9999}
+            backgroundColor="$boardTextSubtle"
+          />
+          {editing ? (
+            <YStack gap="$2" flex={1} minWidth={0}>
+              <YStack tag="label" gap="$2" htmlFor={`${labelId}-field`}>
+                <Text id={labelId} fontWeight="600" color="$boardHeading">
+                  Column title
+                </Text>
+                <Input
+                  id={`${labelId}-field`}
+                  value={draft}
+                  onChangeText={setDraft}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setDraft(e.currentTarget.value)}
+                  disabled={saving}
+                  autoFocus
+                  aria-labelledby={labelId}
+                  onBlur={() => {
+                    if (skipBlurSave.current || saving) {
+                      return;
+                    }
+
+                    void commit();
+                  }}
+                  onKeyDown={(e: { nativeEvent?: { key?: string }; key?: string }) => {
+                    const key = e.key ?? e.nativeEvent?.key ?? "";
+                    if (key === "Escape") {
+                      cancel();
+                    }
+
+                    if (key === "Enter") {
+                      void commit();
+                    }
+                  }}
+                  backgroundColor="$boardPanelSurfaceStrong"
+                  borderColor="$boardShellBorder"
+                />
+              </YStack>
+              <XStack gap="$2" flexWrap="wrap">
+                <BoardActionButton tone="accent" disabled={saving} onPress={() => void commit()}>
+                  {saving ? "Saving…" : "Save"}
+                </BoardActionButton>
+                <BoardActionButton tone="ghost" disabled={saving} onPress={cancel}>
+                  Cancel
+                </BoardActionButton>
+              </XStack>
+            </YStack>
+          ) : (
+            <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
+              <Text fontWeight="800" color="$boardHeading" fontSize="$6" numberOfLines={1}>
+                {lane.title}
+              </Text>
+              <BoardPill>{lane.cards.length}</BoardPill>
+            </XStack>
+          )}
+        </XStack>
+        {!editing ? (
+          <XStack gap="$2" flexWrap="wrap">
+            <BoardActionButton
+              tone="ghost"
+              disabled={blockActions}
+              onPress={() => onMoveColumn(columnId, "left")}
+            >
+              ←
+            </BoardActionButton>
+            <BoardActionButton
+              tone="ghost"
+              disabled={blockActions}
+              onPress={() => onMoveColumn(columnId, "right")}
+            >
+              →
+            </BoardActionButton>
+            <BoardActionButton
+              tone="ghost"
+              disabled={blockActions}
+              onPress={() => {
+                setDraft(lane.title);
+                setEditing(true);
+              }}
+            >
+              Rename
+            </BoardActionButton>
+            <BoardActionButton
+              tone="ghost"
+              disabled={blockActions}
+              onPress={() => onOpenCreateColumnAfter(columnId)}
+            >
+              Add after
+            </BoardActionButton>
+          </XStack>
+        ) : null}
+      </XStack>
+    </YStack>
+  );
+}
+
 function BoardLaneView({
   lane,
   canReorder,
   dragHandleProps,
   onOpenCard,
   onOpenCreateCard,
-  onOpenRenameColumn,
+  onRenameColumn,
+  renamePendingColumnId,
   onOpenCreateColumnAfter,
   onMoveColumn,
   onMoveCard,
@@ -142,7 +325,12 @@ function BoardLaneView({
   dragHandleProps?: Record<string, unknown>;
   onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (columnId: string) => void;
-  onOpenRenameColumn: (columnId: string) => void;
+  onRenameColumn: (input: {
+    columnId: string;
+    title: string;
+    expectedVersion: number;
+  }) => Promise<void>;
+  renamePendingColumnId: string | null;
   onOpenCreateColumnAfter: (columnId?: string | null) => void;
   onMoveColumn: (columnId: string, direction: "left" | "right") => void;
   onMoveCard: (cardId: string, direction: "up" | "down" | "left" | "right") => void;
@@ -153,39 +341,32 @@ function BoardLaneView({
     <BoardSurface padding="$4">
       <YStack gap="$3">
         <YStack gap="$2">
-          <XStack alignItems="center" justifyContent="space-between" gap="$3" {...dragHandleProps}>
-            <XStack alignItems="center" gap="$3" minWidth={0}>
-              <Stack
-                width={12}
-                height={12}
-                borderRadius={9999}
-                backgroundColor={lane.laneKind === "priority" ? "$boardAccent" : "$boardTextSubtle"}
-              />
-              <Text fontWeight="800" color="$boardHeading" fontSize="$6" numberOfLines={1}>
-                {lane.title}
-              </Text>
-              <BoardPill>{lane.cards.length}</BoardPill>
-            </XStack>
-            {isRealColumn ? (
-              <XStack gap="$2" flexWrap="wrap">
-                <BoardActionButton tone="ghost" onPress={() => onMoveColumn(isRealColumn, "left")}>
-                  ←
-                </BoardActionButton>
-                <BoardActionButton tone="ghost" onPress={() => onMoveColumn(isRealColumn, "right")}>
-                  →
-                </BoardActionButton>
-                <BoardActionButton tone="ghost" onPress={() => onOpenRenameColumn(isRealColumn)}>
-                  Rename
-                </BoardActionButton>
-                <BoardActionButton
-                  tone="ghost"
-                  onPress={() => onOpenCreateColumnAfter(isRealColumn)}
-                >
-                  Add after
-                </BoardActionButton>
+          {isRealColumn ? (
+            <ColumnHeaderWithInlineRename
+              lane={lane}
+              columnId={isRealColumn}
+              dragHandleProps={dragHandleProps}
+              onMoveColumn={onMoveColumn}
+              onOpenCreateColumnAfter={onOpenCreateColumnAfter}
+              onRenameColumn={onRenameColumn}
+              renamePendingColumnId={renamePendingColumnId}
+            />
+          ) : (
+            <XStack
+              alignItems="center"
+              justifyContent="space-between"
+              gap="$3"
+              {...dragHandleProps}
+            >
+              <XStack alignItems="center" gap="$3" minWidth={0}>
+                <Stack width={12} height={12} borderRadius={9999} backgroundColor="$boardAccent" />
+                <Text fontWeight="800" color="$boardHeading" fontSize="$6" numberOfLines={1}>
+                  {lane.title}
+                </Text>
+                <BoardPill>{lane.cards.length}</BoardPill>
               </XStack>
-            ) : null}
-          </XStack>
+            </XStack>
+          )}
           {lane.helperText ? <Text color="$boardTextMuted">{lane.helperText}</Text> : null}
         </YStack>
 

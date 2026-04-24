@@ -164,6 +164,7 @@ export function buildBoardLanes(
     title: column.title,
     laneKind: "column" as const,
     originalColumnId: column.id,
+    columnVersion: column.version,
     cards: column.cards
       .filter(
         (card) => activePriorityFilters.size === 0 || activePriorityFilters.has(card.priority),

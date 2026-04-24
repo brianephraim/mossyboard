@@ -41,10 +41,6 @@ type CreateColumnForm = {
   title: string;
 };
 
-type RenameColumnForm = {
-  title: string;
-};
-
 type RenameBoardForm = {
   name: string;
 };
@@ -74,7 +70,6 @@ export function BoardDetailScreen({
   const [createColumnAfterId, setCreateColumnAfterId] = useState<string | null | undefined>(
     undefined,
   );
-  const [renameColumnId, setRenameColumnId] = useState<string | null>(null);
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
   const [confirmBoardDelete, setConfirmBoardDelete] = useState(false);
 
@@ -104,9 +99,6 @@ export function BoardDetailScreen({
   const createColumnForm = useForm<CreateColumnForm>({
     defaultValues: { title: "" },
   });
-  const renameColumnForm = useForm<RenameColumnForm>({
-    defaultValues: { title: "" },
-  });
   const renameBoardForm = useForm<RenameBoardForm>({
     defaultValues: { name: "" },
   });
@@ -129,15 +121,6 @@ export function BoardDetailScreen({
       createColumnForm.reset({ title: "" });
     }
   }, [createColumnAfterId, createColumnForm]);
-
-  useEffect(() => {
-    if (renameColumnId && board) {
-      const column = board.columns.find((entry) => entry.id === renameColumnId);
-      if (column) {
-        renameColumnForm.reset({ title: column.title });
-      }
-    }
-  }, [board, renameColumnForm, renameColumnId]);
 
   useEffect(() => {
     if (boardSettingsOpen && board) {
@@ -195,7 +178,6 @@ export function BoardDetailScreen({
   const renameColumn = trpc.column.rename.useMutation({
     onSuccess: async () => {
       await refreshBoard();
-      setRenameColumnId(null);
       setAnnouncement("Column renamed.");
     },
     onError: async (error) => {
@@ -536,9 +518,14 @@ export function BoardDetailScreen({
             onOpenCreateCard={(columnId) => {
               setCreateCardColumnId(columnId);
             }}
-            onOpenRenameColumn={(columnId) => {
-              setRenameColumnId(columnId);
+            onRenameColumn={async (input) => {
+              await renameColumn.mutateAsync(input);
             }}
+            renamePendingColumnId={
+              renameColumn.isPending && renameColumn.variables
+                ? renameColumn.variables.columnId
+                : null
+            }
             onOpenCreateColumnAfter={(columnId) => {
               setCreateColumnAfterId(columnId ?? null);
             }}
@@ -743,78 +730,6 @@ export function BoardDetailScreen({
           ) : null}
           {createColumn.error ? (
             <Text color="$boardDangerText">{createColumn.error.message}</Text>
-          ) : null}
-        </YStack>
-      </PrettyModalWrap>
-
-      <PrettyModalWrap
-        open={Boolean(renameColumnId)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setRenameColumnId(null);
-          }
-        }}
-        title="Rename column"
-        description="Update the lane label without changing its card order."
-        footer={
-          <>
-            <BoardActionButton tone="ghost" onPress={() => setRenameColumnId(null)}>
-              Cancel
-            </BoardActionButton>
-            <BoardActionButton
-              tone="accent"
-              disabled={renameColumn.isPending}
-              onPress={renameColumnForm.handleSubmit(async (values) => {
-                if (!renameColumnId || !board) {
-                  return;
-                }
-
-                const column = board.columns.find((entry) => entry.id === renameColumnId);
-                if (!column) {
-                  return;
-                }
-
-                await renameColumn.mutateAsync({
-                  columnId: renameColumnId,
-                  title: values.title,
-                  expectedVersion: column.version,
-                });
-              })}
-            >
-              {renameColumn.isPending ? "Saving…" : "Save name"}
-            </BoardActionButton>
-          </>
-        }
-      >
-        <YStack gap="$3">
-          <YStack tag="label" gap="$2">
-            <Text fontWeight="700" color="$boardHeading">
-              Column title
-            </Text>
-            <Controller
-              control={renameColumnForm.control}
-              name="title"
-              rules={{
-                required: "Column title is required.",
-                maxLength: { value: 80, message: "Keep the title under 80 characters." },
-              }}
-              render={({ field }) => (
-                <Input
-                  value={field.value}
-                  onChangeText={field.onChange}
-                  onBlur={field.onBlur}
-                  autoFocus
-                  backgroundColor="$boardPanelSurfaceStrong"
-                  borderColor="$boardShellBorder"
-                />
-              )}
-            />
-          </YStack>
-          {renameColumnForm.formState.errors.title ? (
-            <Text color="$boardDangerText">{renameColumnForm.formState.errors.title.message}</Text>
-          ) : null}
-          {renameColumn.error ? (
-            <Text color="$boardDangerText">{renameColumn.error.message}</Text>
           ) : null}
         </YStack>
       </PrettyModalWrap>

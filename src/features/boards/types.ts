@@ -27,6 +27,8 @@ export type BoardLane = {
   title: string;
   laneKind: "column" | "priority";
   originalColumnId?: string;
+  /** Present for real columns; used for optimistic rename + conflict checks. */
+  columnVersion?: number;
   helperText?: string;
   cards: BoardLaneCard[];
 };
