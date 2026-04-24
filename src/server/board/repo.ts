@@ -4,7 +4,8 @@ import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { keyBetween } from "../../lib/ordering/key-between";
 import { db } from "../db/client";
-import { boards, cards, columns } from "../db/schema";
+import { boards, cards, cardSubtasks, columns, type CardPriority } from "../db/schema";
+import { getOwnedBoard } from "./repo-shared";
 
 const DEFAULT_COLUMN_TITLES = ["To do", "In progress", "Done"] as const;
 
@@ -32,6 +33,7 @@ export type LoadedBoardRow = {
       id: string;
       title: string;
       description: string;
+      priority: CardPriority;
       position: string;
       version: number;
     }>;
@@ -140,6 +142,7 @@ export async function getBoardWithColumnsAndCards(input: {
             columnId: cards.columnId,
             title: cards.title,
             description: cards.description,
+            priority: cards.priority,
             position: cards.position,
             version: cards.version,
           })
@@ -155,6 +158,7 @@ export async function getBoardWithColumnsAndCards(input: {
       id: card.id,
       title: card.title,
       description: card.description,
+      priority: card.priority,
       position: card.position,
       version: card.version,
     });
@@ -202,4 +206,103 @@ function buildStarterColumns(boardId: string, now: Date) {
     createdAt: now,
     updatedAt: now,
   }));
+}
+
+export async function renameBoard(input: {
+  ownerId: string;
+  boardId: string;
+  name: string;
+}): Promise<{ id: string; name: string; updatedAt: Date } | null> {
+  const now = new Date();
+  const [updated] = await db
+    .update(boards)
+    .set({
+      name: input.name,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(boards.id, input.boardId),
+        eq(boards.ownerId, input.ownerId),
+        isNull(boards.deletedAt),
+      ),
+    )
+    .returning({
+      id: boards.id,
+      name: boards.name,
+      updatedAt: boards.updatedAt,
+    });
+
+  return updated ?? null;
+}
+
+export async function softDeleteBoard(input: {
+  ownerId: string;
+  boardId: string;
+}): Promise<{ id: string; deletedAt: Date } | null> {
+  return db.transaction(async (tx) => {
+    const ownedBoard = await getOwnedBoard(tx, input);
+    if (!ownedBoard) {
+      return null;
+    }
+
+    const now = new Date();
+    const [deletedBoard] = await tx
+      .update(boards)
+      .set({
+        deletedAt: now,
+        updatedAt: now,
+      })
+      .where(and(eq(boards.id, input.boardId), isNull(boards.deletedAt)))
+      .returning({
+        id: boards.id,
+        deletedAt: boards.deletedAt,
+      });
+
+    if (!deletedBoard?.deletedAt) {
+      throw new Error("Failed to soft-delete board");
+    }
+
+    const activeColumns = await tx
+      .select({ id: columns.id })
+      .from(columns)
+      .where(and(eq(columns.boardId, input.boardId), isNull(columns.deletedAt)));
+    const activeColumnIds = activeColumns.map((column) => column.id);
+
+    if (activeColumnIds.length > 0) {
+      await tx
+        .update(columns)
+        .set({
+          deletedAt: now,
+          updatedAt: now,
+        })
+        .where(and(inArray(columns.id, activeColumnIds), isNull(columns.deletedAt)));
+
+      const activeCards = await tx
+        .select({ id: cards.id })
+        .from(cards)
+        .where(and(inArray(cards.columnId, activeColumnIds), isNull(cards.deletedAt)));
+      const activeCardIds = activeCards.map((card) => card.id);
+
+      if (activeCardIds.length > 0) {
+        await tx
+          .update(cards)
+          .set({
+            deletedAt: now,
+            updatedAt: now,
+          })
+          .where(and(inArray(cards.id, activeCardIds), isNull(cards.deletedAt)));
+
+        await tx
+          .update(cardSubtasks)
+          .set({
+            deletedAt: now,
+            updatedAt: now,
+          })
+          .where(and(inArray(cardSubtasks.cardId, activeCardIds), isNull(cardSubtasks.deletedAt)));
+      }
+    }
+
+    return deletedBoard;
+  });
 }

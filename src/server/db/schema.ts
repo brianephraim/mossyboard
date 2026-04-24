@@ -3,6 +3,7 @@ import {
   bigint,
   index,
   integer,
+  boolean,
   pgTable,
   serial,
   text,
@@ -58,6 +59,10 @@ export const demoItem = pgTable(
   }),
 );
 
+export const cardPriorityValues = ["none", "low", "medium", "high"] as const;
+
+export type CardPriority = (typeof cardPriorityValues)[number];
+
 export const boards = pgTable(
   "boards",
   {
@@ -101,6 +106,7 @@ export const cards = pgTable(
       .references(() => columns.id),
     title: text("title").notNull(),
     description: text("description").notNull().default(""),
+    priority: text("priority").notNull().default("none"),
     position: text("position").notNull(),
     version: integer("version").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -109,6 +115,26 @@ export const cards = pgTable(
   },
   (t) => ({
     columnPositionIdx: index("cards_column_position_idx").on(t.columnId, t.position),
+  }),
+);
+
+export const cardSubtasks = pgTable(
+  "card_subtasks",
+  {
+    id: uuid("id").primaryKey(),
+    cardId: uuid("card_id")
+      .notNull()
+      .references(() => cards.id),
+    title: text("title").notNull(),
+    isDone: boolean("is_done").notNull().default(false),
+    position: text("position").notNull(),
+    version: integer("version").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({
+    cardPositionIdx: index("card_subtasks_card_position_idx").on(t.cardId, t.position),
   }),
 );
 
@@ -124,9 +150,17 @@ export const columnsRelations = relations(columns, ({ one, many }) => ({
   cards: many(cards),
 }));
 
-export const cardsRelations = relations(cards, ({ one }) => ({
+export const cardsRelations = relations(cards, ({ one, many }) => ({
+  subtasks: many(cardSubtasks),
   column: one(columns, {
     fields: [cards.columnId],
     references: [columns.id],
+  }),
+}));
+
+export const cardSubtasksRelations = relations(cardSubtasks, ({ one }) => ({
+  card: one(cards, {
+    fields: [cardSubtasks.cardId],
+    references: [cards.id],
   }),
 }));

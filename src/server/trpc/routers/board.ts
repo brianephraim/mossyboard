@@ -4,6 +4,8 @@ import {
   createBoardForUser,
   getBoardWithColumnsAndCardsForUser,
   listBoardsForUser,
+  renameBoardForUser,
+  softDeleteBoardForUser,
 } from "../../board/service";
 import { protectedProcedure, t } from "../init";
 
@@ -24,5 +26,18 @@ export const boardRouter = t.router({
   }),
   getWithColumnsAndCards: protectedProcedure.input(boardIdInput).query(({ ctx, input }) => {
     return getBoardWithColumnsAndCardsForUser(ctx.userId, input.boardId);
+  }),
+  rename: protectedProcedure
+    .input(
+      z.object({
+        boardId: z.string().uuid(),
+        name: z.string().trim().min(1).max(80),
+      }),
+    )
+    .mutation(({ ctx, input }) => {
+      return renameBoardForUser(ctx.userId, input);
+    }),
+  softDelete: protectedProcedure.input(boardIdInput).mutation(({ ctx, input }) => {
+    return softDeleteBoardForUser(ctx.userId, input);
   }),
 });

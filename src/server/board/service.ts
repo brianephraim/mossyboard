@@ -3,6 +3,8 @@ import {
   createBoard,
   getBoardWithColumnsAndCards,
   listBoards,
+  renameBoard,
+  softDeleteBoard,
   type BoardSummaryRow,
   type LoadedBoardRow,
 } from "./repo";
@@ -34,6 +36,41 @@ export async function getBoardWithColumnsAndCardsForUser(ownerId: string, boardI
   }
 
   return { board: serializeLoadedBoard(loaded) };
+}
+
+export async function renameBoardForUser(
+  ownerId: string,
+  input: { boardId: string; name: string },
+) {
+  const renamed = await renameBoard({
+    ownerId,
+    boardId: input.boardId,
+    name: input.name.trim(),
+  });
+  if (!renamed) {
+    throw trpcErrors.notFound("Board not found");
+  }
+
+  return {
+    boardId: renamed.id,
+    name: renamed.name,
+    updatedAt: renamed.updatedAt.toISOString(),
+  };
+}
+
+export async function softDeleteBoardForUser(ownerId: string, input: { boardId: string }) {
+  const deleted = await softDeleteBoard({
+    ownerId,
+    boardId: input.boardId,
+  });
+  if (!deleted) {
+    throw trpcErrors.notFound("Board not found");
+  }
+
+  return {
+    boardId: deleted.id,
+    deletedAt: deleted.deletedAt.toISOString(),
+  };
 }
 
 function serializeBoardSummary(row: BoardSummaryRow) {

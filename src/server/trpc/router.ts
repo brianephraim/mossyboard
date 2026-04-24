@@ -7,11 +7,17 @@ import { TRPCError } from "@trpc/server";
 import { adminAuth } from "../auth/admin";
 import { logger } from "../logging/logger";
 import { boardRouter } from "./routers/board";
+import { cardRouter } from "./routers/card";
+import { columnRouter } from "./routers/column";
+import { subtaskRouter } from "./routers/subtask";
 
 export const appRouter = t.router({
   health: publicProcedure.input(z.object({})).query(() => ({ ok: true })),
   echo: publicProcedure.input(z.object({ message: z.string().min(1) })).query(({ input }) => input),
   board: boardRouter,
+  card: cardRouter,
+  column: columnRouter,
+  subtask: subtaskRouter,
   counter: t.router({
     get: publicProcedure.input(z.object({})).query(() => readCounter()),
     increment: publicProcedure.input(z.object({})).mutation(() => incrementCounter()),
