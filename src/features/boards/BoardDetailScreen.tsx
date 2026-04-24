@@ -8,6 +8,7 @@ import { XStack, YStack } from "@tamagui/stacks";
 
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
 import { trpc } from "../../trpc/client";
+import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
 import { BoardShell } from "./BoardShell";
 import { BoardCanvas } from "./BoardCanvas";
 import { CardDetailSurface } from "./CardDetailSurface";
@@ -633,7 +634,7 @@ export function BoardDetailScreen({
               render={({ field }) => (
                 <Input
                   value={field.value}
-                  onChangeText={field.onChange}
+                  onChange={tamaguiInputValueOnChange(field.onChange)}
                   onBlur={field.onBlur}
                   autoFocus
                   backgroundColor="$boardPanelSurfaceStrong"
@@ -715,7 +716,7 @@ export function BoardDetailScreen({
               render={({ field }) => (
                 <Input
                   value={field.value}
-                  onChangeText={field.onChange}
+                  onChange={tamaguiInputValueOnChange(field.onChange)}
                   onBlur={field.onBlur}
                   autoFocus
                   backgroundColor="$boardPanelSurfaceStrong"
@@ -774,7 +775,7 @@ export function BoardDetailScreen({
               render={({ field }) => (
                 <Input
                   value={field.value}
-                  onChangeText={field.onChange}
+                  onChange={tamaguiInputValueOnChange(field.onChange)}
                   onBlur={field.onBlur}
                   autoFocus
                   backgroundColor="$boardPanelSurfaceStrong"

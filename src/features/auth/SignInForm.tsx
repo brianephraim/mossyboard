@@ -8,6 +8,7 @@ import { Text } from "@tamagui/core";
 import { YStack } from "@tamagui/stacks";
 
 import { signInWithEmail } from "../../auth/client";
+import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
 import { useAuthAnnounceOptional } from "./AuthAnnounceContext";
 import { mapSignInError } from "./firebase-auth-errors";
 
@@ -99,7 +100,7 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
               <>
                 <Input
                   value={field.value}
-                  onChangeText={field.onChange}
+                  onChange={tamaguiInputValueOnChange(field.onChange)}
                   onBlur={field.onBlur}
                   placeholder="you@example.com"
                   keyboardType="email-address"
@@ -136,7 +137,7 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
               <>
                 <Input
                   value={field.value}
-                  onChangeText={field.onChange}
+                  onChange={tamaguiInputValueOnChange(field.onChange)}
                   onBlur={field.onBlur}
                   secureTextEntry
                   autoComplete="current-password"

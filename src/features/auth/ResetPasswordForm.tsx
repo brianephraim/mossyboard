@@ -8,6 +8,7 @@ import { Text } from "@tamagui/core";
 import { YStack } from "@tamagui/stacks";
 
 import { trpc } from "../../trpc/client";
+import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
 import { mapPasswordResetSendError } from "./firebase-auth-errors";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -129,7 +130,7 @@ export function ResetPasswordForm({ redirectTo, formHeadingRef }: ResetPasswordF
             <>
               <Input
                 value={field.value}
-                onChangeText={field.onChange}
+                onChange={tamaguiInputValueOnChange(field.onChange)}
                 onBlur={field.onBlur}
                 placeholder="you@example.com"
                 keyboardType="email-address"

@@ -11,6 +11,7 @@ import { AccountSignOutControl } from "../../features/auth/AccountSignOutControl
 import { VerificationReminderBanner } from "../../features/auth/VerificationReminderBanner";
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
 import { trpc } from "../../trpc/client";
+import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
 import {
   BoardActionButton,
   BoardLiveRegion,
@@ -276,7 +277,7 @@ export function BoardShell({
               render={({ field }) => (
                 <Input
                   value={field.value}
-                  onChangeText={field.onChange}
+                  onChange={tamaguiInputValueOnChange(field.onChange)}
                   onBlur={field.onBlur}
                   placeholder="Product launch"
                   autoFocus

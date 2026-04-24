@@ -6,6 +6,7 @@ import { Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
+import { tamaguiInputValueOnChange, tamaguiTextAreaValueOnChange } from "../../tamaguiRhfWebField";
 import { trpc } from "../../trpc/client";
 import { boardPriorityMeta, boardPriorityValues } from "./model";
 import type { CardPriority } from "./types";
@@ -215,7 +216,7 @@ export function CardDetailSurface({
                 render={({ field }) => (
                   <Input
                     value={field.value}
-                    onChangeText={field.onChange}
+                    onChange={tamaguiInputValueOnChange(field.onChange)}
                     onBlur={field.onBlur}
                     backgroundColor="$boardPanelSurfaceStrong"
                     borderColor="$boardShellBorder"
@@ -234,7 +235,7 @@ export function CardDetailSurface({
                 render={({ field }) => (
                   <TextArea
                     value={field.value}
-                    onChangeText={field.onChange}
+                    onChange={tamaguiTextAreaValueOnChange(field.onChange)}
                     onBlur={field.onBlur}
                     numberOfLines={8}
                     minHeight={180}
@@ -343,7 +344,7 @@ export function CardDetailSurface({
             <XStack gap="$2" flexWrap="wrap">
               <Input
                 value={newSubtaskTitle}
-                onChangeText={setNewSubtaskTitle}
+                onChange={tamaguiInputValueOnChange(setNewSubtaskTitle)}
                 placeholder="Add a subtask"
                 flex={1}
                 minWidth={220}
@@ -396,7 +397,7 @@ export function CardDetailSurface({
                           {isEditing ? (
                             <Input
                               value={editingSubtaskTitle}
-                              onChangeText={setEditingSubtaskTitle}
+                              onChange={tamaguiInputValueOnChange(setEditingSubtaskTitle)}
                               flex={1}
                               autoFocus
                               backgroundColor="$boardPanelSurfaceStrong"
