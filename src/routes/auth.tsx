@@ -7,8 +7,8 @@ import {
   parseSessionExpiredReason,
 } from "../auth/searchParams";
 import { useAuthSession, useRequiresEmailVerification } from "../auth/session";
-import { AuthFormsPlaceholder } from "../features/auth/AuthFormsPlaceholder";
 import { AuthPageShell } from "../features/auth/AuthPageShell";
+import { ResetPasswordForm } from "../features/auth/ResetPasswordForm";
 import { SignInForm } from "../features/auth/SignInForm";
 import { SignUpForm } from "../features/auth/SignUpForm";
 
@@ -67,7 +67,7 @@ function AuthRoute() {
     ) : search.mode === "signup" ? (
       <SignUpForm redirectTo={search.redirectTo} formHeadingRef={headingRef} />
     ) : (
-      <AuthFormsPlaceholder mode={search.mode} />
+      <ResetPasswordForm redirectTo={search.redirectTo} formHeadingRef={headingRef} />
     );
 
   return (
