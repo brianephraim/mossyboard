@@ -22,7 +22,6 @@
 
 ### Frontend ambiguity
 
-- The dependency memo recommends no new form or tabs library for this slice, but the human sign-off remains pending.
 - The auth route's mode switch visual treatment is intentionally open as long as keyboard and route behavior remain intact.
 
 ### Backend ambiguity
@@ -49,6 +48,6 @@ The package is concrete enough for:
 
 ## 5. Remaining Follow-Up Before Coding Starts
 
-- Confirm the recommended `no new frontend dependency` path for this slice, or explicitly choose an alternative from the dependency memo
+- Install the approved auth/frontend dependencies intentionally when implementation begins: `react-hook-form` and `@tamagui/tabs`
 - Keep `REQUIRE_EMAIL_VERIFICATION` as the server-truth contract
 - Carry the open shell-placement questions forward into the later board-shell slice instead of solving them implicitly here

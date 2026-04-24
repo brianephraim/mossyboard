@@ -8,34 +8,37 @@ Parent UX spec: [`docs/ux-specs/auth-session-boundaries.md`](./auth-session-boun
 
 ## 2. Executive Summary
 
-Recommendation for this slice: do not add a new frontend library yet.
+Engineer-approved decisions for this slice:
 
-The auth/session UX defined in the canonical spec can be implemented with the current stack plus project-local patterns:
+- forms: `react-hook-form`
+- auth mode switch: `@tamagui/tabs`
+- modal/dialog foundation: keep using `PrettyModalWrap`
 
-- React component state for small auth forms
-- TanStack Router query params for auth mode switching
-- current Tamagui primitives for layout and controls
-- project-required `PrettyModalWrap` for blocking session-expired dialogs
+Related cross-slice decisions are recorded in [`docs/frontend-library-decisions.md`](../frontend-library-decisions.md), including:
 
-The only category that is close to a real decision point is form state + validation handling, and even there the current slice is still simple enough that a library would add more abstraction than value.
+- drag-and-drop: `@hello-pangea/dnd`
+- virtualization partner for DnD lists: `react-window`
+- complex selects / comboboxes / filter menus: prefer official Tamagui packages
+- toasts / transient status UI: prefer official Tamagui packages
+- extra motion library: defer
 
 ## 3. Human Decision Checklist
 
-- [ ] Approve `no new form library` for the auth/session slice
-- [ ] Approve `no new tabs/mode-switch package` for the auth/session slice
-- [ ] Approve `defer drag-and-drop / sortable evaluation` until the move/reorder slice
+- [x] Approve `react-hook-form` for the auth/session slice
+- [x] Approve `@tamagui/tabs` for the auth/session slice
+- [x] Keep `PrettyModalWrap` as the modal/dialog foundation for this slice
 
 ## 4. Option Status Snapshot
 
 ### Approved
 
-- none yet
+- `react-hook-form`
+- `@tamagui/tabs`
+- `PrettyModalWrap`
 
 ### Deferred
 
 - `@tanstack/react-form`
-- `react-hook-form`
-- `@tamagui/tabs`
 - any drag-and-drop / sortable package evaluation
 
 ### Rejected for this slice
@@ -171,20 +174,21 @@ Tradeoffs for this slice:
 
 #### Recommendation
 
-Do not add a form library for this auth/session slice.
+Use `react-hook-form` for this auth/session slice.
 
-Revisit the choice when the repo reaches larger multi-field slices such as card create/edit or card detail editing. At that point, compare whether a standardized form abstraction would reduce duplication enough to justify adoption.
+Why this is acceptable despite the slice being small:
+
+- the engineer explicitly chose early standardization
+- it gives a clear repo pattern for auth forms
+- it keeps future auth and profile-adjacent forms from re-litigating the choice immediately
 
 #### Human decision required
 
-Approve `no new form library now` or explicitly choose an early standard:
-
-- `@tanstack/react-form`
-- `react-hook-form`
+Decision recorded: `react-hook-form`
 
 #### Install timing
 
-`later`
+`now when this slice is implemented`
 
 ### Capability: Auth mode switch / tab-like primitive
 
@@ -241,17 +245,20 @@ Tradeoffs for this slice:
 
 #### Recommendation
 
-Do not add `@tamagui/tabs` for this slice.
+Use `@tamagui/tabs` for the auth mode switch in this slice.
 
-Use route-aware controls with current Tamagui primitives unless a later design pass proves that tab semantics materially improve the experience.
+Implementation guardrail:
+
+- keep the router query param as the source of truth for auth mode
+- do not let tab-local state drift away from the route
 
 #### Human decision required
 
-Approve `no new tabs package now` or approve `@tamagui/tabs` if the team wants true tab semantics for auth mode switching.
+Decision recorded: `@tamagui/tabs`
 
 #### Install timing
 
-`later`
+`now when this slice is implemented`
 
 ### Capability: Modal/dialog foundation for session-expired write failures
 
@@ -294,17 +301,19 @@ None unless the project rule changes.
 
 ## 6. Recommendation Summary
 
-- Recommended path for this slice: no new frontend dependencies
-- Strongest defer candidate: form library choice
-- Best future-fit option if the team wants early standardization: `@tanstack/react-form`
-- Best Tamagui-specific add-on if the designer later insists on tab semantics: `@tamagui/tabs`
+- Approved auth/session additions: `react-hook-form`, `@tamagui/tabs`
+- Required existing project pattern: `PrettyModalWrap`
+- Future Kanban interaction default: `@hello-pangea/dnd`
+- Future DnD virtualization partner: `react-window`
+- Future UI package bias: official Tamagui packages where applicable
+- Strongest remaining defer candidate: extra motion library choice
 
 ## 7. What This Means for the Frontend Brief
 
 The frontend build brief should currently assume:
 
-- local React state for auth forms
-- route-driven auth mode switching
-- current Tamagui primitives for layout and controls
+- `react-hook-form` for auth forms
+- route-driven auth mode switching rendered with `@tamagui/tabs`
+- current Tamagui primitives for surrounding layout and controls
 - `PrettyModalWrap` for the session-expired dialog
 - no drag-and-drop or sortable dependency for this slice

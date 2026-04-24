@@ -10,12 +10,12 @@
 
 This brief assumes the current recommended path from the dependency memo:
 
-- no new form library for this slice
-- no new tabs/mode-switch package for this slice
+- use `react-hook-form` for auth forms
+- use `@tamagui/tabs` for the auth mode switch presentation layer
 - no drag-and-drop / sortable library for this slice
 - no external modal/dialog library for this slice
 
-If the engineer later approves a different dependency choice, update this brief before implementation begins.
+Supporting cross-slice defaults are recorded in [`docs/frontend-library-decisions.md`](../frontend-library-decisions.md).
 
 ## 3. Slice Goal
 
@@ -76,13 +76,13 @@ Note: this slice must not define full board-shell UI. Use minimal integration po
 
 ### `AuthModeSwitch`
 
-- route-aware controls for `signin` and `signup`
+- route-aware `@tamagui/tabs` controls for `signin` and `signup`
 - visible active-state treatment
 - focus reset to the mode heading after mode changes
 
 ### `SignInForm`
 
-- local field state for email and password
+- `react-hook-form` wiring for email and password
 - client-side validation
 - form-level error mapping
 - pending-state button label
@@ -90,14 +90,14 @@ Note: this slice must not define full board-shell UI. Use minimal integration po
 
 ### `SignUpForm`
 
-- local field state for email and password
+- `react-hook-form` wiring for email and password
 - client-side validation
 - error mapping for duplicate-account and weak-password cases
 - redirect branching based on verification requirement
 
 ### `ResetPasswordForm`
 
-- local email field state
+- `react-hook-form` wiring for the email field
 - success state and cooldown state
 - back-to-sign-in navigation
 
@@ -140,7 +140,6 @@ Note: this slice must not define full board-shell UI. Use minimal integration po
 
 ### Local React state
 
-- auth form field values
 - auth form pending/submitting state
 - field-level and form-level display state
 - verification resend cooldown timers
@@ -224,9 +223,9 @@ The frontend brief does not define APIs. It only requires that these touchpoints
 
 ## 13. Implementation Guardrails
 
-- Keep auth mode state URL-driven.
+- Keep auth mode state URL-driven even when rendered through `@tamagui/tabs`.
 - Keep verification enforcement env-driven.
 - Use `PrettyModalWrap` for the session-expired modal flow.
-- Do not add a form library for this slice unless the dependency memo is explicitly updated and approved.
+- Use `react-hook-form` for auth forms in this slice.
 - Do not introduce Redux for local auth form behavior.
 - Do not invent extra auth screens beyond `/`, `/auth`, and `/verify-email`.

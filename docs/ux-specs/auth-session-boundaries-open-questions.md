@@ -21,23 +21,17 @@
 - Why it matters:
   - affects create-account copy and link targets
 
-## 2. Engineering Decision Gates
+## 2. Recorded Engineering Decisions
 
-### Question: Should the auth/session slice remain dependency-free on the frontend?
+These were decided after the dependency interview and are recorded in [`docs/frontend-library-decisions.md`](../frontend-library-decisions.md):
 
-- Recommendation from the dependency memo: yes
-- Candidate alternatives:
-  - `@tanstack/react-form`
-  - `react-hook-form`
-  - `@tamagui/tabs`
-- Status: pending engineer sign-off
-- Blocking: no for documentation, low-risk yes for final implementation kickoff if the team wants an explicit standardized pattern first
-
-### Question: Should drag-and-drop evaluation be deferred to the move/reorder slice?
-
-- Recommendation from the dependency memo: yes
-- Status: pending engineer sign-off
-- Blocking: no
+- auth forms: `react-hook-form`
+- auth mode switch: `@tamagui/tabs`
+- future drag-and-drop for cards/columns: `@hello-pangea/dnd`
+- future virtualization partner for DnD lists: `react-window`
+- future complex selects/comboboxes/filter menus: prefer official Tamagui packages
+- future toasts / undo / transient status UI: prefer official Tamagui packages
+- extra motion library: defer
 
 ## 3. Future-Slice Coordination Questions
 
@@ -57,5 +51,5 @@
 
 - Blocking questions: none
 - Non-blocking product questions: 2
-- Non-blocking engineering sign-offs: 2
+- Non-blocking engineering sign-offs: 0
 - Non-blocking future-shell coordination questions: 2
