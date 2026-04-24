@@ -143,3 +143,31 @@
 - **step**: Redux checkbox survives route remount
 - **outcome**: done
 - **reason**: toggled the counter-page checkbox on `/`, opened `/other-page`, returned to `/`; checkbox stayed checked (Redux store outlives the counter route component tree)
+
+## 2026-04-24T15:35:28Z
+
+- **phase**: docs
+- **step**: add UX spec meta-plan
+- **outcome**: done
+- **reason**: added `docs/ux-spec-meta-plan.md` to define a staged workflow for producing canonical UX specs and derived briefs for wireframe, frontend, and backend AI agents
+
+## 2026-04-24T15:41:21Z
+
+- **phase**: docs
+- **step**: convert UX meta-plan bullets to checklists
+- **outcome**: done
+- **reason**: updated `docs/ux-spec-meta-plan.md` so its unordered document lists use Markdown task-list formatting while leaving prompt examples intact
+
+## 2026-04-24T15:43:02Z
+
+- **phase**: docs
+- **step**: convert UX meta-plan prompt bullets to checklists
+- **outcome**: done
+- **reason**: updated the embedded prompt examples in `docs/ux-spec-meta-plan.md` so all remaining Markdown bullet lists also use task-list formatting
+
+## 2026-04-24T15:45:07Z
+
+- **phase**: docs
+- **step**: add frontend dependency exploration gate to UX meta-plan
+- **outcome**: done
+- **reason**: updated `docs/ux-spec-meta-plan.md` to require a frontend library exploration memo and human sign-off for decisions such as drag-and-drop, form handling, and other high-impact frontend dependencies before finalizing the frontend build brief
