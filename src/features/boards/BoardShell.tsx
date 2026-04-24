@@ -6,17 +6,13 @@ import { Input } from "@tamagui/input";
 import { Stack, Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
-import {
-  refreshAuthSession,
-  useAuthSession,
-  useRequiresEmailVerification,
-} from "../../auth/session";
-import { signOutUser } from "../../auth/client";
+import { useAuthSession, useRequiresEmailVerification } from "../../auth/session";
+import { AccountSignOutControl } from "../../features/auth/AccountSignOutControl";
+import { VerificationReminderBanner } from "../../features/auth/VerificationReminderBanner";
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
 import { trpc } from "../../trpc/client";
 import {
   BoardActionButton,
-  BoardInlineNotice,
   BoardLiveRegion,
   BoardPageChrome,
   BoardPill,
@@ -70,15 +66,6 @@ export function BoardShell({
     },
   });
 
-  const sendVerification = trpc.authEmail.sendVerification.useMutation({
-    onSuccess: () => {
-      setShellAnnouncement("Verification email sent.");
-    },
-    onError: () => {
-      setShellAnnouncement("Verification email failed.");
-    },
-  });
-
   useEffect(() => {
     if (!createBoardOpen) {
       createBoardForm.reset({ name: "" });
@@ -87,33 +74,7 @@ export function BoardShell({
 
   const verificationBanner =
     session.user && !session.user.emailVerified && !requiresEmailVerification ? (
-      <BoardInlineNotice
-        tone="warning"
-        message="Your email is not verified yet. You can keep working, but some environments may require verification before entering the board."
-        actions={
-          <>
-            <BoardActionButton
-              tone="ghost"
-              disabled={sendVerification.isPending}
-              onPress={() => {
-                void sendVerification.mutateAsync({});
-              }}
-            >
-              {sendVerification.isPending ? "Sending…" : "Send verification email"}
-            </BoardActionButton>
-            <BoardActionButton
-              tone="ghost"
-              onPress={() => {
-                void refreshAuthSession().then(() => {
-                  setShellAnnouncement("Verification status refreshed.");
-                });
-              }}
-            >
-              Refresh status
-            </BoardActionButton>
-          </>
-        }
-      />
+      <VerificationReminderBanner userEmail={session.user.email} />
     ) : null;
 
   const boardList = boardsQuery.data?.boards ?? [];
@@ -242,20 +203,14 @@ export function BoardShell({
           Create board
         </BoardActionButton>
         {headerActions}
-        <BoardActionButton
-          tone="ghost"
-          onPress={() => {
-            void signOutUser().then(() => {
-              setShellAnnouncement("Signed out.");
-              void navigate({ to: "/auth", search: {} });
-            });
+        <AccountSignOutControl
+          onSignedOut={() => {
+            setShellAnnouncement("Signed out.");
           }}
-        >
-          Sign out
-        </BoardActionButton>
+        />
       </>
     ),
-    [headerActions, navigate],
+    [headerActions],
   );
 
   return (

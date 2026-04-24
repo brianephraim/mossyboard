@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { Text } from "@tamagui/core";
+import { XStack, YStack } from "@tamagui/stacks";
 
-import { signOutUser } from "../../auth/client";
 import {
   refreshAuthSession,
   useAuthSession,
   useRequiresEmailVerification,
 } from "../../auth/session";
+import { AccountSignOutControl } from "../../features/auth/AccountSignOutControl";
+import { useAuthAnnounceOptional } from "../../features/auth/AuthAnnounceContext";
 import { trpc } from "../../trpc/client";
 import { BoardActionButton, BoardInlineNotice } from "./ui";
 import { CenteredBoardState } from "./access";
@@ -17,6 +20,7 @@ export function VerifyEmailScreen({
   redirectTo?: string;
 }>) {
   const navigate = useNavigate();
+  const announce = useAuthAnnounceOptional();
   const session = useAuthSession();
   const requiresEmailVerification = useRequiresEmailVerification();
   const [status, setStatus] = useState<string | null>(null);
@@ -25,9 +29,11 @@ export function VerifyEmailScreen({
   const sendVerification = trpc.authEmail.sendVerification.useMutation({
     onSuccess: () => {
       setStatus("Verification email sent.");
+      announce?.announce("Verification email sent.");
     },
     onError: () => {
-      setStatus("Could not send verification email.");
+      setStatus("We couldn't send the verification email. Try again.");
+      announce?.announce("We couldn't send the verification email. Try again.");
     },
   });
 
@@ -89,8 +95,8 @@ export function VerifyEmailScreen({
 
   return (
     <CenteredBoardState
-      title="Verify your email to enter the board"
-      description="This environment requires email verification before loading protected board content. Once you verify, refresh this screen and we’ll continue."
+      title="Verify your email to continue"
+      description="Check your inbox for a verification link. Once your email is verified, you can continue to your boards."
       actions={
         <>
           <BoardActionButton
@@ -104,27 +110,46 @@ export function VerifyEmailScreen({
           </BoardActionButton>
           <BoardActionButton
             onPress={() => {
-              void refreshAuthSession().then(() => {
-                setStatus("Verification status refreshed.");
+              void refreshAuthSession().then((user) => {
+                if (user?.emailVerified) {
+                  setStatus("Email verified. Redirecting.");
+                  announce?.announce("Email verified. Redirecting.");
+                } else {
+                  setStatus("We couldn't confirm your verification status. Try again.");
+                  announce?.announce("We couldn't confirm your verification status. Try again.");
+                }
               });
             }}
           >
             Refresh status
           </BoardActionButton>
-          <BoardActionButton
-            tone="ghost"
-            onPress={() => {
-              void signOutUser().then(() => {
-                void navigate({ to: "/auth", replace: true });
-              });
-            }}
-          >
-            Sign out
-          </BoardActionButton>
+          <AccountSignOutControl />
         </>
       }
     >
-      {status ? <BoardInlineNotice tone="success" message={status} /> : null}
+      <YStack gap="$3" width="100%">
+        <XStack gap="$2" flexWrap="wrap" alignItems="center">
+          <Text color="$boardTextMuted">Signed in as</Text>
+          <Text fontWeight="700" color="$boardHeading">
+            {session.user?.email ?? "this account"}
+          </Text>
+        </XStack>
+        <Text color="$boardTextMuted">
+          Open the verification email, confirm your address, then return here and refresh your
+          status.
+        </Text>
+        <Text color="$boardTextMuted">
+          You can keep this page open while you verify your email.
+        </Text>
+        {status ? (
+          <BoardInlineNotice
+            tone={
+              status.includes("couldn't") || status.includes("Could not") ? "danger" : "success"
+            }
+            message={status}
+          />
+        ) : null}
+      </YStack>
     </CenteredBoardState>
   );
 }
