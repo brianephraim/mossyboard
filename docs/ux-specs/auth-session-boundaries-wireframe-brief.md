@@ -187,7 +187,7 @@ When a protected area must appear for context, use a generic protected-shell stu
 - When verification is required, the gate is the only in-app destination available after auth until verification succeeds.
 - The session-expired dialog is for protected write failures only. It is not used for ordinary sign-in errors.
 - After session-expired read failures, the auth page must show the top-of-page expired-session alert.
-- Sign-out needs to be visible in protected contexts, but its final placement inside the future board shell is still open for design exploration.
+- Sign-out needs to be visible in protected contexts. The finalized protected-shell placement is now defined in [`docs/ux-specs/board-shell-and-board-loading-states.md`](./board-shell-and-board-loading-states.md).
 
 ## 10. Responsive Notes
 
@@ -221,13 +221,11 @@ When a protected area must appear for context, use a generic protected-shell stu
 
 - Visual treatment of the auth mode switch: segmented control, tabs, or another clearly accessible pattern
 - Whether the public landing includes a lightweight illustration, a text-only hero, or simple product iconography
-- Exact visual placement of the reminder banner inside the future protected shell
-- Exact treatment of the sign-out affordance in protected contexts while the board shell remains unspecified
+- Whether the generic protected-shell stub in auth wireframes should feel more app-like or more neutral now that the real board shell is defined elsewhere
 - How prominent the signed-in email summary should be on the verification-required gate
 
 ## 14. Open Design Questions
 
 1. Should the public landing feel more like a minimal utility page or a slightly more expressive product introduction?
 2. Should the auth mode switch read more like tabs or more like stacked actions for better small-screen clarity?
-3. Where should the verification reminder banner sit within the future protected shell: top-of-page, under the nav, or inline near the main content start?
-4. Should the verification-required gate use lightweight explanatory illustration, or stay entirely text-first?
+3. Should the verification-required gate use lightweight explanatory illustration, or stay entirely text-first?

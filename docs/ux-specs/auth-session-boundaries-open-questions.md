@@ -35,16 +35,11 @@ These were decided after the dependency interview and are recorded in [`docs/fro
 
 ## 3. Future-Slice Coordination Questions
 
-### Question: Where should the reminder banner live inside the future protected shell?
+### Resolved in later slice: protected-shell placement
 
-- Current assumption: top-level protected shell integration point
-- Status: open
-- Blocking: no for this slice's documentation, yes for polished board-shell wireframes later
-
-### Question: Where should the persistent sign-out affordance live in the eventual protected shell?
-
-- Current assumption: accessible from any protected context, exact placement deferred
-- Status: open
+- Reminder-banner placement is now defined in [`docs/ux-specs/board-shell-and-board-loading-states.md`](./board-shell-and-board-loading-states.md) as below the protected shell header.
+- Protected-context sign-out placement is now defined in [`docs/ux-specs/board-shell-and-board-loading-states.md`](./board-shell-and-board-loading-states.md) as a persistent shell-header action.
+- Status: resolved
 - Blocking: no
 
 ## 4. Tracking Summary
@@ -52,4 +47,4 @@ These were decided after the dependency interview and are recorded in [`docs/fro
 - Blocking questions: none
 - Non-blocking product questions: 2
 - Non-blocking engineering sign-offs: 0
-- Non-blocking future-shell coordination questions: 2
+- Non-blocking future-shell coordination questions: 0

@@ -17,8 +17,7 @@
 
 ### Wireframe ambiguity
 
-- The eventual visual placement of the reminder banner inside the future protected shell remains intentionally open.
-- The eventual visual placement of the long-term sign-out affordance inside the future board shell remains intentionally open.
+- none that block the auth/session slice; protected-shell placement is now defined in [`docs/ux-specs/board-shell-and-board-loading-states.md`](./board-shell-and-board-loading-states.md)
 
 ### Frontend ambiguity
 
@@ -50,4 +49,4 @@ The package is concrete enough for:
 
 - Install the approved auth/frontend dependencies intentionally when implementation begins: `react-hook-form` and `@tamagui/tabs`
 - Keep `REQUIRE_EMAIL_VERIFICATION` as the server-truth contract
-- Carry the open shell-placement questions forward into the later board-shell slice instead of solving them implicitly here
+- Keep the resolved protected-shell placement aligned with [`docs/ux-specs/board-shell-and-board-loading-states.md`](./board-shell-and-board-loading-states.md) if the auth surfaces are revised later

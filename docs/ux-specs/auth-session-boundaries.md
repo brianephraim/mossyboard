@@ -82,7 +82,7 @@ Enable a user to reliably start or recover an authenticated Kanban session and r
 - When the verification-required flag is off, unverified users can access boards and instead see a persistent reminder banner until verified or dismissed for the current session.
 - When the verification-required flag is on, unverified users can authenticate successfully but are routed to `/verify-email` instead of protected board content until verification is complete.
 - Session-expired recovery can temporarily store a restorable local draft in `sessionStorage` when the user is interrupted during a protected write flow.
-- Later slices must define the actual board shell, account menu placement, and toast infrastructure referenced here.
+- The actual protected board shell is defined in [`docs/ux-specs/board-shell-and-board-loading-states.md`](./board-shell-and-board-loading-states.md). Later slices may still define account-menu/profile treatment and toast infrastructure.
 
 ## 7. Data-Scale Assumptions and Limits
 

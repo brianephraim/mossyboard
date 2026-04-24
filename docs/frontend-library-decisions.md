@@ -6,14 +6,22 @@ These are the current defaults unless a later slice documents a deliberate overr
 
 ## Approved Decisions
 
+### Forms
+
+- Preferred form library for the current documented product slices: `react-hook-form`
+
+Notes:
+
+- Approved during the auth/session dependency review for [`docs/ux-specs/auth-session-boundaries.md`](./ux-specs/auth-session-boundaries.md).
+- Reused for the create-board dialog in [`docs/ux-specs/board-shell-and-board-loading-states.md`](./ux-specs/board-shell-and-board-loading-states.md).
+
 ### Auth and session boundaries
 
-- Forms: `react-hook-form`
 - Auth mode switch between `signin` and `signup`: `@tamagui/tabs`
 
 Notes:
 
-- These choices were made after the auth/session dependency review for [`docs/ux-specs/auth-session-boundaries.md`](./ux-specs/auth-session-boundaries.md).
+- This choice was made after the auth/session dependency review for [`docs/ux-specs/auth-session-boundaries.md`](./ux-specs/auth-session-boundaries.md).
 - Keep the auth route URL as the source of truth even if tabs are used for presentation.
 
 ### Drag-and-drop for cards and columns
