@@ -99,6 +99,7 @@ Ask the agent to extract:
 - [ ] accessibility constraints
 - [ ] mobile/responsive expectations
 - [ ] known backend constraints
+- [ ] data-scale expectations and limits (max items per collection, max field lengths, pagination/virtualization thresholds, large-board behavior)
 - [ ] known unknowns
 
 Expected output:
@@ -234,11 +235,17 @@ For each screen or interaction surface, require the agent to specify:
 - [ ] layout regions
 - [ ] visible content blocks
 - [ ] interactive controls
-- [ ] control labels
+- [ ] control labels (exact strings, not paraphrases)
 - [ ] default values
+- [ ] placeholder, helper, and microcopy strings
+- [ ] empty-state copy
+- [ ] error message copy per validation or failure case
+- [ ] success confirmation copy
+- [ ] live-region announcement strings for asynchronous changes
 - [ ] validation rules
 - [ ] enabled and disabled states
 - [ ] loading, empty, success, and error behavior
+- [ ] data-scale limits relevant to this surface (max field length, max collection size before virtualization or pagination kicks in, truncation rules)
 - [ ] keyboard behavior
 - [ ] focus behavior
 - [ ] accessibility labels or announcements where relevant
@@ -288,6 +295,8 @@ For the Kanban app, this is where the agent should specify things like:
 - [ ] optimistic UI expectations
 - [ ] live announcements for important updates
 - [ ] modal open/close/focus return behavior
+- [ ] undo and redo behavior (which actions are undoable, undo scope, undo discoverability via toast or shortcut, undo time window, what happens when undo conflicts with a concurrent change)
+- [ ] global microcopy and tone rules (sentence case vs title case, how errors are phrased, how destructive confirmations are phrased)
 
 Expected output:
 
@@ -573,16 +582,19 @@ Use this structure for the actual UX spec document:
 4. In-scope tasks
 5. Out-of-scope tasks
 6. Assumptions and dependencies
-7. Workflow definitions
-8. Screen and state inventory
-9. Detailed surface specs
-10. Cross-screen interaction rules
-11. Data visible to the user
-12. Validation and error handling
-13. Accessibility requirements
-14. Responsive behavior
-15. Open questions
-16. Acceptance criteria
+7. Data-scale assumptions and limits
+8. Workflow definitions
+9. Screen and state inventory
+10. Detailed surface specs
+11. Cross-screen interaction rules
+12. Undo and redo rules
+13. Microcopy, tone, and announcement strings
+14. Data visible to the user
+15. Validation and error handling
+16. Accessibility requirements
+17. Responsive behavior
+18. Open questions
+19. Acceptance criteria
 
 ---
 
@@ -615,6 +627,9 @@ The UX spec is ready only when all of the following are true:
 - [ ] every modal, panel, or overlay has open, close, focus, and keyboard behavior
 - [ ] every drag interaction has a non-drag keyboard alternative
 - [ ] every form field has labels, defaults, validation, and failure behavior
+- [ ] every user-visible string (labels, placeholders, empty-state copy, error messages, success confirmations, live announcements) is written verbatim, not paraphrased
+- [ ] data-scale limits (max field lengths, max collection sizes, virtualization or pagination thresholds) are stated for every surface that can grow
+- [ ] every user-initiated mutation states whether it is undoable, and undoable mutations specify undo discoverability, time window, and conflict behavior
 - [ ] mobile behavior is described, not assumed
 - [ ] backend-dependent behaviors are called out explicitly
 - [ ] conflict-prone interactions describe what the user sees when a conflict happens
@@ -627,14 +642,15 @@ The UX spec is ready only when all of the following are true:
 
 Because the app is still mostly a scaffold, author UX specs in this order:
 
-1. Board shell and board loading states
-2. Card create and edit flows
-3. Card detail panel or modal
-4. Card move and reorder behavior
-5. Column create and reorder behavior
-6. Filters and grouping
-7. Empty states and first-run onboarding
-8. Mobile adaptations
+1. Authentication and session boundaries (sign-in, sign-out, session-expired-mid-action, unauthenticated landing, post-sign-in destination)
+2. Board shell and board loading states
+3. Card create and edit flows
+4. Card detail panel or modal
+5. Card move and reorder behavior
+6. Column create and reorder behavior
+7. Filters and grouping
+8. Empty states and first-run onboarding
+9. Mobile adaptations
 
 This reduces the chance of designing advanced states before the core board interaction model is stable.
 
