@@ -10,6 +10,44 @@ Create one precise UX specification document that can act as the source of truth
 
 The UX spec should describe product behavior clearly enough that downstream agents do not need to invent important details.
 
+## Current authoring progress
+
+### Slice: Authentication and session boundaries
+
+Artifacts
+
+- [x] canonical UX spec: [`docs/ux-specs/auth-session-boundaries.md`](./ux-specs/auth-session-boundaries.md)
+- [x] wireframe brief: [`docs/ux-specs/auth-session-boundaries-wireframe-brief.md`](./ux-specs/auth-session-boundaries-wireframe-brief.md)
+- [x] frontend dependency exploration memo: [`docs/ux-specs/auth-session-boundaries-frontend-dependency-exploration.md`](./ux-specs/auth-session-boundaries-frontend-dependency-exploration.md)
+- [x] frontend implementation brief: [`docs/ux-specs/auth-session-boundaries-frontend-build-brief.md`](./ux-specs/auth-session-boundaries-frontend-build-brief.md)
+- [x] backend implementation brief: [`docs/ux-specs/auth-session-boundaries-backend-build-brief.md`](./ux-specs/auth-session-boundaries-backend-build-brief.md)
+- [x] open-questions log as a separate sibling artifact: [`docs/ux-specs/auth-session-boundaries-open-questions.md`](./ux-specs/auth-session-boundaries-open-questions.md)
+- [x] readiness audit: [`docs/ux-specs/auth-session-boundaries-readiness-audit.md`](./ux-specs/auth-session-boundaries-readiness-audit.md)
+
+Workflow status
+
+- [x] Phase 1: constrain the problem
+- [x] Phase 2: define the slice being specified
+- [x] Phase 3: define user jobs and flows
+- [x] Phase 4: build the screen inventory
+- [x] Phase 5: turn each screen into a precise UX spec
+- [x] Phase 6: define cross-screen interaction rules
+- [x] Phase 7: add implementation-facing annotations
+- [x] Phase 8: derive the wireframe brief
+- [x] Phase 9: explore frontend library decisions
+- [x] Phase 10: derive the frontend build brief
+- [x] Phase 11: derive the backend build brief
+- [x] Phase 12: run ambiguity and completeness checks
+
+Inputs used for this slice
+
+- [x] [`AGENTS.md`](../AGENTS.md)
+- [x] [`docs/kanban-app-requirements.md`](./kanban-app-requirements.md)
+- [x] [`docs/app-architecture-overview.md`](./app-architecture-overview.md)
+- [x] `package.json`
+- [ ] existing screenshots, sketches, or reference products
+- [x] the specific feature slice being defined
+
 ---
 
 ## Why this exists
