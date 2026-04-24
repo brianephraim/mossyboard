@@ -21,7 +21,7 @@ The full docs index is at [`docs/README.md`](./README.md). The slice-by-slice UX
   - `/boards/$boardId`
   - create board
   - create, edit, move, reorder, and delete cards
-  - create and rename columns (rename currently via modal — tracked by Session 04)
+  - create and rename columns (rename is inline on the column header)
   - subtasks
   - board filters, grouping, and list mode
   - board rename and delete
@@ -32,11 +32,11 @@ The full docs index is at [`docs/README.md`](./README.md). The slice-by-slice UX
 
 Execute top-down. Each session links to the self-contained checklist an agent should pick up.
 
-- [ ] **Session 01 — Auth frontend**: [`next-steps/01-auth-frontend.md`](./next-steps/01-auth-frontend.md)
-- [ ] **Session 02 — Signed-in browser QA**: [`next-steps/02-signed-in-qa.md`](./next-steps/02-signed-in-qa.md)
-- [ ] **Session 03 — Frontend tests for board flows**: [`next-steps/03-frontend-tests.md`](./next-steps/03-frontend-tests.md)
-- [ ] **Session 04 — Inline column rename**: [`next-steps/04-inline-column-rename.md`](./next-steps/04-inline-column-rename.md)
-- [ ] **Session 05 — Bundle weight on the board route**: [`next-steps/05-bundle-split.md`](./next-steps/05-bundle-split.md)
+- [x] **Session 01 — Auth frontend**: [`next-steps/01-auth-frontend.md`](./next-steps/01-auth-frontend.md)
+- [ ] **Session 02 — Signed-in browser QA**: [`next-steps/02-signed-in-qa.md`](./next-steps/02-signed-in-qa.md) (blocked: missing `AGENT_LOGIN_EMAIL` / `AGENT_LOGIN_PASSWORD` in `.env` — see [`kanban-frontend-implementation-blockers.md`](./kanban-frontend-implementation-blockers.md))
+- [x] **Session 03 — Frontend tests for board flows**: [`next-steps/03-frontend-tests.md`](./next-steps/03-frontend-tests.md)
+- [x] **Session 04 — Inline column rename**: [`next-steps/04-inline-column-rename.md`](./next-steps/04-inline-column-rename.md)
+- [x] **Session 05 — Bundle weight on the board route**: [`next-steps/05-bundle-split.md`](./next-steps/05-bundle-split.md)
 - [ ] **Session 06 — Visual and interaction polish**: [`next-steps/06-polish.md`](./next-steps/06-polish.md)
 
 ## Why This Order
@@ -52,11 +52,13 @@ Execute top-down. Each session links to the self-contained checklist an agent sh
 
 The next milestone is complete when:
 
-- [ ] Auth frontend matches the canonical auth UX spec
+- [x] Auth frontend matches the canonical auth UX spec
 - [ ] Signed-in board flows have been browser-verified under both `VITE_PUBLIC_REQUIRE_EMAIL_VERIFICATION` modes
-- [ ] Board route protection and key board interactions have frontend test coverage
-- [ ] Column rename is inline, not modal
-- [ ] `npm run build` is green and the board-route chunk warning is gone or materially reduced
-- [ ] [`kanban-frontend-implementation-checklist.md`](./kanban-frontend-implementation-checklist.md) reflects those completions
+- [x] Board route protection and key board interactions have frontend test coverage
+- [x] Column rename is inline, not modal
+- [x] `npm run build` is green and the board-route chunk warning is gone or materially reduced
+- [x] [`kanban-frontend-implementation-checklist.md`](./kanban-frontend-implementation-checklist.md) reflects those completions
+
+Session 02 remains open until agent browser credentials exist in `.env`; see [`kanban-frontend-implementation-blockers.md`](./kanban-frontend-implementation-blockers.md).
 
 Polish work (Session 06) is explicitly **not** part of this milestone; it is the first work _after_ the milestone closes.

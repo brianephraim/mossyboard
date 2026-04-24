@@ -49,7 +49,7 @@ This checklist turns the current frontend briefs into an implementation-ordered 
 
 - [x] Build board-end add-column flow
 - [x] Build add-column-after flow
-- [ ] Build inline column rename flow
+- [x] Build inline column rename flow
 - [x] Build board settings dialog
 - [x] Build board rename flow
 - [x] Build board delete confirmation and `/boards` post-delete status
@@ -66,14 +66,14 @@ This checklist turns the current frontend briefs into an implementation-ordered 
 
 ## 8. Verification
 
-- [ ] Add frontend coverage for route protection and verification-gate behavior
-- [ ] Add component or interaction tests for key board flows
+- [x] Add frontend coverage for route protection and verification-gate behavior (`src/features/boards/BoardRouteGate.test.tsx`)
+- [x] Add component or interaction tests for key board flows (`src/features/boards/BoardsIndexScreen.test.tsx`, `src/features/boards/BoardCanvas.inline-rename.test.tsx`, `src/features/auth/SignInForm.test.tsx`)
 - [x] Run targeted tests during each milestone
 - [x] Run a broad test pass at the end
 - [x] Run `npm run build`
 
 ## 9. Blocker Handling
 
-- [ ] If a blocker appears, document it in `docs/kanban-frontend-implementation-blockers.md`
-- [ ] Move to the next non-blocked milestone when possible
+- [x] If a blocker appears, document it in `docs/kanban-frontend-implementation-blockers.md`
+- [x] Move to the next non-blocked milestone when possible
 - [ ] Return to unresolved blockers before finishing

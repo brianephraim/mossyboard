@@ -171,3 +171,23 @@
 - **step**: add frontend dependency exploration gate to UX meta-plan
 - **outcome**: done
 - **reason**: updated `docs/ux-spec-meta-plan.md` to require a frontend library exploration memo and human sign-off for decisions such as drag-and-drop, form handling, and other high-impact frontend dependencies before finalizing the frontend build brief
+
+## 2026-04-24T19:35:00Z
+
+- **session**: next milestone (`docs/kanban-next-steps.md` Sessions 01–05)
+- **step**: start
+- **outcome**: in progress
+- **reason**: landing Session 03 tests, Session 04 inline column rename, Session 05 bundle split, and doc checklist updates
+
+## 2026-04-24T19:35:01Z
+
+- **BLOCKED**: Session 02 signed-in browser QA — `.env` has no `AGENT_LOGIN_EMAIL` / `AGENT_LOGIN_PASSWORD` (see `docs/kanban-frontend-implementation-blockers.md`); skipped per `docs/next-steps/02-signed-in-qa.md` preconditions
+
+## 2026-04-24T19:42:00Z
+
+- **session**: next milestone summary (`docs/kanban-next-steps.md` Sessions 01–05)
+- **outcome**: partial — Session 02 not executed in browser (credentials missing)
+- **completed**: Session 01 (already on branch), Session 03 (frontend tests), Session 04 (inline column rename), Session 05 (lazy board detail + Rollup manualChunks)
+- **partial / blocked**: Session 02 — signed-in QA; see `docs/kanban-frontend-implementation-blockers.md`
+- **head**: HEAD_PLACEHOLDER
+- **recommendations before Session 06**: add `AGENT_LOGIN_EMAIL` / `AGENT_LOGIN_PASSWORD` to `.env`, complete Session 02 under both `VITE_PUBLIC_REQUIRE_EMAIL_VERIFICATION` values, tick the signed-in milestone checkbox in `docs/kanban-next-steps.md`, then open Session 06 polish
