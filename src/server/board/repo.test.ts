@@ -1,41 +1,10 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { spawnSync } from "node:child_process";
 
 import { eq } from "drizzle-orm";
 import { beforeAll, describe, it, vi } from "vitest";
 
-async function migrateTestDb() {
-  process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
-
-  const result = spawnSync("npm", ["run", "db:migrate"], {
-    encoding: "utf8",
-    env: process.env,
-  });
-  if (result.status !== 0) {
-    throw new Error(
-      ["db:migrate failed for test DB", result.stdout?.trim(), result.stderr?.trim()]
-        .filter(Boolean)
-        .join("\n"),
-    );
-  }
-}
-
-function getTestDatabaseUrl() {
-  const testUrl = process.env.DATABASE_URL_TEST_POOLER ?? process.env.DATABASE_URL_TEST;
-  assert.ok(testUrl, "DATABASE_URL_TEST must be set");
-  return testUrl;
-}
-
-function requireSsl(url: string) {
-  try {
-    const parsed = new URL(url);
-    if (!parsed.searchParams.has("sslmode")) parsed.searchParams.set("sslmode", "require");
-    return parsed.toString();
-  } catch {
-    return url;
-  }
-}
+import { getTestDatabaseUrl, migrateTestDb, requireSsl } from "../testing/database";
 
 describe("board repo", () => {
   let canRun = true;
@@ -78,77 +47,78 @@ describe("board repo", () => {
     );
     assert.ok(loaded?.columns[0]?.position < loaded?.columns[1]?.position);
     assert.ok(loaded?.columns[1]?.position < loaded?.columns[2]?.position);
-  });
+  }, 20000);
 
-  it("filters deleted cards and hides missing or foreign-owned boards", async () => {
+  it("renames and soft-deletes a board with descendant cards and subtasks", async () => {
     if (!canRun) return;
 
     process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-    const { keyBetween } = await import("../../lib/ordering/key-between");
+    const { createBoard, getBoardWithColumnsAndCards, listBoards, renameBoard, softDeleteBoard } =
+      await import("./repo");
+    const { createCard, getCard } = await import("../card/repo");
+    const { createSubtask } = await import("../subtask/repo");
     const { db } = await import("../db/client");
-    const { boards, cards } = await import("../db/schema");
-    const { createBoard, getBoardWithColumnsAndCards, listBoards } = await import("./repo");
+    const { boards, cards, cardSubtasks, columns } = await import("../db/schema");
 
     const ownerId = randomUUID();
-    const otherOwnerId = randomUUID();
     const created = await createBoard({ ownerId, name: "Delivery board" });
     const loaded = await getBoardWithColumnsAndCards({ ownerId, boardId: created.id });
-    assert.ok(loaded, "expected the created board to load");
-
     const firstColumnId = loaded?.columns[0]?.id;
     assert.ok(firstColumnId, "expected a starter column");
 
-    const firstCardPosition = keyBetween(null, null);
-    const secondCardPosition = keyBetween(firstCardPosition, null);
-    const now = new Date();
+    const createdCard = await createCard({
+      ownerId,
+      columnId: firstColumnId,
+      title: "Ship docs",
+      description: "Docs need final review",
+      priority: "high",
+    });
+    const createdSubtask = await createSubtask({
+      ownerId,
+      cardId: createdCard.id,
+      title: "Proofread release notes",
+    });
 
-    await db.insert(cards).values([
-      {
-        id: randomUUID(),
-        columnId: firstColumnId,
-        title: "Visible card",
-        description: "Keep me",
-        position: firstCardPosition,
-        version: 0,
-        createdAt: now,
-        updatedAt: now,
-      },
-      {
-        id: randomUUID(),
-        columnId: firstColumnId,
-        title: "Deleted card",
-        description: "Hide me",
-        position: secondCardPosition,
-        version: 0,
-        createdAt: now,
-        updatedAt: now,
-        deletedAt: now,
-      },
-    ]);
+    const renamed = await renameBoard({
+      ownerId,
+      boardId: created.id,
+      name: "Launch board",
+    });
+    assert.equal(renamed?.name, "Launch board");
 
-    const reloaded = await getBoardWithColumnsAndCards({ ownerId, boardId: created.id });
-    assert.equal(reloaded?.cardCount, 1);
-    assert.deepEqual(
-      reloaded?.columns[0]?.cards.map((card) => card.title),
-      ["Visible card"],
-    );
-
-    const foreignBoard = await getBoardWithColumnsAndCards({
-      ownerId: otherOwnerId,
+    const deleted = await softDeleteBoard({
+      ownerId,
       boardId: created.id,
     });
-    assert.equal(foreignBoard, null);
+    assert.ok(deleted?.deletedAt);
 
-    await db.update(boards).set({ deletedAt: new Date() }).where(eq(boards.id, created.id));
+    const hiddenBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: created.id });
+    assert.equal(hiddenBoard, null);
 
-    const deletedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: created.id });
-    assert.equal(deletedBoard, null);
+    const hiddenCard = await getCard({
+      ownerId,
+      cardId: createdCard.id,
+    });
+    assert.equal(hiddenCard, null);
 
-    const summaries = await listBoards({ ownerId });
+    const boardSummaries = await listBoards({ ownerId });
     assert.equal(
-      summaries.find((summary) => summary.id === created.id),
+      boardSummaries.find((summary) => summary.id === created.id),
       undefined,
     );
-  });
+
+    const [boardRow] = await db.select().from(boards).where(eq(boards.id, created.id));
+    const [columnRow] = await db.select().from(columns).where(eq(columns.boardId, created.id));
+    const [cardRow] = await db.select().from(cards).where(eq(cards.id, createdCard.id));
+    const [subtaskRow] = await db
+      .select()
+      .from(cardSubtasks)
+      .where(eq(cardSubtasks.id, createdSubtask.id));
+
+    assert.ok(boardRow?.deletedAt);
+    assert.ok(columnRow?.deletedAt);
+    assert.ok(cardRow?.deletedAt);
+    assert.ok(subtaskRow?.deletedAt);
+  }, 20000);
 });

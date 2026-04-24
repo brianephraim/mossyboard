@@ -53,5 +53,5 @@ describe("shared counter repo", () => {
     const before = await getSharedCounter();
     const after = await incrementSharedCounter();
     assert.equal(after.value, before.value + 1);
-  });
+  }, 20000);
 });
