@@ -1,0 +1,344 @@
+import type { ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Input } from "@tamagui/input";
+import { Stack, Text, useMedia } from "@tamagui/core";
+import { XStack, YStack } from "@tamagui/stacks";
+
+import {
+  refreshAuthSession,
+  useAuthSession,
+  useRequiresEmailVerification,
+} from "../../auth/session";
+import { signOutUser } from "../../auth/client";
+import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
+import { trpc } from "../../trpc/client";
+import {
+  BoardActionButton,
+  BoardInlineNotice,
+  BoardLiveRegion,
+  BoardPageChrome,
+  BoardPill,
+  BoardResponsiveColumns,
+  BoardSectionHeading,
+  BoardSurface,
+} from "./ui";
+
+type CreateBoardForm = {
+  name: string;
+};
+
+type BoardShellProps = {
+  currentBoardId?: string;
+  title: string;
+  subtitle?: string;
+  announcement?: string | null;
+  headerActions?: ReactNode;
+  renderContent: (controls: { openCreateBoard: () => void }) => ReactNode;
+};
+
+export function BoardShell({
+  currentBoardId,
+  title,
+  subtitle,
+  announcement,
+  headerActions,
+  renderContent,
+}: Readonly<BoardShellProps>) {
+  const media = useMedia();
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
+  const session = useAuthSession();
+  const requiresEmailVerification = useRequiresEmailVerification();
+  const [createBoardOpen, setCreateBoardOpen] = useState(false);
+  const [shellAnnouncement, setShellAnnouncement] = useState<string | null>(null);
+  const boardsQuery = trpc.board.list.useQuery({});
+  const createBoardForm = useForm<CreateBoardForm>({
+    defaultValues: {
+      name: "",
+    },
+  });
+
+  const createBoard = trpc.board.create.useMutation({
+    onSuccess: async ({ boardId }) => {
+      createBoardForm.reset({ name: "" });
+      setCreateBoardOpen(false);
+      setShellAnnouncement("Board created.");
+      await utils.board.list.invalidate();
+      void navigate({ to: "/boards/$boardId", params: { boardId } });
+    },
+  });
+
+  const sendVerification = trpc.authEmail.sendVerification.useMutation({
+    onSuccess: () => {
+      setShellAnnouncement("Verification email sent.");
+    },
+    onError: () => {
+      setShellAnnouncement("Verification email failed.");
+    },
+  });
+
+  useEffect(() => {
+    if (!createBoardOpen) {
+      createBoardForm.reset({ name: "" });
+    }
+  }, [createBoardForm, createBoardOpen]);
+
+  const verificationBanner =
+    session.user && !session.user.emailVerified && !requiresEmailVerification ? (
+      <BoardInlineNotice
+        tone="warning"
+        message="Your email is not verified yet. You can keep working, but some environments may require verification before entering the board."
+        actions={
+          <>
+            <BoardActionButton
+              tone="ghost"
+              disabled={sendVerification.isPending}
+              onPress={() => {
+                void sendVerification.mutateAsync({});
+              }}
+            >
+              {sendVerification.isPending ? "Sending…" : "Send verification email"}
+            </BoardActionButton>
+            <BoardActionButton
+              tone="ghost"
+              onPress={() => {
+                void refreshAuthSession().then(() => {
+                  setShellAnnouncement("Verification status refreshed.");
+                });
+              }}
+            >
+              Refresh status
+            </BoardActionButton>
+          </>
+        }
+      />
+    ) : null;
+
+  const boardList = boardsQuery.data?.boards ?? [];
+  const boardRail = (
+    <BoardSurface padding="$4">
+      <YStack gap="$4" minHeight={media.maxMd ? "auto" : "calc(100vh - 32px)"}>
+        <YStack gap="$3">
+          <XStack alignItems="center" gap="$3">
+            <Stack
+              width={48}
+              height={48}
+              borderRadius={9999}
+              backgroundColor="$boardAccentSoft"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <Text color="$boardAccent" fontSize="$6" fontWeight="800" aria-hidden>
+                ↟
+              </Text>
+            </Stack>
+            <YStack gap="$1">
+              <Text fontSize="$9" fontWeight="800" color="$boardHeading">
+                Mossyboard
+              </Text>
+              <Text color="$boardTextMuted">Steady, green, and focused.</Text>
+            </YStack>
+          </XStack>
+
+          <BoardActionButton tone="accent" onPress={() => setCreateBoardOpen(true)}>
+            + New board
+          </BoardActionButton>
+        </YStack>
+
+        <YStack gap="$3">
+          <Text
+            textTransform="uppercase"
+            letterSpacing={1.4}
+            fontSize="$2"
+            color="$boardTextSubtle"
+          >
+            Boards
+          </Text>
+
+          {boardsQuery.isLoading && boardList.length === 0 ? (
+            <Text color="$boardTextMuted">Loading boards…</Text>
+          ) : boardsQuery.isError && boardList.length === 0 ? (
+            <YStack gap="$2">
+              <Text color="$boardDangerText">Could not load your boards.</Text>
+              <BoardActionButton tone="ghost" onPress={() => void boardsQuery.refetch()}>
+                Retry
+              </BoardActionButton>
+            </YStack>
+          ) : boardList.length === 0 ? (
+            <Text color="$boardTextMuted">No boards yet. Create one to get moving.</Text>
+          ) : (
+            <YStack gap="$2">
+              {boardList.map((board) => {
+                const isCurrent = board.id === currentBoardId;
+
+                return (
+                  <Link key={board.id} to="/boards/$boardId" params={{ boardId: board.id }}>
+                    <XStack
+                      cursor="pointer"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      gap="$3"
+                      paddingHorizontal="$3"
+                      paddingVertical="$3"
+                      borderRadius="$8"
+                      backgroundColor={isCurrent ? "$boardAccentSoft" : "transparent"}
+                      borderWidth={1}
+                      borderColor={isCurrent ? "$boardAccentWash" : "transparent"}
+                      hoverStyle={{
+                        backgroundColor: "$boardAccentWash",
+                      }}
+                    >
+                      <YStack flex={1} gap="$1" minWidth={0}>
+                        <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
+                          {board.name}
+                        </Text>
+                        <Text color="$boardTextMuted" fontSize="$2">
+                          {board.columnCount} columns • {board.cardCount} cards
+                        </Text>
+                      </YStack>
+                      {isCurrent ? <BoardPill>Open</BoardPill> : null}
+                    </XStack>
+                  </Link>
+                );
+              })}
+            </YStack>
+          )}
+        </YStack>
+
+        <YStack marginTop="auto" gap="$3">
+          <BoardSurface padding="$4">
+            <YStack gap="$2">
+              <Text fontWeight="700" color="$boardHeading">
+                Stay grounded.
+              </Text>
+              <Text color="$boardTextMuted">
+                This first pass follows the repo mockup and keeps the board calm, readable, and
+                keyboard-friendly.
+              </Text>
+            </YStack>
+          </BoardSurface>
+
+          <BoardSurface padding="$4">
+            <YStack gap="$1">
+              <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
+                {session.user?.email ?? "Signed in"}
+              </Text>
+              <Text color="$boardTextMuted">
+                {session.user?.emailVerified ? "Verified account" : "Verification pending"}
+              </Text>
+            </YStack>
+          </BoardSurface>
+        </YStack>
+      </YStack>
+    </BoardSurface>
+  );
+
+  const headerControls = useMemo(
+    () => (
+      <>
+        <BoardActionButton tone="accent" onPress={() => setCreateBoardOpen(true)}>
+          Create board
+        </BoardActionButton>
+        {headerActions}
+        <BoardActionButton
+          tone="ghost"
+          onPress={() => {
+            void signOutUser().then(() => {
+              setShellAnnouncement("Signed out.");
+              void navigate({ to: "/auth", search: {} });
+            });
+          }}
+        >
+          Sign out
+        </BoardActionButton>
+      </>
+    ),
+    [headerActions, navigate],
+  );
+
+  return (
+    <BoardPageChrome>
+      <BoardLiveRegion message={shellAnnouncement ?? announcement ?? null} />
+      <BoardResponsiveColumns
+        rail={boardRail}
+        content={
+          <BoardSurface padding="$5">
+            <YStack gap="$5">
+              <BoardSectionHeading
+                eyebrow="Workspace"
+                title={title}
+                subtitle={subtitle}
+                actions={headerControls}
+              />
+              {verificationBanner}
+              {renderContent({
+                openCreateBoard: () => {
+                  setCreateBoardOpen(true);
+                },
+              })}
+            </YStack>
+          </BoardSurface>
+        }
+      />
+
+      <PrettyModalWrap
+        open={createBoardOpen}
+        onOpenChange={setCreateBoardOpen}
+        title="Create board"
+        description="Start with a new board and we’ll seed it with the default workflow columns."
+        footer={
+          <>
+            <BoardActionButton tone="ghost" onPress={() => setCreateBoardOpen(false)}>
+              Cancel
+            </BoardActionButton>
+            <BoardActionButton
+              tone="accent"
+              disabled={createBoard.isPending}
+              onPress={createBoardForm.handleSubmit(async (values) => {
+                await createBoard.mutateAsync(values);
+              })}
+            >
+              {createBoard.isPending ? "Creating…" : "Create board"}
+            </BoardActionButton>
+          </>
+        }
+      >
+        <YStack gap="$3">
+          <YStack tag="label" gap="$2">
+            <Text color="$boardHeading" fontWeight="600">
+              Board name
+            </Text>
+            <Controller
+              control={createBoardForm.control}
+              name="name"
+              rules={{
+                required: "Board name is required.",
+                minLength: { value: 1, message: "Board name is required." },
+                maxLength: { value: 80, message: "Keep the name under 80 characters." },
+              }}
+              render={({ field }) => (
+                <Input
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Product launch"
+                  autoFocus
+                  backgroundColor="$boardPanelSurfaceStrong"
+                  borderColor="$boardShellBorder"
+                />
+              )}
+            />
+          </YStack>
+          {createBoardForm.formState.errors.name ? (
+            <Text color="$boardDangerText">{createBoardForm.formState.errors.name.message}</Text>
+          ) : null}
+          {createBoard.error ? (
+            <Text color="$boardDangerText">{createBoard.error.message}</Text>
+          ) : null}
+        </YStack>
+      </PrettyModalWrap>
+    </BoardPageChrome>
+  );
+}

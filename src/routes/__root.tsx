@@ -1,8 +1,15 @@
 /// <reference types="vite/client" />
 import type { ReactNode } from "react";
-import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRoute,
+  useRouterState,
+} from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { PortalProvider } from "@tamagui/portal";
 
 import "../tamagui.css";
 
@@ -24,12 +31,20 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const shouldHideScaffoldNav =
+    pathname.startsWith("/boards") || pathname.startsWith("/verify-email");
+
   return (
     <RootDocument>
       <Providers>
         <TamaguiRootProvider>
-          <AppNav />
-          <Outlet />
+          <PortalProvider shouldAddRootHost>
+            {shouldHideScaffoldNav ? null : <AppNav />}
+            <Outlet />
+          </PortalProvider>
         </TamaguiRootProvider>
       </Providers>
     </RootDocument>
@@ -53,10 +68,9 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 
 function Providers({ children }: Readonly<{ children: ReactNode }>) {
   const [queryClient] = useState(() => new QueryClient());
-  useState(() => {
+  useEffect(() => {
     startAuthSession();
-    return null;
-  });
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

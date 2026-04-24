@@ -3,6 +3,7 @@ import { Text } from "@tamagui/core";
 import { XStack } from "@tamagui/stacks";
 
 const links = [
+  { to: "/boards", label: "Boards" },
   { to: "/", label: "Counter" },
   { to: "/tamagui-counter", label: "Tamagui counter" },
   { to: "/other-page", label: "Other page" },

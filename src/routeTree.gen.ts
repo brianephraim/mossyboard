@@ -9,12 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as TamaguiCounterRouteImport } from './routes/tamagui-counter'
 import { Route as OtherPageRouteImport } from './routes/other-page'
+import { Route as BoardsRouteImport } from './routes/boards'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BoardsBoardIdRouteImport } from './routes/boards.$boardId'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
 
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TamaguiCounterRoute = TamaguiCounterRouteImport.update({
   id: '/tamagui-counter',
   path: '/tamagui-counter',
@@ -23,6 +31,11 @@ const TamaguiCounterRoute = TamaguiCounterRouteImport.update({
 const OtherPageRoute = OtherPageRouteImport.update({
   id: '/other-page',
   path: '/other-page',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardsRoute = BoardsRouteImport.update({
+  id: '/boards',
+  path: '/boards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -35,6 +48,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BoardsBoardIdRoute = BoardsBoardIdRouteImport.update({
+  id: '/$boardId',
+  path: '/$boardId',
+  getParentRoute: () => BoardsRoute,
+} as any)
 const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   id: '/api/trpc/$',
   path: '/api/trpc/$',
@@ -44,49 +62,86 @@ const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/boards': typeof BoardsRouteWithChildren
   '/other-page': typeof OtherPageRoute
   '/tamagui-counter': typeof TamaguiCounterRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/boards/$boardId': typeof BoardsBoardIdRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/boards': typeof BoardsRouteWithChildren
   '/other-page': typeof OtherPageRoute
   '/tamagui-counter': typeof TamaguiCounterRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/boards/$boardId': typeof BoardsBoardIdRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/boards': typeof BoardsRouteWithChildren
   '/other-page': typeof OtherPageRoute
   '/tamagui-counter': typeof TamaguiCounterRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/boards/$boardId': typeof BoardsBoardIdRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/other-page' | '/tamagui-counter' | '/api/trpc/$'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/boards'
+    | '/other-page'
+    | '/tamagui-counter'
+    | '/verify-email'
+    | '/boards/$boardId'
+    | '/api/trpc/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/other-page' | '/tamagui-counter' | '/api/trpc/$'
+  to:
+    | '/'
+    | '/auth'
+    | '/boards'
+    | '/other-page'
+    | '/tamagui-counter'
+    | '/verify-email'
+    | '/boards/$boardId'
+    | '/api/trpc/$'
   id:
     | '__root__'
     | '/'
     | '/auth'
+    | '/boards'
     | '/other-page'
     | '/tamagui-counter'
+    | '/verify-email'
+    | '/boards/$boardId'
     | '/api/trpc/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  BoardsRoute: typeof BoardsRouteWithChildren
   OtherPageRoute: typeof OtherPageRoute
   TamaguiCounterRoute: typeof TamaguiCounterRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tamagui-counter': {
       id: '/tamagui-counter'
       path: '/tamagui-counter'
@@ -99,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/other-page'
       fullPath: '/other-page'
       preLoaderRoute: typeof OtherPageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/boards': {
+      id: '/boards'
+      path: '/boards'
+      fullPath: '/boards'
+      preLoaderRoute: typeof BoardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -115,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/boards/$boardId': {
+      id: '/boards/$boardId'
+      path: '/$boardId'
+      fullPath: '/boards/$boardId'
+      preLoaderRoute: typeof BoardsBoardIdRouteImport
+      parentRoute: typeof BoardsRoute
+    }
     '/api/trpc/$': {
       id: '/api/trpc/$'
       path: '/api/trpc/$'
@@ -125,11 +194,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface BoardsRouteChildren {
+  BoardsBoardIdRoute: typeof BoardsBoardIdRoute
+}
+
+const BoardsRouteChildren: BoardsRouteChildren = {
+  BoardsBoardIdRoute: BoardsBoardIdRoute,
+}
+
+const BoardsRouteWithChildren =
+  BoardsRoute._addFileChildren(BoardsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  BoardsRoute: BoardsRouteWithChildren,
   OtherPageRoute: OtherPageRoute,
   TamaguiCounterRoute: TamaguiCounterRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
 export const routeTree = rootRouteImport

@@ -23,19 +23,46 @@ const app = initializeApp({
 export const auth = getAuth(app);
 
 let started = false;
+let initialAuthResolved = false;
+const listeners = new Set<() => void>();
+let currentSnapshot = {
+  hasResolvedInitialAuth: initialAuthResolved,
+  isSignedIn: Boolean(auth.currentUser),
+  user: auth.currentUser,
+};
+
+function notifyAuthListeners() {
+  for (const listener of listeners) {
+    listener();
+  }
+}
+
+function updateAuthSnapshot(user: User | null) {
+  currentSnapshot = {
+    hasResolvedInitialAuth: initialAuthResolved,
+    isSignedIn: Boolean(user),
+    user,
+  };
+}
+
 export function startAuthSession() {
-  if (started) return;
+  if (started || typeof window === "undefined") return;
   started = true;
 
   void setPersistence(auth, browserLocalPersistence);
 
   onIdTokenChanged(auth, async (user) => {
-    if (!user) {
+    initialAuthResolved = true;
+    updateAuthSnapshot(user);
+
+    if (user) {
+      const token = await user.getIdToken();
+      setAuthToken(token);
+    } else {
       setAuthToken(null);
-      return;
     }
-    const token = await user.getIdToken();
-    setAuthToken(token);
+
+    notifyAuthListeners();
   });
 }
 
@@ -55,4 +82,36 @@ export async function signOutUser() {
 
 export function getUser(): User | null {
   return auth.currentUser;
+}
+
+export async function refreshUserSession() {
+  if (!auth.currentUser) {
+    updateAuthSnapshot(null);
+    return null;
+  }
+
+  await auth.currentUser.reload();
+  const refreshedUser = auth.currentUser;
+
+  if (!refreshedUser) {
+    setAuthToken(null);
+  } else {
+    const token = await refreshedUser.getIdToken(true);
+    setAuthToken(token);
+  }
+
+  updateAuthSnapshot(refreshedUser);
+  notifyAuthListeners();
+  return refreshedUser;
+}
+
+export function subscribeToAuthSession(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function getAuthSessionSnapshot() {
+  return currentSnapshot;
 }
