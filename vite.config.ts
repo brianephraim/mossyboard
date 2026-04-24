@@ -8,6 +8,35 @@ import { nitro } from "nitro/vite";
 import { logger } from "./src/server/logging/logger";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) {
+            return;
+          }
+
+          if (id.includes("@hello-pangea")) {
+            return "vendor-dnd";
+          }
+
+          if (id.includes("react-dom")) {
+            return "vendor-react-dom";
+          }
+
+          if (id.includes("react/") || id.endsWith("react/index.js")) {
+            return "vendor-react";
+          }
+
+          if (id.includes("@trpc")) {
+            return "vendor-trpc";
+          }
+
+          return;
+        },
+      },
+    },
+  },
   plugins: [
     {
       name: "kanban-pino-http-dev",
