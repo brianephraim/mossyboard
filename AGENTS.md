@@ -154,6 +154,7 @@ A skill is a set of local instructions to follow that is stored in a `SKILL.md` 
 ### Available skills
 
 - pretty-modal-wrap-enforcer: Enforce consistent modal implementation by requiring `src/Modal/PrettyModalWrap.tsx` for new dialogs and modal refactors. Use when a request adds, updates, debugs, or reviews modal UI/dialog overlays/popup flows. (file: skills/pretty-modal-wrap-enforcer/SKILL.md)
+- rhf-tamagui-forms: Standardize forms around `src/form` reusable RHF + Tamagui fields that bind by `name` through form context instead of inline `Controller` wiring. Use when a request adds, refactors, debugs, or reviews forms. (file: skills/rhf-tamagui-forms/SKILL.md)
 - test-writer: Write unit and E2E tests following project conventions (Vitest, node:assert/strict, @testing-library/react, Playwright). Use when a request adds, expands, debugs, or reviews tests. (file: skills/test-writer/SKILL.md)
 
 ### How to use skills
