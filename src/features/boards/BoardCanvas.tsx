@@ -275,8 +275,8 @@ function ColumnHeaderWithInlineRename({
   return (
     <YStack gap="$2">
       <div {...(dragHandleProps ?? {})} style={{ width: "100%" }}>
-        <XStack alignItems="flex-start" justifyContent="space-between" gap="$3">
-          <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
+        <YStack gap="$2">
+          <XStack alignItems="center" gap="$3" minWidth={0}>
             <Stack
               width={12}
               height={12}
@@ -293,8 +293,13 @@ function ColumnHeaderWithInlineRename({
                   <Input
                     id={`${labelId}-field`}
                     value={draft}
-                    onChangeText={setDraft}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setDraft(e.currentTarget.value)}
+                    onChange={(e) => {
+                      const event = e as unknown as {
+                        currentTarget?: { value?: string };
+                        nativeEvent?: { text?: string };
+                      };
+                      setDraft(event.currentTarget?.value ?? event.nativeEvent?.text ?? "");
+                    }}
                     disabled={saving}
                     autoFocus
                     aria-labelledby={labelId}
@@ -337,6 +342,7 @@ function ColumnHeaderWithInlineRename({
               </XStack>
             )}
           </XStack>
+
           {!editing ? (
             <XStack gap="$2" flexWrap="wrap">
               <BoardActionButton
@@ -372,7 +378,7 @@ function ColumnHeaderWithInlineRename({
               </BoardActionButton>
             </XStack>
           ) : null}
-        </XStack>
+        </YStack>
       </div>
     </YStack>
   );

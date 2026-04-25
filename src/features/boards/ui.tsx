@@ -73,7 +73,7 @@ function BoardBackdropArt() {
 export function BoardSurface({
   children,
   padding = "$5",
-}: Readonly<{ children: ReactNode; padding?: string }>) {
+}: Readonly<{ children: ReactNode; padding?: ComponentProps<typeof YStack>["padding"] }>) {
   return (
     <YStack
       backgroundColor="$boardShellSurface"
@@ -95,8 +95,8 @@ export function BoardPill({
   color = "$boardAccent",
 }: Readonly<{
   children: ReactNode;
-  backgroundColor?: string;
-  color?: string;
+  backgroundColor?: ComponentProps<typeof XStack>["backgroundColor"];
+  color?: ComponentProps<typeof Text>["color"];
 }>) {
   return (
     <XStack
@@ -115,7 +115,11 @@ export function BoardPill({
 }
 
 export function PriorityPill({ priority }: Readonly<{ priority: CardPriority }>) {
-  const meta = boardPriorityMeta[priority];
+  const meta = boardPriorityMeta[priority] as {
+    shortLabel: string;
+    backgroundColor: ComponentProps<typeof XStack>["backgroundColor"];
+    textColor: ComponentProps<typeof Text>["color"];
+  };
 
   return (
     <BoardPill backgroundColor={meta.backgroundColor} color={meta.textColor}>
@@ -176,7 +180,7 @@ export function BoardActionButton({
     tone?: "default" | "accent" | "danger" | "ghost";
   } & ComponentProps<typeof Button>
 >) {
-  const styles =
+  const styles = (
     tone === "accent"
       ? {
           backgroundColor: "$boardAccent",
@@ -193,7 +197,7 @@ export function BoardActionButton({
           }
         : tone === "ghost"
           ? {
-              backgroundColor: "transparent",
+              chromeless: true,
               color: "$boardTextMuted",
               borderColor: "$boardShellBorder",
               hoverStyle: { backgroundColor: "$boardAccentWash" },
@@ -203,11 +207,11 @@ export function BoardActionButton({
               color: "$boardHeading",
               borderColor: "$boardShellBorder",
               hoverStyle: { backgroundColor: "$boardAccentWash" },
-            };
+            }
+  ) satisfies ComponentProps<typeof Button>;
 
   return (
     <Button
-      type="button"
       size="$3"
       borderRadius="$10"
       borderWidth={1}
@@ -260,7 +264,7 @@ export function BoardInlineNotice({
   message: string;
   actions?: ReactNode;
 }>) {
-  const palette =
+  const palette = (
     tone === "warning"
       ? {
           backgroundColor: "$boardWarningBg",
@@ -277,7 +281,12 @@ export function BoardInlineNotice({
             backgroundColor: "$boardSuccessBg",
             color: "$boardSuccessText",
             borderColor: "rgba(47, 110, 61, 0.14)",
-          };
+          }
+  ) satisfies {
+    backgroundColor: ComponentProps<typeof XStack>["backgroundColor"];
+    color: ComponentProps<typeof Text>["color"];
+    borderColor: ComponentProps<typeof XStack>["borderColor"];
+  };
 
   return (
     <XStack
