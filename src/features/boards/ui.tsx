@@ -141,9 +141,16 @@ export function BoardSectionHeading({
   subtitle?: string;
   actions?: ReactNode;
 }>) {
+  const media = useMedia();
+
   return (
-    <XStack justifyContent="space-between" alignItems="flex-start" gap="$4" flexWrap="wrap">
-      <YStack gap="$2" maxWidth={760}>
+    <XStack
+      justifyContent="space-between"
+      alignItems="flex-start"
+      gap="$4"
+      flexWrap={media.maxSm ? "wrap" : "nowrap"}
+    >
+      <YStack gap="$2" maxWidth={760} flex={1} minWidth={0}>
         {eyebrow ? (
           <Text
             textTransform="uppercase"
@@ -168,7 +175,7 @@ export function BoardSectionHeading({
         ) : null}
       </YStack>
       {actions ? (
-        <XStack gap="$3" flexWrap="wrap" justifyContent="flex-end">
+        <XStack gap="$3" flexWrap="wrap" justifyContent="flex-end" flexShrink={0}>
           {actions}
         </XStack>
       ) : null}

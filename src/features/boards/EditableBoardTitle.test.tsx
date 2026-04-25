@@ -19,9 +19,8 @@ describe("EditableBoardTitle", () => {
       </TamaguiRootProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /edit board title/i }));
-
     const field = screen.getByRole("textbox", { name: /board title/i });
+    fireEvent.focus(field);
     assert.equal(document.activeElement, field);
     fireEvent.change(field, { target: { value: "  Renamed roadmap  " } });
     fireEvent.blur(field);
@@ -40,12 +39,11 @@ describe("EditableBoardTitle", () => {
       </TamaguiRootProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /edit board title/i }));
     const field = screen.getByRole("textbox", { name: /board title/i });
+    fireEvent.focus(field);
     fireEvent.change(field, { target: { value: "   " } });
     fireEvent.blur(field);
 
-    screen.getByRole("button", { name: /edit board title/i });
     expect(onSave).not.toHaveBeenCalled();
   });
 
@@ -58,12 +56,11 @@ describe("EditableBoardTitle", () => {
       </TamaguiRootProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /edit board title/i }));
     const field = screen.getByRole("textbox", { name: /board title/i });
+    fireEvent.focus(field);
     fireEvent.change(field, { target: { value: "Discarded" } });
     fireEvent.keyDown(field, { key: "Escape" });
 
-    screen.getByRole("button", { name: /edit board title/i });
     expect(onSave).not.toHaveBeenCalled();
   });
 });
