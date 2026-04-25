@@ -68,11 +68,11 @@ function RootComponent() {
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   // TanStack Start requires the HTML document shell to be rendered by the root route.
   return (
-    <html lang="en">
+    <html lang="en" style={{ margin: 0 }}>
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body style={{ margin: 0, padding: 0 }}>
         {children}
         <Scripts />
       </body>

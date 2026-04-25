@@ -13,7 +13,12 @@ const pageBackground =
 export function BoardPageChrome({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <Theme name="light">
-      <YStack minHeight="100vh" backgroundImage={pageBackground} position="relative">
+      <YStack
+        minHeight="100vh"
+        backgroundImage={pageBackground}
+        position="relative"
+        overflow="hidden"
+      >
         <BoardBackdropArt />
         <YStack position="relative" zIndex={1} minHeight="100vh">
           {children}
