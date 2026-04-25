@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 
 import {
+  getFilteredColumnPlacement,
   getPriorityGroupDroppableId,
   getPriorityGroupPlacement,
   parsePriorityGroupDroppableId,
@@ -12,8 +13,8 @@ const boardFixture: LoadedBoard = {
   id: "board-1",
   name: "Product Launch",
   updatedAt: "2026-04-24T12:00:00.000Z",
-  columnCount: 1,
-  cardCount: 5,
+  columnCount: 2,
+  cardCount: 7,
   columns: [
     {
       id: "column-1",
@@ -60,6 +61,31 @@ const boardFixture: LoadedBoard = {
           description: "",
           priority: "none",
           position: "5000",
+          version: 0,
+        },
+      ],
+    },
+    {
+      id: "column-2",
+      title: "Doing",
+      position: "2000",
+      version: 0,
+      cardCount: 2,
+      cards: [
+        {
+          id: "card-6",
+          title: "Sync legal",
+          description: "",
+          priority: "none",
+          position: "1000",
+          version: 0,
+        },
+        {
+          id: "card-7",
+          title: "Prep recap",
+          description: "",
+          priority: "low",
+          position: "2000",
           version: 0,
         },
       ],
@@ -124,6 +150,38 @@ describe("priority grouping helpers", () => {
       destinationIndex: 2,
       prevId: "card-3",
       nextId: "card-4",
+    });
+  });
+
+  it("maps filtered-column drops back into the underlying user order", () => {
+    const placement = getFilteredColumnPlacement(boardFixture, {
+      cardId: "card-4",
+      columnId: "column-1",
+      priority: ["high", "medium"],
+      destinationIndex: 0,
+    });
+
+    assert.deepEqual(placement, {
+      columnId: "column-1",
+      destinationIndex: 1,
+      prevId: "card-1",
+      nextId: "card-2",
+    });
+  });
+
+  it("appends when dropping into a filtered column with no currently visible cards", () => {
+    const placement = getFilteredColumnPlacement(boardFixture, {
+      cardId: "card-2",
+      columnId: "column-2",
+      priority: ["high"],
+      destinationIndex: 0,
+    });
+
+    assert.deepEqual(placement, {
+      columnId: "column-2",
+      destinationIndex: 2,
+      prevId: "card-7",
+      nextId: null,
     });
   });
 });

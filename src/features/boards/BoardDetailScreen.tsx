@@ -29,7 +29,11 @@ import {
   serializePriorityFilter,
   togglePrioritySelection,
 } from "./model";
-import { getPriorityGroupPlacement, parsePriorityGroupDroppableId } from "./priorityGrouping";
+import {
+  getFilteredColumnPlacement,
+  getPriorityGroupPlacement,
+  parsePriorityGroupDroppableId,
+} from "./priorityGrouping";
 import type { BoardDetailSearch, CardPriority, LoadedBoard } from "./types";
 import {
   BoardActionButton,
@@ -114,9 +118,16 @@ export function BoardDetailScreen({
 
   const board = optimisticBoard ?? boardQuery.data?.board;
   const groupedBoardReorderEnabled =
-    search.view === "board" && search.groupBy !== "column" && groupedBoardReorderPreference;
+    search.view === "board" &&
+    (search.groupBy !== "column" || search.priority.length > 0) &&
+    groupedBoardReorderPreference;
   const priorityGroupReorderEnabled =
     search.view === "board" && search.groupBy === "priority" && groupedBoardReorderEnabled;
+  const filteredColumnReorderEnabled =
+    search.view === "board" &&
+    search.groupBy === "column" &&
+    search.priority.length > 0 &&
+    groupedBoardReorderEnabled;
 
   useEffect(() => {
     setOptimisticBoard(null);
@@ -393,8 +404,46 @@ export function BoardDetailScreen({
       return;
     }
 
+    if (filteredColumnReorderEnabled && result.type === "CARD") {
+      if (
+        result.source.droppableId === result.destination.droppableId &&
+        result.source.index === result.destination.index
+      ) {
+        return;
+      }
+
+      if (result.destination.droppableId === "board-columns") {
+        return;
+      }
+
+      const cardLocation = getCardPosition(board, result.draggableId);
+      if (!cardLocation) {
+        return;
+      }
+
+      const placement = getFilteredColumnPlacement(board, {
+        cardId: result.draggableId,
+        columnId: result.destination.droppableId,
+        priority: search.priority,
+        destinationIndex: result.destination.index,
+      });
+      if (!placement) {
+        return;
+      }
+
+      void commitCardPlacement(board, {
+        cardId: result.draggableId,
+        sourceColumnId: cardLocation.column.id,
+        sourceIndex: cardLocation.cardIndex,
+        destinationColumnId: placement.columnId,
+        destinationIndex: placement.destinationIndex,
+        expectedVersion: cardLocation.card.version,
+      });
+      return;
+    }
+
     if (result.type === "COLUMN") {
-      if (!columnReorderEnabled && !groupedBoardReorderEnabled) {
+      if (!columnReorderEnabled && !priorityGroupReorderEnabled) {
         return;
       }
 
@@ -432,7 +481,7 @@ export function BoardDetailScreen({
   };
 
   const handleMoveColumn = (columnId: string, direction: "left" | "right") => {
-    if (!board || (!columnReorderEnabled && !groupedBoardReorderEnabled)) {
+    if (!board || (!columnReorderEnabled && !priorityGroupReorderEnabled)) {
       return;
     }
 
@@ -453,8 +502,93 @@ export function BoardDetailScreen({
     void commitColumnPlacement(board, columnId, destinationIndex);
   };
 
+  const handleMoveCardInFilteredView = (
+    cardId: string,
+    direction: "up" | "down" | "left" | "right",
+  ) => {
+    if (!board || !filteredColumnReorderEnabled) {
+      return;
+    }
+
+    const location = getCardPosition(board, cardId);
+    if (!location) {
+      return;
+    }
+
+    const visiblePriorities = new Set(search.priority);
+    const sourceVisibleCards = location.column.cards.filter((card) =>
+      visiblePriorities.has(card.priority),
+    );
+    const sourceVisibleIndex = sourceVisibleCards.findIndex((card) => card.id === cardId);
+    if (sourceVisibleIndex === -1) {
+      return;
+    }
+
+    let destinationColumnId = location.column.id;
+    let destinationVisibleIndex = sourceVisibleIndex;
+
+    if (direction === "up") {
+      destinationVisibleIndex = Math.max(sourceVisibleIndex - 1, 0);
+    } else if (direction === "down") {
+      destinationVisibleIndex = Math.min(sourceVisibleIndex + 1, sourceVisibleCards.length - 1);
+    } else if (direction === "left") {
+      const targetColumn = board.columns[location.columnIndex - 1];
+      if (!targetColumn) {
+        return;
+      }
+
+      destinationColumnId = targetColumn.id;
+      const targetVisibleCards = targetColumn.cards.filter((card) =>
+        visiblePriorities.has(card.priority),
+      );
+      destinationVisibleIndex = Math.min(sourceVisibleIndex, targetVisibleCards.length);
+    } else if (direction === "right") {
+      const targetColumn = board.columns[location.columnIndex + 1];
+      if (!targetColumn) {
+        return;
+      }
+
+      destinationColumnId = targetColumn.id;
+      const targetVisibleCards = targetColumn.cards.filter((card) =>
+        visiblePriorities.has(card.priority),
+      );
+      destinationVisibleIndex = Math.min(sourceVisibleIndex, targetVisibleCards.length);
+    }
+
+    if (
+      destinationColumnId === location.column.id &&
+      destinationVisibleIndex === sourceVisibleIndex
+    ) {
+      return;
+    }
+
+    const placement = getFilteredColumnPlacement(board, {
+      cardId,
+      columnId: destinationColumnId,
+      priority: search.priority,
+      destinationIndex: destinationVisibleIndex,
+    });
+    if (!placement) {
+      return;
+    }
+
+    void commitCardPlacement(board, {
+      cardId,
+      sourceColumnId: location.column.id,
+      sourceIndex: location.cardIndex,
+      destinationColumnId: placement.columnId,
+      destinationIndex: placement.destinationIndex,
+      expectedVersion: location.card.version,
+    });
+  };
+
   const handleMoveCard = (cardId: string, direction: "up" | "down" | "left" | "right") => {
-    if (!board || !columnReorderEnabled) {
+    if (!board || (!columnReorderEnabled && !filteredColumnReorderEnabled)) {
+      return;
+    }
+
+    if (filteredColumnReorderEnabled) {
+      handleMoveCardInFilteredView(cardId, direction);
       return;
     }
 
@@ -632,7 +766,7 @@ export function BoardDetailScreen({
         </YStack>
 
         {search.view === "board" ? (
-          <YStack paddingTop="$0" flex={1} minHeight={0} overflow="hidden">
+          <YStack paddingTop="$4" flex={1} minHeight={0} overflow="hidden">
             <BoardCanvas
               board={board}
               search={search}

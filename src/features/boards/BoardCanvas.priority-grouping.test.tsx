@@ -65,6 +65,13 @@ const priorityGroupedSearch: BoardDetailSearch = {
   priority: [],
 };
 
+const filteredColumnSearch: BoardDetailSearch = {
+  card: undefined,
+  view: "board",
+  groupBy: "column",
+  priority: ["high", "low"],
+};
+
 describe("BoardCanvas priority grouping", () => {
   afterEach(() => {
     cleanup();
@@ -160,5 +167,65 @@ describe("BoardCanvas priority grouping", () => {
     );
 
     expect(screen.getAllByRole("button", { name: /move column/i })).toHaveLength(4);
+  });
+
+  it("shows the shared reorder opt-in notice for priority-filtered columns", () => {
+    render(
+      <TamaguiRootProvider>
+        <BoardCanvas
+          board={board}
+          search={filteredColumnSearch}
+          canReorder={false}
+          groupedBoardReorderEnabled={false}
+          onToggleGroupedBoardReorderEnabled={vi.fn()}
+          onDragEnd={vi.fn()}
+          onOpenCard={vi.fn()}
+          onOpenCreateCard={vi.fn()}
+          onRenameColumn={vi.fn().mockResolvedValue(undefined)}
+          renamePendingColumnId={null}
+          onOpenCreateColumnAfter={vi.fn()}
+          onMoveColumn={vi.fn()}
+          onMoveCard={vi.fn()}
+          onMovePriorityGroupCard={vi.fn()}
+        />
+      </TamaguiRootProvider>,
+    );
+
+    assert.ok(
+      screen.getByText(
+        /Priority-filtered columns are display-only by default\. Visible cards keep their saved user order underneath/i,
+      ),
+    );
+    assert.ok(
+      screen.getByRole("checkbox", {
+        name: /allow re-ordering in this view, which will impact the user order/i,
+      }),
+    );
+  });
+
+  it("enables card move controls without enabling column move controls in filtered column mode", () => {
+    render(
+      <TamaguiRootProvider>
+        <BoardCanvas
+          board={board}
+          search={filteredColumnSearch}
+          canReorder={false}
+          groupedBoardReorderEnabled
+          onToggleGroupedBoardReorderEnabled={vi.fn()}
+          onDragEnd={vi.fn()}
+          onOpenCard={vi.fn()}
+          onOpenCreateCard={vi.fn()}
+          onRenameColumn={vi.fn().mockResolvedValue(undefined)}
+          renamePendingColumnId={null}
+          onOpenCreateColumnAfter={vi.fn()}
+          onMoveColumn={vi.fn()}
+          onMoveCard={vi.fn()}
+          onMovePriorityGroupCard={vi.fn()}
+        />
+      </TamaguiRootProvider>,
+    );
+
+    expect(screen.queryByRole("button", { name: /move column/i })).toBeNull();
+    expect(screen.getAllByRole("button", { name: /move card/i }).length).toBeGreaterThan(0);
   });
 });

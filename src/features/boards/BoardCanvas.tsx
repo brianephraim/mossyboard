@@ -149,17 +149,26 @@ export function BoardCanvas({
   });
   const showColumnManagement = true;
   const hasActivePriorityFilters = search.priority.length > 0;
-  const showGroupedBoardReorderNotice = search.view === "board" && search.groupBy !== "column";
+  const isPriorityGroupedBoard = search.view === "board" && search.groupBy === "priority";
+  const isPriorityFilteredColumnBoard =
+    search.view === "board" && search.groupBy === "column" && hasActivePriorityFilters;
+  const showGroupedBoardReorderNotice = isPriorityGroupedBoard || isPriorityFilteredColumnBoard;
+  const priorityGroupReorderEnabled = isPriorityGroupedBoard && groupedBoardReorderEnabled;
+  const filteredColumnReorderEnabled = isPriorityFilteredColumnBoard && groupedBoardReorderEnabled;
   const columns = board.columns;
   const sensorApiRef = useRef<SensorAPI | null>(null);
   const boardNoticeMessage =
     showGroupedBoardReorderNotice && !groupedBoardReorderEnabled
-      ? "Priority grouping is display-only for now. Cards stay in their saved column order underneath, so drag and keyboard reorder are off in this view."
-      : showGroupedBoardReorderNotice && groupedBoardReorderEnabled
+      ? isPriorityGroupedBoard
+        ? "Priority grouping is display-only for now. Cards stay in their saved column order underneath, so drag and keyboard reorder are off in this view."
+        : "Priority-filtered columns are display-only by default. Visible cards keep their saved user order underneath, so drag and keyboard reorder are off in this filtered view."
+      : priorityGroupReorderEnabled
         ? "Priority-group reordering is on. Moving cards here updates the saved user order, and dropping into another priority group also updates its priority."
-        : !canReorder && search.view === "board"
-          ? "Drag and keyboard reorder controls are available only in board view grouped by column with no active priority filters."
-          : null;
+        : filteredColumnReorderEnabled
+          ? "Priority-filtered reordering is on. Moving visible cards here updates the saved user order while hidden cards keep their places underneath."
+          : !canReorder && search.view === "board"
+            ? "Drag and keyboard reorder controls are available only in board view grouped by column with no active priority filters."
+            : null;
 
   const programmaticSensor: Sensor = useMemo(() => {
     return (api) => {
@@ -168,7 +177,7 @@ export function BoardCanvas({
   }, []);
 
   const moveColumnProgrammatically = (columnId: string, direction: "left" | "right") => {
-    if (!canReorder && !groupedBoardReorderEnabled) {
+    if (!canReorder && !priorityGroupReorderEnabled) {
       onMoveColumn(columnId, direction);
       return;
     }
@@ -202,13 +211,14 @@ export function BoardCanvas({
     cardId: string,
     direction: "up" | "down" | "left" | "right",
   ) => {
-    if (!canReorder) {
+    if (!canReorder && !filteredColumnReorderEnabled) {
       onMoveCard(cardId, direction);
       return;
     }
 
     const api = sensorApiRef.current;
     if (!api) {
+      onMoveCard(cardId, direction);
       return;
     }
 
@@ -390,7 +400,7 @@ export function BoardCanvas({
               )}
             </Droppable>
           </DragDropContext>
-        ) : groupedBoardReorderEnabled ? (
+        ) : priorityGroupReorderEnabled ? (
           <DragDropContext onDragEnd={onDragEnd} sensors={[programmaticSensor]}>
             <Droppable
               droppableId="board-columns"
@@ -478,7 +488,7 @@ export function BoardCanvas({
                                   canReorder={false}
                                   groupBy={search.groupBy}
                                   hasActivePriorityFilters={hasActivePriorityFilters}
-                                  canMoveColumn={groupedBoardReorderEnabled}
+                                  canMoveColumn={priorityGroupReorderEnabled}
                                   groupedBoardReorderEnabled={groupedBoardReorderEnabled}
                                   dragHandleProps={columnProvided.dragHandleProps}
                                   onOpenCard={onOpenCard}
@@ -501,6 +511,87 @@ export function BoardCanvas({
                 </div>
               )}
             </Droppable>
+          </DragDropContext>
+        ) : filteredColumnReorderEnabled ? (
+          <DragDropContext onDragEnd={onDragEnd} sensors={[programmaticSensor]}>
+            <XStack
+              gap="$4"
+              alignItems="stretch"
+              height="100%"
+              minWidth="max-content"
+              paddingHorizontal="$5"
+              paddingTop={INSERT_COLUMN_BUTTON_SAFE_TOP_PX}
+              paddingBottom="$5"
+            >
+              {showColumnManagement && columns.length === 0 ? (
+                <YStack width={COLUMN_WIDTH_PX} minWidth={COLUMN_WIDTH_PX} padding="$5">
+                  <InsertColumnCircleButton
+                    ariaLabel="Add first column"
+                    onPress={() => onOpenCreateColumnAfter(null)}
+                  />
+                </YStack>
+              ) : null}
+
+              {lanes.map((lane, laneIndex) => (
+                <YStack
+                  key={lane.id}
+                  width={COLUMN_WIDTH_PX}
+                  minWidth={COLUMN_WIDTH_PX}
+                  height="100%"
+                  flexShrink={0}
+                  position="relative"
+                >
+                  {showColumnManagement && laneIndex === 0 ? (
+                    <YStack
+                      position="absolute"
+                      left={-INSERT_COLUMN_BUTTON_OFFSET_PX}
+                      top={6}
+                      zIndex={2}
+                    >
+                      <InsertColumnCircleButton
+                        ariaLabel="Add column before first column"
+                        onPress={() => onOpenCreateColumnAfter(null)}
+                      />
+                    </YStack>
+                  ) : null}
+
+                  {showColumnManagement ? (
+                    <YStack
+                      position="absolute"
+                      right={-INSERT_COLUMN_BUTTON_OFFSET_PX}
+                      top={6}
+                      zIndex={2}
+                    >
+                      <InsertColumnCircleButton
+                        ariaLabel={
+                          laneIndex === lanes.length - 1
+                            ? "Add column after last column"
+                            : "Add column between columns"
+                        }
+                        onPress={() => onOpenCreateColumnAfter(lane.id)}
+                      />
+                    </YStack>
+                  ) : null}
+
+                  <BoardLaneView
+                    lane={lane}
+                    canReorder
+                    groupBy={search.groupBy}
+                    hasActivePriorityFilters={hasActivePriorityFilters}
+                    canMoveColumn={false}
+                    groupedBoardReorderEnabled={groupedBoardReorderEnabled}
+                    onOpenCard={onOpenCard}
+                    onOpenCreateCard={onOpenCreateCard}
+                    onRenameColumn={onRenameColumn}
+                    renamePendingColumnId={renamePendingColumnId}
+                    onOpenCreateColumnAfter={onOpenCreateColumnAfter}
+                    onMoveColumn={onMoveColumn}
+                    onMoveCard={moveCardProgrammatically}
+                    onMovePriorityGroupCard={onMovePriorityGroupCard}
+                  />
+                </YStack>
+              ))}
+            </XStack>
           </DragDropContext>
         ) : (
           <XStack
@@ -1017,7 +1108,7 @@ function BoardLaneView({
                     <LaneEmptyState
                       isVisible
                       isRealColumn={Boolean(isRealColumn)}
-                      isFiltered={false}
+                      isFiltered={hasActivePriorityFilters}
                     />
                   ) : null}
                 </YStack>

@@ -40,6 +40,55 @@ export function getPriorityGroupPlacement(
   prevId: string | null;
   nextId: string | null;
 } | null {
+  return getVisibleSubsetPlacement(board, {
+    cardId: input.cardId,
+    columnId: input.columnId,
+    destinationIndex: input.destinationIndex,
+    includeCard: (card) => card.priority === input.priority,
+  });
+}
+
+export function getFilteredColumnPlacement(
+  board: LoadedBoard,
+  input: {
+    cardId: string;
+    columnId: string;
+    priority: CardPriority[];
+    destinationIndex: number;
+  },
+): {
+  columnId: string;
+  destinationIndex: number;
+  prevId: string | null;
+  nextId: string | null;
+} | null {
+  const visiblePriorities = new Set(input.priority);
+  if (visiblePriorities.size === 0) {
+    return null;
+  }
+
+  return getVisibleSubsetPlacement(board, {
+    cardId: input.cardId,
+    columnId: input.columnId,
+    destinationIndex: input.destinationIndex,
+    includeCard: (card) => visiblePriorities.has(card.priority),
+  });
+}
+
+function getVisibleSubsetPlacement(
+  board: LoadedBoard,
+  input: {
+    cardId: string;
+    columnId: string;
+    destinationIndex: number;
+    includeCard: (card: LoadedBoard["columns"][number]["cards"][number]) => boolean;
+  },
+): {
+  columnId: string;
+  destinationIndex: number;
+  prevId: string | null;
+  nextId: string | null;
+} | null {
   const sourceLocation = getCardPosition(board, input.cardId);
   if (!sourceLocation) {
     return null;
@@ -51,55 +100,58 @@ export function getPriorityGroupPlacement(
   }
 
   const columnCardsWithoutMoved = targetColumn.cards.filter((card) => card.id !== input.cardId);
-  const targetGroupCards = columnCardsWithoutMoved.filter(
-    (card) => card.priority === input.priority,
-  );
+  const visibleCards = columnCardsWithoutMoved.filter(input.includeCard);
 
-  if (
-    targetGroupCards.length === 0 ||
-    input.destinationIndex < 0 ||
-    input.destinationIndex > targetGroupCards.length
-  ) {
+  if (input.destinationIndex < 0 || input.destinationIndex > visibleCards.length) {
     return null;
   }
 
+  if (visibleCards.length === 0) {
+    return {
+      columnId: targetColumn.id,
+      destinationIndex: columnCardsWithoutMoved.length,
+      prevId: columnCardsWithoutMoved.at(-1)?.id ?? null,
+      nextId: null,
+    };
+  }
+
   if (input.destinationIndex === 0) {
-    const topGroupCard = targetGroupCards[0];
-    if (!topGroupCard) {
+    const topVisibleCard = visibleCards[0];
+    if (!topVisibleCard) {
       return null;
     }
 
-    const topGroupCardIndex = columnCardsWithoutMoved.findIndex(
-      (card) => card.id === topGroupCard.id,
+    const topVisibleCardIndex = columnCardsWithoutMoved.findIndex(
+      (card) => card.id === topVisibleCard.id,
     );
-    if (topGroupCardIndex === -1) {
+    if (topVisibleCardIndex === -1) {
       return null;
     }
 
     return {
       columnId: targetColumn.id,
-      destinationIndex: topGroupCardIndex,
-      prevId: columnCardsWithoutMoved[topGroupCardIndex - 1]?.id ?? null,
-      nextId: topGroupCard.id,
+      destinationIndex: topVisibleCardIndex,
+      prevId: columnCardsWithoutMoved[topVisibleCardIndex - 1]?.id ?? null,
+      nextId: topVisibleCard.id,
     };
   }
 
-  const previousGroupCard = targetGroupCards[input.destinationIndex - 1];
-  if (!previousGroupCard) {
+  const previousVisibleCard = visibleCards[input.destinationIndex - 1];
+  if (!previousVisibleCard) {
     return null;
   }
 
-  const previousGroupCardIndex = columnCardsWithoutMoved.findIndex(
-    (card) => card.id === previousGroupCard.id,
+  const previousVisibleCardIndex = columnCardsWithoutMoved.findIndex(
+    (card) => card.id === previousVisibleCard.id,
   );
-  if (previousGroupCardIndex === -1) {
+  if (previousVisibleCardIndex === -1) {
     return null;
   }
 
   return {
     columnId: targetColumn.id,
-    destinationIndex: previousGroupCardIndex + 1,
-    prevId: previousGroupCard.id,
-    nextId: columnCardsWithoutMoved[previousGroupCardIndex + 1]?.id ?? null,
+    destinationIndex: previousVisibleCardIndex + 1,
+    prevId: previousVisibleCard.id,
+    nextId: columnCardsWithoutMoved[previousVisibleCardIndex + 1]?.id ?? null,
   };
 }
