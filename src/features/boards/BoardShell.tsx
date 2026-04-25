@@ -67,6 +67,10 @@ export function BoardShell({
     },
   });
 
+  const submitCreateBoard = createBoardForm.handleSubmit(async (values) => {
+    await createBoard.mutateAsync(values);
+  });
+
   useEffect(() => {
     if (!createBoardOpen) {
       createBoardForm.reset({ name: "" });
@@ -81,7 +85,15 @@ export function BoardShell({
   const boardList = boardsQuery.data?.boards ?? [];
   const boardRail = (
     <BoardSurface padding="$4">
-      <YStack gap="$4" minHeight={media.maxMd ? "auto" : "calc(100vh - 32px)"}>
+      <YStack
+        gap="$4"
+        minHeight={
+          media.maxMd
+            ? "auto"
+            : // BoardResponsiveColumns desktop XStack: $4 top+bottom. BoardSurface: $4 padding + 1px border each vertical side.
+              "calc(100vh - 4 * var(--c-space-4) - 2px)"
+        }
+      >
         <YStack gap="$3">
           <XStack alignItems="center" gap="$3">
             <Stack
@@ -252,9 +264,7 @@ export function BoardShell({
             <BoardActionButton
               tone="accent"
               disabled={createBoard.isPending}
-              onPress={createBoardForm.handleSubmit(async (values) => {
-                await createBoard.mutateAsync(values);
-              })}
+              onPress={() => void submitCreateBoard()}
             >
               {createBoard.isPending ? "Creating…" : "Create board"}
             </BoardActionButton>
@@ -279,6 +289,12 @@ export function BoardShell({
                   value={field.value}
                   onChange={tamaguiInputValueOnChange(field.onChange)}
                   onBlur={field.onBlur}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    if ("isComposing" in e.nativeEvent && e.nativeEvent.isComposing) return;
+                    e.preventDefault();
+                    void submitCreateBoard();
+                  }}
                   placeholder="Product launch"
                   autoFocus
                   backgroundColor="$boardPanelSurfaceStrong"
