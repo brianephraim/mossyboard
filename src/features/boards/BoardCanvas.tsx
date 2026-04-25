@@ -11,7 +11,7 @@ import type { BoardDetailSearch, BoardLane, LoadedBoard } from "./types";
 
 const BOARD_DND_GAP_PX = 16;
 const COLUMN_WIDTH_PX = 320;
-const INSERT_COLUMN_BUTTON_SIZE_PX = 34;
+const INSERT_COLUMN_BUTTON_SIZE_PX = 26;
 const INSERT_COLUMN_BUTTON_OFFSET_PX = Math.round(
   BOARD_DND_GAP_PX / 2 + INSERT_COLUMN_BUTTON_SIZE_PX / 2,
 );
