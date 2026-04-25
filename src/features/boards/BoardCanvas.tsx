@@ -459,13 +459,7 @@ function BoardLaneView({
                   {provided.placeholder}
                 </div>
                 {lane.cards.length === 0 ? (
-                  <LaneEmptyState
-                    isVisible
-                    isRealColumn={Boolean(isRealColumn)}
-                    onOpenCreateCard={() => {
-                      onOpenCreateCard(isRealColumn);
-                    }}
-                  />
+                  <LaneEmptyState isVisible isRealColumn={Boolean(isRealColumn)} />
                 ) : null}
               </div>
             )}
@@ -485,11 +479,6 @@ function BoardLaneView({
             <LaneEmptyState
               isVisible={lane.cards.length === 0}
               isRealColumn={Boolean(isRealColumn)}
-              onOpenCreateCard={() => {
-                if (isRealColumn) {
-                  onOpenCreateCard(isRealColumn);
-                }
-              }}
             />
           </YStack>
         )}
@@ -598,31 +587,20 @@ function CardPreview({
 function LaneEmptyState({
   isVisible,
   isRealColumn,
-  onOpenCreateCard,
 }: Readonly<{
   isVisible: boolean;
   isRealColumn: boolean;
-  onOpenCreateCard: () => void;
 }>) {
   if (!isVisible) {
     return null;
   }
 
   return (
-    <BoardSurface padding="$4">
-      <YStack gap="$3" alignItems="flex-start">
-        <Text color="$boardTextMuted">
-          {isRealColumn
-            ? "This column is empty. Add a card to get it moving."
-            : "No cards match this group right now."}
-        </Text>
-        {isRealColumn ? (
-          <BoardActionButton tone="ghost" onPress={onOpenCreateCard}>
-            Add card
-          </BoardActionButton>
-        ) : null}
-      </YStack>
-    </BoardSurface>
+    <Text color="$boardTextMuted" fontSize="$3">
+      {isRealColumn
+        ? "This column is empty. Add a card to get it moving."
+        : "No cards match this group right now."}
+    </Text>
   );
 }
 
