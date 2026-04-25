@@ -591,9 +591,9 @@ function BoardLaneView({
   const isRealColumn = lane.laneKind === "column" && lane.originalColumnId;
 
   return (
-    <BoardSurface padding="$4" height="100%">
-      <YStack gap="$3" flex={1} minHeight={0}>
-        <YStack gap="$2" flexShrink={0}>
+    <BoardSurface padding="$0" height="100%">
+      <YStack flex={1} minHeight={0}>
+        <YStack padding="$4" paddingBottom="$0" gap="$2" flexShrink={0}>
           {isRealColumn ? (
             <ColumnHeaderWithInlineRename
               lane={lane}
@@ -631,7 +631,6 @@ function BoardLaneView({
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: BOARD_DND_GAP_PX,
                   flex: "1 1 auto",
                   minHeight: 0,
                 }}
@@ -644,6 +643,9 @@ function BoardLaneView({
                     overflowY: "auto",
                     flex: "1 1 auto",
                     minHeight: 0,
+                    paddingLeft: "var(--c-space-4)",
+                    paddingRight: "var(--c-space-4)",
+                    paddingTop: "var(--c-space-3)",
                   }}
                 >
                   {lane.cards.map((card, index) => (
@@ -675,37 +677,46 @@ function BoardLaneView({
                   ))}
                   {provided.placeholder}
                 </div>
-                {lane.cards.length === 0 ? (
-                  <LaneEmptyState isVisible isRealColumn={Boolean(isRealColumn)} />
-                ) : null}
+                <YStack paddingHorizontal="$4" paddingTop="$3" gap="$3">
+                  {lane.cards.length === 0 ? (
+                    <LaneEmptyState isVisible isRealColumn={Boolean(isRealColumn)} />
+                  ) : null}
+                </YStack>
               </div>
             )}
           </Droppable>
         ) : (
-          <YStack gap="$3" flex={1} minHeight={0}>
-            <YStack gap="$3" flex={1} minHeight={0} overflow="scroll">
-              {lane.cards.map((card) => (
-                <CardPreview
-                  key={card.id}
-                  card={card}
-                  showColumnContext={lane.laneKind === "priority"}
-                  canMove={false}
-                  onOpen={() => onOpenCard(card.id)}
-                  onMove={onMoveCard}
-                />
-              ))}
-              <LaneEmptyState
-                isVisible={lane.cards.length === 0}
-                isRealColumn={Boolean(isRealColumn)}
+          <YStack
+            gap="$3"
+            flex={1}
+            minHeight={0}
+            overflow="scroll"
+            paddingHorizontal="$4"
+            paddingTop="$3"
+          >
+            {lane.cards.map((card) => (
+              <CardPreview
+                key={card.id}
+                card={card}
+                showColumnContext={lane.laneKind === "priority"}
+                canMove={false}
+                onOpen={() => onOpenCard(card.id)}
+                onMove={onMoveCard}
               />
-            </YStack>
+            ))}
+            <LaneEmptyState
+              isVisible={lane.cards.length === 0}
+              isRealColumn={Boolean(isRealColumn)}
+            />
           </YStack>
         )}
 
         {isRealColumn ? (
-          <BoardActionButton tone="ghost" onPress={() => onOpenCreateCard(isRealColumn)}>
-            + Add card
-          </BoardActionButton>
+          <YStack padding="$4" paddingTop="$3">
+            <BoardActionButton tone="ghost" onPress={() => onOpenCreateCard(isRealColumn)}>
+              + Add card
+            </BoardActionButton>
+          </YStack>
         ) : null}
       </YStack>
     </BoardSurface>
