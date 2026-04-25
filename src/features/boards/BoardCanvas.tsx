@@ -11,7 +11,10 @@ import type { BoardDetailSearch, BoardLane, LoadedBoard } from "./types";
 
 const BOARD_DND_GAP_PX = 16;
 const COLUMN_WIDTH_PX = 320;
-const ADD_COLUMN_LANE_WIDTH_PX = 280;
+const INSERT_COLUMN_BUTTON_SIZE_PX = 34;
+const INSERT_COLUMN_BUTTON_OFFSET_PX = Math.round(
+  BOARD_DND_GAP_PX / 2 + INSERT_COLUMN_BUTTON_SIZE_PX / 2,
+);
 
 const dndHorizontalRowStyle: CSSProperties = {
   display: "flex",
@@ -95,6 +98,7 @@ export function BoardCanvas({
   });
   const showColumnManagement = search.groupBy === "column";
   const lastColumnId = board.columns[board.columns.length - 1]?.id ?? null;
+  const columns = board.columns;
 
   return (
     <YStack gap="$4">
@@ -130,7 +134,16 @@ export function BoardCanvas({
                       {...provided.droppableProps}
                       style={dndHorizontalRowStyle}
                     >
-                      {board.columns.map((column, columnIndex) => (
+                      {showColumnManagement && columns.length === 0 ? (
+                        <YStack width={COLUMN_WIDTH_PX} minWidth={COLUMN_WIDTH_PX} padding="$5">
+                          <InsertColumnCircleButton
+                            ariaLabel="Add first column"
+                            onPress={() => onOpenCreateColumnAfter(null)}
+                          />
+                        </YStack>
+                      ) : null}
+
+                      {columns.map((column, columnIndex) => (
                         <Draggable key={column.id} draggableId={column.id} index={columnIndex}>
                           {(columnProvided) => {
                             const { rest: colDragRest, style: colDragStyle } = mergeDraggableStyle(
@@ -141,8 +154,44 @@ export function BoardCanvas({
                               <div
                                 ref={columnProvided.innerRef}
                                 {...colDragRest}
-                                style={colDragStyle}
+                                style={{ ...colDragStyle, position: "relative" }}
                               >
+                                {showColumnManagement && columnIndex === 0 ? (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      left: -INSERT_COLUMN_BUTTON_OFFSET_PX,
+                                      top: 6,
+                                      zIndex: 2,
+                                    }}
+                                  >
+                                    <InsertColumnCircleButton
+                                      ariaLabel="Add column before first column"
+                                      onPress={() => onOpenCreateColumnAfter(null)}
+                                    />
+                                  </div>
+                                ) : null}
+
+                                {showColumnManagement ? (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      right: -INSERT_COLUMN_BUTTON_OFFSET_PX,
+                                      top: 6,
+                                      zIndex: 2,
+                                    }}
+                                  >
+                                    <InsertColumnCircleButton
+                                      ariaLabel={
+                                        columnIndex === columns.length - 1
+                                          ? "Add column after last column"
+                                          : "Add column between columns"
+                                      }
+                                      onPress={() => onOpenCreateColumnAfter(column.id)}
+                                    />
+                                  </div>
+                                ) : null}
+
                                 <BoardLaneView
                                   lane={{
                                     id: column.id,
@@ -173,7 +222,6 @@ export function BoardCanvas({
                       ))}
                       {provided.placeholder}
                     </div>
-                    <AddColumnLane onOpen={() => onOpenCreateColumnAfter(lastColumnId)} />
                   </div>
                 </div>
               )}
@@ -181,8 +229,49 @@ export function BoardCanvas({
           </DragDropContext>
         ) : (
           <XStack gap="$4" alignItems="flex-start" minWidth="max-content" paddingHorizontal="$5">
-            {lanes.map((lane) => (
-              <YStack key={lane.id} width={320} minWidth={320}>
+            {showColumnManagement && columns.length === 0 ? (
+              <YStack width={COLUMN_WIDTH_PX} minWidth={COLUMN_WIDTH_PX} padding="$5">
+                <InsertColumnCircleButton
+                  ariaLabel="Add first column"
+                  onPress={() => onOpenCreateColumnAfter(null)}
+                />
+              </YStack>
+            ) : null}
+
+            {lanes.map((lane, laneIndex) => (
+              <YStack key={lane.id} width={320} minWidth={320} position="relative">
+                {showColumnManagement && laneIndex === 0 ? (
+                  <YStack
+                    position="absolute"
+                    left={-INSERT_COLUMN_BUTTON_OFFSET_PX}
+                    top={6}
+                    zIndex={2}
+                  >
+                    <InsertColumnCircleButton
+                      ariaLabel="Add column before first column"
+                      onPress={() => onOpenCreateColumnAfter(null)}
+                    />
+                  </YStack>
+                ) : null}
+
+                {showColumnManagement ? (
+                  <YStack
+                    position="absolute"
+                    right={-INSERT_COLUMN_BUTTON_OFFSET_PX}
+                    top={6}
+                    zIndex={2}
+                  >
+                    <InsertColumnCircleButton
+                      ariaLabel={
+                        laneIndex === lanes.length - 1
+                          ? "Add column after last column"
+                          : "Add column between columns"
+                      }
+                      onPress={() => onOpenCreateColumnAfter(lane.id)}
+                    />
+                  </YStack>
+                ) : null}
+
                 <BoardLaneView
                   lane={lane}
                   canReorder={false}
@@ -196,9 +285,6 @@ export function BoardCanvas({
                 />
               </YStack>
             ))}
-            {showColumnManagement ? (
-              <AddColumnLane onOpen={() => onOpenCreateColumnAfter(lastColumnId)} />
-            ) : null}
           </XStack>
         )}
       </div>
@@ -211,7 +297,6 @@ function ColumnHeaderWithInlineRename({
   columnId,
   dragHandleProps,
   onMoveColumn,
-  onOpenCreateColumnAfter,
   onRenameColumn,
   renamePendingColumnId,
 }: Readonly<{
@@ -219,7 +304,6 @@ function ColumnHeaderWithInlineRename({
   columnId: string;
   dragHandleProps?: DraggableProvided["dragHandleProps"];
   onMoveColumn: (columnId: string, direction: "left" | "right") => void;
-  onOpenCreateColumnAfter: (columnId?: string | null) => void;
   onRenameColumn: (input: {
     columnId: string;
     title: string;
@@ -369,13 +453,6 @@ function ColumnHeaderWithInlineRename({
               >
                 Rename
               </BoardActionButton>
-              <BoardActionButton
-                tone="ghost"
-                disabled={blockActions}
-                onPress={() => onOpenCreateColumnAfter(columnId)}
-              >
-                Add after
-              </BoardActionButton>
             </XStack>
           ) : null}
         </YStack>
@@ -423,7 +500,6 @@ function BoardLaneView({
               columnId={isRealColumn}
               dragHandleProps={dragHandleProps}
               onMoveColumn={onMoveColumn}
-              onOpenCreateColumnAfter={onOpenCreateColumnAfter}
               onRenameColumn={onRenameColumn}
               renamePendingColumnId={renamePendingColumnId}
             />
@@ -623,28 +699,29 @@ function LaneEmptyState({
   );
 }
 
-function AddColumnLane({ onOpen }: Readonly<{ onOpen: () => void }>) {
+function InsertColumnCircleButton({
+  ariaLabel,
+  onPress,
+}: Readonly<{
+  ariaLabel: string;
+  onPress: () => void;
+}>) {
   return (
-    <div
-      style={{
-        width: ADD_COLUMN_LANE_WIDTH_PX,
-        minWidth: ADD_COLUMN_LANE_WIDTH_PX,
-        flexShrink: 0,
-      }}
+    <BoardActionButton
+      tone="ghost"
+      aria-label={ariaLabel}
+      onPress={onPress}
+      width={INSERT_COLUMN_BUTTON_SIZE_PX}
+      height={INSERT_COLUMN_BUTTON_SIZE_PX}
+      borderRadius={9999}
+      paddingHorizontal={0}
+      paddingVertical={0}
+      borderWidth={1}
+      borderColor="$boardShellBorder"
+      backgroundColor="$boardPanelSurfaceStrong"
+      hoverStyle={{ backgroundColor: "$boardAccentWash" }}
     >
-      <BoardSurface padding="$4">
-        <YStack gap="$3">
-          <Text fontWeight="700" color="$boardHeading">
-            Add another column
-          </Text>
-          <Text color="$boardTextMuted">
-            Extend the workflow with a new lane without leaving the board canvas.
-          </Text>
-          <BoardActionButton tone="accent" onPress={onOpen}>
-            + Add column
-          </BoardActionButton>
-        </YStack>
-      </BoardSurface>
-    </div>
+      +
+    </BoardActionButton>
   );
 }
