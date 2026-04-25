@@ -22,6 +22,12 @@ export type BoardLaneCard = CardSummary & {
   originalColumnTitle: string;
 };
 
+export type BoardLanePriorityGroup = {
+  priority: CardPriority;
+  title: string;
+  cards: BoardLaneCard[];
+};
+
 export type BoardLane = {
   id: string;
   title: string;

@@ -4,6 +4,7 @@ import { describe, it } from "vitest";
 import {
   buildBoardLanes,
   canReorderBoard,
+  groupListItemsByPriority,
   parseBoardDetailSearch,
   reorderBoardCards,
   togglePrioritySelection,
@@ -95,19 +96,53 @@ describe("board model helpers", () => {
     });
   });
 
-  it("groups priority lanes while preserving original column order", () => {
+  it("keeps real board columns when priority grouping is selected", () => {
     const lanes = buildBoardLanes(boardFixture, {
       groupBy: "priority",
       priority: [],
     });
 
-    assert.equal(lanes[3]?.title, "High");
     assert.deepEqual(
-      lanes[3]?.cards.map((card) => card.id),
-      ["card-1", "card-3"],
+      lanes.map((lane) => lane.title),
+      ["To do", "In progress", "Done"],
     );
-    assert.equal(lanes[3]?.cards[0]?.originalColumnTitle, "To do");
-    assert.equal(lanes[3]?.cards[1]?.originalColumnTitle, "In progress");
+    assert.deepEqual(
+      lanes[0]?.cards.map((card) => card.id),
+      ["card-1", "card-2"],
+    );
+    assert.equal(lanes[0]?.cards[0]?.originalColumnTitle, "To do");
+  });
+
+  it("groups cards by priority while preserving their relative column order", () => {
+    const [todoLane] = buildBoardLanes(boardFixture, {
+      groupBy: "priority",
+      priority: [],
+    });
+
+    assert.ok(todoLane);
+    const [firstCard, secondCard] = todoLane.cards;
+    assert.ok(firstCard);
+    assert.ok(secondCard);
+
+    const groups = groupListItemsByPriority([
+      firstCard,
+      secondCard,
+      {
+        ...firstCard,
+        id: "card-5",
+        title: "Review copy",
+        position: "3000",
+      },
+    ]);
+
+    assert.deepEqual(
+      groups.find((group) => group.priority === "high")?.cards.map((card) => card.id),
+      ["card-1", "card-5"],
+    );
+    assert.deepEqual(
+      groups.find((group) => group.priority === "low")?.cards.map((card) => card.id),
+      ["card-2"],
+    );
   });
 
   it("reorders cards across columns for optimistic updates", () => {

@@ -3,6 +3,7 @@ import type {
   BoardGroupBy,
   BoardLane,
   BoardLaneCard,
+  BoardLanePriorityGroup,
   BoardsIndexStatus,
   BoardViewMode,
   CardPriority,
@@ -153,10 +154,6 @@ export function buildBoardLanes(
     priority: CardPriority[];
   },
 ): BoardLane[] {
-  if (input.groupBy === "priority") {
-    return buildPriorityLanes(board, input.priority);
-  }
-
   const activePriorityFilters = new Set(input.priority);
 
   return board.columns.map((column) => ({
@@ -175,42 +172,6 @@ export function buildBoardLanes(
         originalColumnTitle: column.title,
       })),
   }));
-}
-
-function buildPriorityLanes(board: LoadedBoard, selectedPriority: CardPriority[]): BoardLane[] {
-  const activePriorityFilters = new Set(selectedPriority);
-  const lanes = new Map<CardPriority, BoardLane>();
-
-  for (const priority of priorityValues) {
-    lanes.set(priority, {
-      id: `priority:${priority}`,
-      title: boardPriorityMeta[priority].label,
-      laneKind: "priority",
-      helperText: "Cards keep their original workflow context in this view.",
-      cards: [],
-    });
-  }
-
-  for (const column of board.columns) {
-    for (const card of column.cards) {
-      if (activePriorityFilters.size > 0 && !activePriorityFilters.has(card.priority)) {
-        continue;
-      }
-
-      const lane = lanes.get(card.priority);
-      if (!lane) {
-        continue;
-      }
-
-      lane.cards.push({
-        ...card,
-        originalColumnId: column.id,
-        originalColumnTitle: column.title,
-      });
-    }
-  }
-
-  return priorityValues.map((priority) => lanes.get(priority) as BoardLane);
 }
 
 export function reorderBoardColumns(
@@ -333,11 +294,7 @@ export function getColumnPosition(board: LoadedBoard, columnId: string) {
 
 export function groupListItemsByPriority<T extends BoardLaneCard>(
   cards: T[],
-): Array<{
-  priority: CardPriority;
-  title: string;
-  cards: T[];
-}> {
+): BoardLanePriorityGroup[] {
   const groups = new Map<CardPriority, T[]>();
 
   for (const priority of priorityValues) {

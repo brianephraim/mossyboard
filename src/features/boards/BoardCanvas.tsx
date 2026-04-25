@@ -18,7 +18,7 @@ import { Stack, Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import { BoardActionButton, BoardInlineNotice, BoardPill, BoardSurface, PriorityPill } from "./ui";
-import { buildBoardLanes } from "./model";
+import { boardPriorityMeta, buildBoardLanes, groupListItemsByPriority } from "./model";
 import type { BoardDetailSearch, BoardLane, LoadedBoard } from "./types";
 
 const BOARD_DND_GAP_PX = 16;
@@ -134,10 +134,16 @@ export function BoardCanvas({
     groupBy: search.groupBy,
     priority: search.priority,
   });
-  const showColumnManagement = search.groupBy === "column";
-  const lastColumnId = board.columns[board.columns.length - 1]?.id ?? null;
+  const showColumnManagement = true;
+  const hasActivePriorityFilters = search.priority.length > 0;
   const columns = board.columns;
   const sensorApiRef = useRef<SensorAPI | null>(null);
+  const boardNoticeMessage =
+    !canReorder && search.groupBy === "priority"
+      ? "Priority grouping is display-only for now. Cards stay in their saved column order underneath, so drag and keyboard reorder are off in this view."
+      : !canReorder && search.view === "board"
+        ? "Drag and keyboard reorder controls are available only in board view grouped by column with no active priority filters."
+        : null;
 
   const programmaticSensor: Sensor = useMemo(() => {
     return (api) => {
@@ -214,12 +220,9 @@ export function BoardCanvas({
 
   return (
     <YStack gap="$4" flex={1} minHeight={0} overflow="hidden">
-      {!canReorder && search.view === "board" ? (
+      {boardNoticeMessage ? (
         <YStack paddingHorizontal="$5">
-          <BoardInlineNotice
-            tone="warning"
-            message="Drag and keyboard reorder controls are available only in board view grouped by column with no active priority filters."
-          />
+          <BoardInlineNotice tone="warning" message={boardNoticeMessage} />
         </YStack>
       ) : null}
 
@@ -330,6 +333,8 @@ export function BoardCanvas({
                                     })),
                                   }}
                                   canReorder={canReorder}
+                                  groupBy={search.groupBy}
+                                  hasActivePriorityFilters={hasActivePriorityFilters}
                                   dragHandleProps={columnProvided.dragHandleProps}
                                   onOpenCard={onOpenCard}
                                   onOpenCreateCard={onOpenCreateCard}
@@ -406,6 +411,8 @@ export function BoardCanvas({
                 <BoardLaneView
                   lane={lane}
                   canReorder={false}
+                  groupBy={search.groupBy}
+                  hasActivePriorityFilters={hasActivePriorityFilters}
                   onOpenCard={onOpenCard}
                   onOpenCreateCard={onOpenCreateCard}
                   onRenameColumn={onRenameColumn}
@@ -426,6 +433,7 @@ export function BoardCanvas({
 function ColumnHeaderWithInlineRename({
   lane,
   columnId,
+  canMoveColumn,
   dragHandleProps,
   onMoveColumn,
   onRenameColumn,
@@ -433,6 +441,7 @@ function ColumnHeaderWithInlineRename({
 }: Readonly<{
   lane: BoardLane;
   columnId: string;
+  canMoveColumn: boolean;
   dragHandleProps?: DraggableProvided["dragHandleProps"];
   onMoveColumn: (columnId: string, direction: "left" | "right") => void;
   onRenameColumn: (input: {
@@ -456,7 +465,7 @@ function ColumnHeaderWithInlineRename({
 
   const saving = renamePendingColumnId === columnId;
   const blockActions = Boolean(renamePendingColumnId);
-  const moveControlsVisible = !editing && (edgeHoverCount > 0 || isFocusWithin);
+  const moveControlsVisible = canMoveColumn && !editing && (edgeHoverCount > 0 || isFocusWithin);
 
   const cancel = () => {
     skipBlurSave.current = true;
@@ -509,7 +518,7 @@ function ColumnHeaderWithInlineRename({
             }
           }}
         >
-          {!editing ? (
+          {canMoveColumn && !editing ? (
             <>
               <Stack
                 position="absolute"
@@ -639,7 +648,13 @@ function ColumnHeaderWithInlineRename({
               </YStack>
             ) : (
               <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
-                <Text fontWeight="800" color="$boardHeading" fontSize="$6" numberOfLines={1}>
+                <Text
+                  tag="h2"
+                  fontWeight="800"
+                  color="$boardHeading"
+                  fontSize="$6"
+                  numberOfLines={1}
+                >
                   {lane.title}
                 </Text>
                 <BoardPill>{lane.cards.length}</BoardPill>
@@ -670,6 +685,8 @@ function ColumnHeaderWithInlineRename({
 function BoardLaneView({
   lane,
   canReorder,
+  groupBy,
+  hasActivePriorityFilters,
   dragHandleProps,
   onOpenCard,
   onOpenCreateCard,
@@ -681,6 +698,8 @@ function BoardLaneView({
 }: Readonly<{
   lane: BoardLane;
   canReorder: boolean;
+  groupBy: BoardDetailSearch["groupBy"];
+  hasActivePriorityFilters: boolean;
   dragHandleProps?: DraggableProvided["dragHandleProps"];
   onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (columnId: string) => void;
@@ -697,13 +716,19 @@ function BoardLaneView({
   const isRealColumn = lane.laneKind === "column" && lane.originalColumnId;
 
   return (
-    <BoardSurface padding="$0" height="100%">
+    <BoardSurface
+      padding="$0"
+      height="100%"
+      tag="section"
+      aria-label={isRealColumn ? `${lane.title} column` : lane.title}
+    >
       <YStack flex={1} minHeight={0}>
         <YStack padding="$4" paddingBottom="$0" gap="$2" flexShrink={0}>
           {isRealColumn ? (
             <ColumnHeaderWithInlineRename
               lane={lane}
               columnId={isRealColumn}
+              canMoveColumn={canReorder}
               dragHandleProps={dragHandleProps}
               onMoveColumn={onMoveColumn}
               onRenameColumn={onRenameColumn}
@@ -719,7 +744,13 @@ function BoardLaneView({
                     borderRadius={9999}
                     backgroundColor="$boardAccent"
                   />
-                  <Text fontWeight="800" color="$boardHeading" fontSize="$6" numberOfLines={1}>
+                  <Text
+                    tag="h2"
+                    fontWeight="800"
+                    color="$boardHeading"
+                    fontSize="$6"
+                    numberOfLines={1}
+                  >
                     {lane.title}
                   </Text>
                   <BoardPill>{lane.cards.length}</BoardPill>
@@ -770,7 +801,7 @@ function BoardLaneView({
                           <div ref={cardProvided.innerRef} {...cardDragRest} style={cardDragStyle}>
                             <CardInterior
                               card={card}
-                              showColumnContext={lane.laneKind === "priority"}
+                              showColumnContext={false}
                               canMove
                               dragHandleProps={cardProvided.dragHandleProps}
                               onOpen={() => onOpenCard(card.id)}
@@ -785,36 +816,24 @@ function BoardLaneView({
                 </div>
                 <YStack paddingHorizontal="$4" paddingTop="$3" gap="$3">
                   {lane.cards.length === 0 ? (
-                    <LaneEmptyState isVisible isRealColumn={Boolean(isRealColumn)} />
+                    <LaneEmptyState
+                      isVisible
+                      isRealColumn={Boolean(isRealColumn)}
+                      isFiltered={false}
+                    />
                   ) : null}
                 </YStack>
               </div>
             )}
           </Droppable>
         ) : (
-          <YStack
-            gap="$3"
-            flex={1}
-            minHeight={0}
-            overflow="scroll"
-            paddingHorizontal="$4"
-            paddingTop="$3"
-          >
-            {lane.cards.map((card) => (
-              <CardPreview
-                key={card.id}
-                card={card}
-                showColumnContext={lane.laneKind === "priority"}
-                canMove={false}
-                onOpen={() => onOpenCard(card.id)}
-                onMove={onMoveCard}
-              />
-            ))}
-            <LaneEmptyState
-              isVisible={lane.cards.length === 0}
-              isRealColumn={Boolean(isRealColumn)}
-            />
-          </YStack>
+          <StaticLaneCards
+            lane={lane}
+            groupBy={groupBy}
+            hasActivePriorityFilters={hasActivePriorityFilters}
+            onOpenCard={onOpenCard}
+            onMoveCard={onMoveCard}
+          />
         )}
 
         {isRealColumn ? (
@@ -826,6 +845,128 @@ function BoardLaneView({
         ) : null}
       </YStack>
     </BoardSurface>
+  );
+}
+
+function StaticLaneCards({
+  lane,
+  groupBy,
+  hasActivePriorityFilters,
+  onOpenCard,
+  onMoveCard,
+}: Readonly<{
+  lane: BoardLane;
+  groupBy: BoardDetailSearch["groupBy"];
+  hasActivePriorityFilters: boolean;
+  onOpenCard: (cardId: string) => void;
+  onMoveCard: (cardId: string, direction: "up" | "down" | "left" | "right") => void;
+}>) {
+  if (groupBy === "priority") {
+    const visibleGroups = groupListItemsByPriority(lane.cards).filter(
+      (group) => group.cards.length > 0,
+    );
+
+    return (
+      <YStack
+        gap="$4"
+        flex={1}
+        minHeight={0}
+        overflow="scroll"
+        paddingHorizontal="$4"
+        paddingTop="$3"
+      >
+        {visibleGroups.map((group, index) => (
+          <PriorityGroupSection
+            key={`${lane.id}-${group.priority}`}
+            group={group}
+            showDivider={index > 0}
+            onOpenCard={onOpenCard}
+            onMoveCard={onMoveCard}
+          />
+        ))}
+        <LaneEmptyState
+          isVisible={visibleGroups.length === 0}
+          isRealColumn
+          isFiltered={hasActivePriorityFilters}
+        />
+      </YStack>
+    );
+  }
+
+  return (
+    <YStack
+      gap="$3"
+      flex={1}
+      minHeight={0}
+      overflow="scroll"
+      paddingHorizontal="$4"
+      paddingTop="$3"
+    >
+      {lane.cards.map((card) => (
+        <CardPreview
+          key={card.id}
+          card={card}
+          showColumnContext={false}
+          canMove={false}
+          onOpen={() => onOpenCard(card.id)}
+          onMove={onMoveCard}
+        />
+      ))}
+      <LaneEmptyState
+        isVisible={lane.cards.length === 0}
+        isRealColumn
+        isFiltered={hasActivePriorityFilters}
+      />
+    </YStack>
+  );
+}
+
+function PriorityGroupSection({
+  group,
+  showDivider,
+  onOpenCard,
+  onMoveCard,
+}: Readonly<{
+  group: ReturnType<typeof groupListItemsByPriority>[number];
+  showDivider: boolean;
+  onOpenCard: (cardId: string) => void;
+  onMoveCard: (cardId: string, direction: "up" | "down" | "left" | "right") => void;
+}>) {
+  return (
+    <YStack
+      gap="$3"
+      paddingTop={showDivider ? "$3" : "$0"}
+      borderTopWidth={showDivider ? 1 : 0}
+      borderColor="$boardShellBorder"
+    >
+      <XStack alignItems="center" gap="$2" flexWrap="wrap">
+        <Stack
+          width={10}
+          height={10}
+          borderRadius={9999}
+          backgroundColor={boardPriorityMeta[group.priority].accentColor}
+        />
+        <Text tag="h3" fontWeight="700" color="$boardHeading">
+          {group.title}
+        </Text>
+        <BoardPill backgroundColor="$boardPanelSurfaceStrong" color="$boardTextMuted">
+          {group.cards.length}
+        </BoardPill>
+      </XStack>
+
+      <YStack gap="$3">
+        {group.cards.map((card) => (
+          <CardPreview
+            key={card.id}
+            card={card}
+            showColumnContext={false}
+            canMove={false}
+            onOpen={() => onOpenCard(card.id)}
+            onMove={onMoveCard}
+          />
+        ))}
+      </YStack>
+    </YStack>
   );
 }
 
@@ -1052,9 +1193,11 @@ function CardPreview({
 function LaneEmptyState({
   isVisible,
   isRealColumn,
+  isFiltered,
 }: Readonly<{
   isVisible: boolean;
   isRealColumn: boolean;
+  isFiltered: boolean;
 }>) {
   if (!isVisible) {
     return null;
@@ -1062,9 +1205,11 @@ function LaneEmptyState({
 
   return (
     <Text color="$boardTextMuted" fontSize="$3">
-      {isRealColumn
-        ? "This column is empty. Add a card to get it moving."
-        : "No cards match this group right now."}
+      {isFiltered
+        ? "No cards in this column match the active priority filter."
+        : isRealColumn
+          ? "This column is empty. Add a card to get it moving."
+          : "No cards match this group right now."}
     </Text>
   );
 }
