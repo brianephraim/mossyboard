@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { BoardRouteGate, CenteredBoardState } from "../features/boards/access";
+import { CenteredBoardState } from "../features/boards/access";
 
 const BoardDetailScreen = lazy(() =>
   import("../features/boards/BoardDetailScreen").then((m) => ({ default: m.BoardDetailScreen })),
@@ -22,17 +22,15 @@ function BoardDetailRoute() {
   const search = Route.useSearch();
 
   return (
-    <BoardRouteGate>
-      <Suspense
-        fallback={
-          <CenteredBoardState
-            title="Loading board"
-            description="We’re fetching this board’s columns and cards."
-          />
-        }
-      >
-        <BoardDetailScreen boardId={params.boardId} rawSearch={search} />
-      </Suspense>
-    </BoardRouteGate>
+    <Suspense
+      fallback={
+        <CenteredBoardState
+          title="Loading board"
+          description="We’re fetching this board’s columns and cards."
+        />
+      }
+    >
+      <BoardDetailScreen boardId={params.boardId} rawSearch={search} />
+    </Suspense>
   );
 }

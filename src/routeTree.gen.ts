@@ -15,6 +15,7 @@ import { Route as OtherPageRouteImport } from './routes/other-page'
 import { Route as BoardsRouteImport } from './routes/boards'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BoardsIndexRouteImport } from './routes/boards.index'
 import { Route as BoardsBoardIdRouteImport } from './routes/boards.$boardId'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
 
@@ -48,6 +49,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BoardsIndexRoute = BoardsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BoardsRoute,
+} as any)
 const BoardsBoardIdRoute = BoardsBoardIdRouteImport.update({
   id: '/$boardId',
   path: '/$boardId',
@@ -67,16 +73,17 @@ export interface FileRoutesByFullPath {
   '/tamagui-counter': typeof TamaguiCounterRoute
   '/verify-email': typeof VerifyEmailRoute
   '/boards/$boardId': typeof BoardsBoardIdRoute
+  '/boards/': typeof BoardsIndexRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/boards': typeof BoardsRouteWithChildren
   '/other-page': typeof OtherPageRoute
   '/tamagui-counter': typeof TamaguiCounterRoute
   '/verify-email': typeof VerifyEmailRoute
   '/boards/$boardId': typeof BoardsBoardIdRoute
+  '/boards': typeof BoardsIndexRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesById {
@@ -88,6 +95,7 @@ export interface FileRoutesById {
   '/tamagui-counter': typeof TamaguiCounterRoute
   '/verify-email': typeof VerifyEmailRoute
   '/boards/$boardId': typeof BoardsBoardIdRoute
+  '/boards/': typeof BoardsIndexRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRouteTypes {
@@ -100,16 +108,17 @@ export interface FileRouteTypes {
     | '/tamagui-counter'
     | '/verify-email'
     | '/boards/$boardId'
+    | '/boards/'
     | '/api/trpc/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
-    | '/boards'
     | '/other-page'
     | '/tamagui-counter'
     | '/verify-email'
     | '/boards/$boardId'
+    | '/boards'
     | '/api/trpc/$'
   id:
     | '__root__'
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/tamagui-counter'
     | '/verify-email'
     | '/boards/$boardId'
+    | '/boards/'
     | '/api/trpc/$'
   fileRoutesById: FileRoutesById
 }
@@ -177,6 +187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/boards/': {
+      id: '/boards/'
+      path: '/'
+      fullPath: '/boards/'
+      preLoaderRoute: typeof BoardsIndexRouteImport
+      parentRoute: typeof BoardsRoute
+    }
     '/boards/$boardId': {
       id: '/boards/$boardId'
       path: '/$boardId'
@@ -196,10 +213,12 @@ declare module '@tanstack/react-router' {
 
 interface BoardsRouteChildren {
   BoardsBoardIdRoute: typeof BoardsBoardIdRoute
+  BoardsIndexRoute: typeof BoardsIndexRoute
 }
 
 const BoardsRouteChildren: BoardsRouteChildren = {
   BoardsBoardIdRoute: BoardsBoardIdRoute,
+  BoardsIndexRoute: BoardsIndexRoute,
 }
 
 const BoardsRouteWithChildren =

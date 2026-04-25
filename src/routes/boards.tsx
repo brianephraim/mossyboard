@@ -1,20 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 import { BoardRouteGate } from "../features/boards/access";
-import { BoardsIndexScreen } from "../features/boards/BoardsIndexScreen";
-import { parseBoardsIndexSearch } from "../features/boards/model";
 
 export const Route = createFileRoute("/boards")({
-  validateSearch: (search) => parseBoardsIndexSearch(search),
-  component: BoardsRoute,
+  component: BoardsLayoutRoute,
 });
 
-function BoardsRoute() {
-  const search = Route.useSearch();
-
+function BoardsLayoutRoute() {
   return (
     <BoardRouteGate>
-      <BoardsIndexScreen status={search.status} />
+      <Outlet />
     </BoardRouteGate>
   );
 }
