@@ -145,6 +145,36 @@ export function BoardCanvas({
     };
   }, []);
 
+  const moveColumnProgrammatically = (columnId: string, direction: "left" | "right") => {
+    if (!canReorder) {
+      onMoveColumn(columnId, direction);
+      return;
+    }
+
+    const api = sensorApiRef.current;
+    if (!api) {
+      return;
+    }
+
+    const preDrag = api.tryGetLock(columnId);
+    if (!preDrag) {
+      return;
+    }
+
+    const drag = preDrag.snapLift();
+    if (direction === "left") {
+      drag.moveLeft();
+    } else if (direction === "right") {
+      drag.moveRight();
+    }
+
+    // Give the browser a chance to paint the lifted + moved state before dropping.
+    // Otherwise the drag can complete within a single frame and look like "nothing happened".
+    window.setTimeout(() => {
+      drag.drop({ shouldBlockNextClick: true });
+    }, 120);
+  };
+
   const moveCardProgrammatically = (
     cardId: string,
     direction: "up" | "down" | "left" | "right",
@@ -306,7 +336,7 @@ export function BoardCanvas({
                                   onRenameColumn={onRenameColumn}
                                   renamePendingColumnId={renamePendingColumnId}
                                   onOpenCreateColumnAfter={onOpenCreateColumnAfter}
-                                  onMoveColumn={onMoveColumn}
+                                  onMoveColumn={moveColumnProgrammatically}
                                   onMoveCard={canReorder ? moveCardProgrammatically : onMoveCard}
                                 />
                               </div>
@@ -381,7 +411,7 @@ export function BoardCanvas({
                   onRenameColumn={onRenameColumn}
                   renamePendingColumnId={renamePendingColumnId}
                   onOpenCreateColumnAfter={onOpenCreateColumnAfter}
-                  onMoveColumn={onMoveColumn}
+                  onMoveColumn={canReorder ? moveColumnProgrammatically : onMoveColumn}
                   onMoveCard={canReorder ? moveCardProgrammatically : onMoveCard}
                 />
               </YStack>
