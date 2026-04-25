@@ -192,6 +192,7 @@ export function reorderBoardCards(
     sourceIndex: number;
     destinationColumnId: string;
     destinationIndex: number;
+    destinationPriority?: CardPriority;
   },
 ): LoadedBoard {
   const nextColumns = board.columns.map((column) => ({
@@ -213,6 +214,7 @@ export function reorderBoardCards(
   destinationColumn.cards.splice(input.destinationIndex, 0, {
     ...movedCard,
     columnId: destinationColumn.id,
+    priority: input.destinationPriority ?? movedCard.priority,
   });
 
   return {

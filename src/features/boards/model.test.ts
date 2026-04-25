@@ -163,6 +163,22 @@ describe("board model helpers", () => {
     );
   });
 
+  it("updates priority during optimistic priority-group moves", () => {
+    const reordered = reorderBoardCards(boardFixture, {
+      sourceColumnId: "column-1",
+      sourceIndex: 1,
+      destinationColumnId: "column-2",
+      destinationIndex: 1,
+      destinationPriority: "high",
+    });
+
+    const movedCard = reordered.columns
+      .find((column) => column.id === "column-2")
+      ?.cards.find((card) => card.id === "card-2");
+
+    assert.equal(movedCard?.priority, "high");
+  });
+
   it("toggles priority filters in a stable order", () => {
     const one = togglePrioritySelection([], "high");
     const two = togglePrioritySelection(one, "low");

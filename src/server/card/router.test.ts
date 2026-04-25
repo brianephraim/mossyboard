@@ -46,6 +46,17 @@ describe("card router", () => {
         }),
       (err: unknown) => (err as { code?: string })?.code === "BAD_REQUEST",
     );
+
+    await assert.rejects(
+      () =>
+        caller.card.move({
+          cardId: "00000000-0000-4000-8000-000000000005",
+          targetColumnId: "00000000-0000-4000-8000-000000000006",
+          priority: "urgent" as never,
+          expectedVersion: 0,
+        }),
+      (err: unknown) => (err as { code?: string })?.code === "BAD_REQUEST",
+    );
   });
 
   it("validates cursor timestamps and UUID ids", async () => {

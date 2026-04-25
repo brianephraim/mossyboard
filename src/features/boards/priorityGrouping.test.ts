@@ -110,4 +110,20 @@ describe("priority grouping helpers", () => {
       nextId: "card-5",
     });
   });
+
+  it("maps cross-group drops back into the underlying user order", () => {
+    const placement = getPriorityGroupPlacement(boardFixture, {
+      cardId: "card-2",
+      columnId: "column-1",
+      priority: "medium",
+      destinationIndex: 1,
+    });
+
+    assert.deepEqual(placement, {
+      columnId: "column-1",
+      destinationIndex: 2,
+      prevId: "card-3",
+      nextId: "card-4",
+    });
+  });
 });

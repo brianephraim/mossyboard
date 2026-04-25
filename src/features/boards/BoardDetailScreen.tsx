@@ -293,12 +293,17 @@ export function BoardDetailScreen({
       sourceIndex: number;
       destinationColumnId: string;
       destinationIndex: number;
+      destinationPriority?: CardPriority;
       expectedVersion: number;
     },
   ) => {
+    const currentLocation = getCardPosition(currentBoard, input.cardId);
+    const currentPriority = currentLocation?.card.priority;
+
     if (
       input.sourceColumnId === input.destinationColumnId &&
-      input.sourceIndex === input.destinationIndex
+      input.sourceIndex === input.destinationIndex &&
+      (!input.destinationPriority || input.destinationPriority === currentPriority)
     ) {
       return;
     }
@@ -320,6 +325,7 @@ export function BoardDetailScreen({
       await reorderCard.mutateAsync({
         cardId: input.cardId,
         columnId: input.destinationColumnId,
+        priority: input.destinationPriority,
         prevCardId: prevId,
         nextCardId: nextId,
         expectedVersion: input.expectedVersion,
@@ -330,6 +336,7 @@ export function BoardDetailScreen({
     await moveCard.mutateAsync({
       cardId: input.cardId,
       targetColumnId: input.destinationColumnId,
+      priority: input.destinationPriority,
       prevCardId: prevId,
       nextCardId: nextId,
       expectedVersion: input.expectedVersion,
@@ -346,10 +353,8 @@ export function BoardDetailScreen({
 
     if (priorityGroupReorderEnabled && sourcePriorityGroup && destinationPriorityGroup) {
       if (
-        sourcePriorityGroup.columnId !== destinationPriorityGroup.columnId ||
-        sourcePriorityGroup.priority !== destinationPriorityGroup.priority ||
-        (result.source.droppableId === result.destination.droppableId &&
-          result.source.index === result.destination.index)
+        result.source.droppableId === result.destination.droppableId &&
+        result.source.index === result.destination.index
       ) {
         return;
       }
@@ -375,6 +380,7 @@ export function BoardDetailScreen({
         sourceIndex: cardLocation.cardIndex,
         destinationColumnId: placement.columnId,
         destinationIndex: placement.destinationIndex,
+        destinationPriority: destinationPriorityGroup.priority,
         expectedVersion: cardLocation.card.version,
       });
       return;

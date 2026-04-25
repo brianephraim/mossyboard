@@ -268,6 +268,7 @@ export async function moveCard(input: {
   ownerId: string;
   cardId: string;
   targetColumnId: string;
+  priority?: CardPriority;
   prevCardId?: string | null;
   nextCardId?: string | null;
   expectedVersion: number;
@@ -282,6 +283,7 @@ export async function moveCard(input: {
     ownerId: input.ownerId,
     cardId: input.cardId,
     targetColumnId: input.targetColumnId,
+    priority: input.priority,
     prevCardId: input.prevCardId,
     nextCardId: input.nextCardId,
     expectedVersion: input.expectedVersion,
@@ -292,6 +294,7 @@ export async function reorderCard(input: {
   ownerId: string;
   cardId: string;
   columnId: string;
+  priority?: CardPriority;
   prevCardId?: string | null;
   nextCardId?: string | null;
   expectedVersion: number;
@@ -306,6 +309,7 @@ export async function reorderCard(input: {
     ownerId: input.ownerId,
     cardId: input.cardId,
     targetColumnId: input.columnId,
+    priority: input.priority,
     prevCardId: input.prevCardId,
     nextCardId: input.nextCardId,
     expectedVersion: input.expectedVersion,
@@ -402,6 +406,7 @@ async function placeCard(input: {
   ownerId: string;
   cardId: string;
   targetColumnId: string;
+  priority?: CardPriority;
   prevCardId?: string | null;
   nextCardId?: string | null;
   expectedVersion: number;
@@ -451,6 +456,7 @@ async function placeCard(input: {
       .update(cards)
       .set({
         columnId: targetColumn.id,
+        priority: input.priority ?? lockedCard.priority,
         position,
         version: lockedCard.version + 1,
         updatedAt: now,

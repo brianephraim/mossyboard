@@ -33,6 +33,7 @@ const INSERT_COLUMN_BUTTON_OFFSET_PX = Math.round(
   BOARD_DND_GAP_PX / 2 + INSERT_COLUMN_BUTTON_SIZE_PX / 2,
 );
 const INSERT_COLUMN_BUTTON_SAFE_TOP_PX = 24;
+const PRIORITY_GROUP_CARD_DROP_TYPE = "PRIORITY_GROUP_CARD";
 
 const dndHorizontalRowStyle: CSSProperties = {
   display: "flex",
@@ -156,7 +157,7 @@ export function BoardCanvas({
     showPriorityGroupingNotice && !priorityGroupReorderEnabled
       ? "Priority grouping is display-only for now. Cards stay in their saved column order underneath, so drag and keyboard reorder are off in this view."
       : showPriorityGroupingNotice && priorityGroupReorderEnabled
-        ? "Priority-group reordering is on. Moving cards here updates the saved user order."
+        ? "Priority-group reordering is on. Moving cards here updates the saved user order, and dropping into another priority group also updates its priority."
         : !canReorder && search.view === "board"
           ? "Drag and keyboard reorder controls are available only in board view grouped by column with no active priority filters."
           : null;
@@ -1139,7 +1140,7 @@ function PriorityGroupSection({
       {canReorder ? (
         <Droppable
           droppableId={getPriorityGroupDroppableId(laneId, group.priority)}
-          type={getPriorityGroupDroppableId(laneId, group.priority)}
+          type={PRIORITY_GROUP_CARD_DROP_TYPE}
           ignoreContainerClipping
         >
           {(provided) => (

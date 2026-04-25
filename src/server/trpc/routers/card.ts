@@ -69,6 +69,7 @@ export const cardRouter = t.router({
       z.object({
         cardId: cardIdSchema,
         targetColumnId: columnIdSchema,
+        priority: cardPrioritySchema.optional(),
         prevCardId: cardIdSchema.nullish(),
         nextCardId: cardIdSchema.nullish(),
         expectedVersion: z.number().int().min(0),
@@ -82,6 +83,7 @@ export const cardRouter = t.router({
       z.object({
         cardId: cardIdSchema,
         columnId: columnIdSchema,
+        priority: cardPrioritySchema.optional(),
         prevCardId: cardIdSchema.nullish(),
         nextCardId: cardIdSchema.nullish(),
         expectedVersion: z.number().int().min(0),

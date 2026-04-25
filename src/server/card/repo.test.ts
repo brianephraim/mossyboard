@@ -130,7 +130,7 @@ describe("card repo", () => {
     );
   }, 20000);
 
-  it("moves and reorders cards with version conflicts", async () => {
+  it("moves and reorders cards with priority changes and version conflicts", async () => {
     if (!canRun) return;
 
     process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
@@ -171,6 +171,7 @@ describe("card repo", () => {
       ownerId,
       cardId: secondCard.id,
       targetColumnId,
+      priority: "high",
       nextCardId: targetCard.id,
       expectedVersion: 0,
     });
@@ -181,6 +182,7 @@ describe("card repo", () => {
       ownerId,
       cardId: targetCard.id,
       columnId: targetColumnId,
+      priority: "low",
       prevCardId: secondCard.id,
       expectedVersion: 0,
     });
@@ -203,6 +205,10 @@ describe("card repo", () => {
     assert.deepEqual(
       reloadedBoard?.columns[1]?.cards.map((card) => card.id),
       [secondCard.id, targetCard.id],
+    );
+    assert.deepEqual(
+      reloadedBoard?.columns[1]?.cards.map((card) => card.priority),
+      ["high", "low"],
     );
     assert.deepEqual(
       reloadedBoard?.columns[0]?.cards.map((card) => card.id),

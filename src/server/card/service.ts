@@ -115,6 +115,7 @@ export async function moveCardForUser(
   input: {
     cardId: string;
     targetColumnId: string;
+    priority?: CardPriority;
     prevCardId?: string | null;
     nextCardId?: string | null;
     expectedVersion: number;
@@ -124,6 +125,7 @@ export async function moveCardForUser(
     ownerId,
     cardId: input.cardId,
     targetColumnId: input.targetColumnId,
+    priority: input.priority,
     prevCardId: input.prevCardId,
     nextCardId: input.nextCardId,
     expectedVersion: input.expectedVersion,
@@ -146,6 +148,7 @@ export async function reorderCardForUser(
   input: {
     cardId: string;
     columnId: string;
+    priority?: CardPriority;
     prevCardId?: string | null;
     nextCardId?: string | null;
     expectedVersion: number;
@@ -155,6 +158,7 @@ export async function reorderCardForUser(
     ownerId,
     cardId: input.cardId,
     columnId: input.columnId,
+    priority: input.priority,
     prevCardId: input.prevCardId,
     nextCardId: input.nextCardId,
     expectedVersion: input.expectedVersion,
