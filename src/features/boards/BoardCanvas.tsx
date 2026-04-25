@@ -168,6 +168,7 @@ export function BoardCanvas({
                     paddingLeft: "var(--c-space-5)",
                     paddingRight: "var(--c-space-5)",
                     paddingTop: INSERT_COLUMN_BUTTON_SAFE_TOP_PX,
+                    paddingBottom: "var(--c-space-5)",
                     marginRight: -BOARD_DND_GAP_PX,
                   }}
                 >
@@ -277,6 +278,7 @@ export function BoardCanvas({
             minWidth="max-content"
             paddingHorizontal="$5"
             paddingTop={INSERT_COLUMN_BUTTON_SAFE_TOP_PX}
+            paddingBottom="$5"
           >
             {showColumnManagement && columns.length === 0 ? (
               <YStack width={COLUMN_WIDTH_PX} minWidth={COLUMN_WIDTH_PX} padding="$5">

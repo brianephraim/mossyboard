@@ -518,7 +518,7 @@ export function BoardDetailScreen({
         </YStack>
 
         {search.view === "board" ? (
-          <YStack paddingBottom="$5" paddingTop="$0" flex={1} minHeight={0} overflow="hidden">
+          <YStack paddingTop="$0" flex={1} minHeight={0} overflow="hidden">
             <BoardCanvas
               board={board}
               search={search}
