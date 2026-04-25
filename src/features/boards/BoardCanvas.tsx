@@ -26,6 +26,7 @@ const COLUMN_WIDTH_PX = 320;
 const INSERT_COLUMN_BUTTON_SIZE_PX = 26;
 const CARD_MOVE_EDGE_SIZE_PX = 15;
 const CARD_CHROME_PADDING_PX = 16;
+const COLUMN_HEADER_MOVE_EDGE_SIZE_PX = 18;
 const INSERT_COLUMN_BUTTON_OFFSET_PX = Math.round(
   BOARD_DND_GAP_PX / 2 + INSERT_COLUMN_BUTTON_SIZE_PX / 2,
 );
@@ -416,6 +417,8 @@ function ColumnHeaderWithInlineRename({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(lane.title);
   const skipBlurSave = useRef(false);
+  const [edgeHoverCount, setEdgeHoverCount] = useState(0);
+  const [isFocusWithin, setIsFocusWithin] = useState(false);
 
   useEffect(() => {
     setDraft(lane.title);
@@ -423,6 +426,7 @@ function ColumnHeaderWithInlineRename({
 
   const saving = renamePendingColumnId === columnId;
   const blockActions = Boolean(renamePendingColumnId);
+  const moveControlsVisible = !editing && (edgeHoverCount > 0 || isFocusWithin);
 
   const cancel = () => {
     skipBlurSave.current = true;
@@ -459,7 +463,93 @@ function ColumnHeaderWithInlineRename({
   return (
     <YStack gap="$2">
       <div {...(dragHandleProps ?? {})} style={{ width: "100%" }}>
-        <YStack gap="$2">
+        <YStack
+          gap="$2"
+          position="relative"
+          onFocus={() => setIsFocusWithin(true)}
+          onBlur={(e: FocusEvent) => {
+            const nextTarget = e.relatedTarget as unknown as Node | null;
+            if (!nextTarget) {
+              setIsFocusWithin(false);
+              return;
+            }
+
+            if (!e.currentTarget.contains(nextTarget)) {
+              setIsFocusWithin(false);
+            }
+          }}
+        >
+          {!editing ? (
+            <>
+              <Stack
+                position="absolute"
+                left={-CARD_CHROME_PADDING_PX}
+                top={0}
+                bottom={0}
+                width={COLUMN_HEADER_MOVE_EDGE_SIZE_PX}
+                zIndex={2}
+                opacity={moveControlsVisible ? 1 : 0}
+                onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
+                onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
+              >
+                <BoardActionButton
+                  tone="ghost"
+                  aria-label="Move column left"
+                  disabled={blockActions}
+                  onPress={() => onMoveColumn(columnId, "left")}
+                  width="100%"
+                  height="100%"
+                  borderWidth={0}
+                  borderRadius={0}
+                  paddingHorizontal={0}
+                  paddingVertical={0}
+                  justifyContent="center"
+                  alignItems="center"
+                  backgroundColor="rgba(255, 255, 255, 0.01)"
+                  hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
+                  pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
+                >
+                  <Text fontSize="$6" fontWeight="800" color="$boardTextMuted">
+                    ‹
+                  </Text>
+                </BoardActionButton>
+              </Stack>
+
+              <Stack
+                position="absolute"
+                right={-CARD_CHROME_PADDING_PX}
+                top={0}
+                bottom={0}
+                width={COLUMN_HEADER_MOVE_EDGE_SIZE_PX}
+                zIndex={2}
+                opacity={moveControlsVisible ? 1 : 0}
+                onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
+                onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
+              >
+                <BoardActionButton
+                  tone="ghost"
+                  aria-label="Move column right"
+                  disabled={blockActions}
+                  onPress={() => onMoveColumn(columnId, "right")}
+                  width="100%"
+                  height="100%"
+                  borderWidth={0}
+                  borderRadius={0}
+                  paddingHorizontal={0}
+                  paddingVertical={0}
+                  justifyContent="center"
+                  alignItems="center"
+                  backgroundColor="rgba(255, 255, 255, 0.01)"
+                  hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
+                  pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
+                >
+                  <Text fontSize="$6" fontWeight="800" color="$boardTextMuted">
+                    ›
+                  </Text>
+                </BoardActionButton>
+              </Stack>
+            </>
+          ) : null}
           <XStack alignItems="center" gap="$3" minWidth={0}>
             <Stack
               width={12}
@@ -529,20 +619,6 @@ function ColumnHeaderWithInlineRename({
 
           {!editing ? (
             <XStack gap="$2" flexWrap="wrap">
-              <BoardActionButton
-                tone="ghost"
-                disabled={blockActions}
-                onPress={() => onMoveColumn(columnId, "left")}
-              >
-                ←
-              </BoardActionButton>
-              <BoardActionButton
-                tone="ghost"
-                disabled={blockActions}
-                onPress={() => onMoveColumn(columnId, "right")}
-              >
-                →
-              </BoardActionButton>
               <BoardActionButton
                 tone="ghost"
                 disabled={blockActions}
