@@ -1,4 +1,4 @@
-import type { DraggableProvided, DropResult } from "@hello-pangea/dnd";
+import type { DraggableProvided, DropResult, Sensor, SensorAPI } from "@hello-pangea/dnd";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import {
   cloneElement,
@@ -8,6 +8,7 @@ import {
   type ReactElement,
   type ReactNode,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -132,6 +133,50 @@ export function BoardCanvas({
   const showColumnManagement = search.groupBy === "column";
   const lastColumnId = board.columns[board.columns.length - 1]?.id ?? null;
   const columns = board.columns;
+  const sensorApiRef = useRef<SensorAPI | null>(null);
+
+  const programmaticSensor: Sensor = useMemo(() => {
+    return (api) => {
+      sensorApiRef.current = api;
+    };
+  }, []);
+
+  const moveCardProgrammatically = (
+    cardId: string,
+    direction: "up" | "down" | "left" | "right",
+  ) => {
+    if (!canReorder) {
+      onMoveCard(cardId, direction);
+      return;
+    }
+
+    const api = sensorApiRef.current;
+    if (!api) {
+      return;
+    }
+
+    const preDrag = api.tryGetLock(cardId);
+    if (!preDrag) {
+      return;
+    }
+
+    const drag = preDrag.snapLift();
+    if (direction === "up") {
+      drag.moveUp();
+    } else if (direction === "down") {
+      drag.moveDown();
+    } else if (direction === "left") {
+      drag.moveLeft();
+    } else if (direction === "right") {
+      drag.moveRight();
+    }
+
+    // Give the browser a chance to paint the lifted + moved state before dropping.
+    // Otherwise the drag can complete within a single frame and look like "nothing happened".
+    window.setTimeout(() => {
+      drag.drop({ shouldBlockNextClick: true });
+    }, 120);
+  };
 
   return (
     <YStack gap="$4" flex={1} minHeight={0} overflow="hidden">
@@ -155,7 +200,7 @@ export function BoardCanvas({
         }}
       >
         {canReorder ? (
-          <DragDropContext onDragEnd={onDragEnd}>
+          <DragDropContext onDragEnd={onDragEnd} sensors={[programmaticSensor]}>
             <Droppable
               droppableId="board-columns"
               direction="horizontal"
@@ -258,7 +303,7 @@ export function BoardCanvas({
                                   renamePendingColumnId={renamePendingColumnId}
                                   onOpenCreateColumnAfter={onOpenCreateColumnAfter}
                                   onMoveColumn={onMoveColumn}
-                                  onMoveCard={onMoveCard}
+                                  onMoveCard={canReorder ? moveCardProgrammatically : onMoveCard}
                                 />
                               </div>
                             );
@@ -333,7 +378,7 @@ export function BoardCanvas({
                   renamePendingColumnId={renamePendingColumnId}
                   onOpenCreateColumnAfter={onOpenCreateColumnAfter}
                   onMoveColumn={onMoveColumn}
-                  onMoveCard={onMoveCard}
+                  onMoveCard={canReorder ? moveCardProgrammatically : onMoveCard}
                 />
               </YStack>
             ))}
