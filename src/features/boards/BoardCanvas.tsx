@@ -1,6 +1,6 @@
-import type { DropResult } from "@hello-pangea/dnd";
+import type { DraggableProvided, DropResult } from "@hello-pangea/dnd";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
-import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type CSSProperties, useEffect, useRef, useState } from "react";
 import { Input } from "@tamagui/input";
 import { Stack, Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
@@ -8,6 +8,52 @@ import { XStack, YStack } from "@tamagui/stacks";
 import { BoardActionButton, BoardInlineNotice, BoardPill, BoardSurface, PriorityPill } from "./ui";
 import { buildBoardLanes } from "./model";
 import type { BoardDetailSearch, BoardLane, LoadedBoard } from "./types";
+
+const BOARD_DND_GAP_PX = 16;
+const COLUMN_WIDTH_PX = 320;
+const ADD_COLUMN_LANE_WIDTH_PX = 280;
+
+const dndHorizontalRowStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "flex-start",
+  gap: BOARD_DND_GAP_PX,
+  minWidth: "max-content",
+};
+
+const dndColumnShellStyle: CSSProperties = {
+  width: COLUMN_WIDTH_PX,
+  minWidth: COLUMN_WIDTH_PX,
+  flexShrink: 0,
+};
+
+const dndCardListStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: BOARD_DND_GAP_PX,
+  minHeight: 120,
+};
+
+/** Card chrome on the HTML drag wrapper (matches board card tokens; no backdrop-filter). */
+const dndCardShellStyle: CSSProperties = {
+  borderRadius: 22,
+  border: "1px solid rgba(121, 138, 91, 0.16)",
+  backgroundColor: "#ffffff",
+  boxShadow: "rgba(81, 102, 57, 0.1) 0px 8px 24px",
+  padding: 16,
+  boxSizing: "border-box",
+};
+
+function mergeDraggableStyle(
+  base: CSSProperties,
+  draggableProps: DraggableProvided["draggableProps"],
+): { rest: Record<string, unknown>; style: CSSProperties } {
+  const { style: dragStyle, ...rest } = draggableProps;
+  return {
+    rest: rest as Record<string, unknown>,
+    style: { ...base, ...(dragStyle as CSSProperties | undefined) },
+  };
+}
 
 type BoardCanvasProps = {
   board: LoadedBoard;
@@ -56,58 +102,67 @@ export function BoardCanvas({
         />
       ) : null}
 
-      <YStack overflow="scroll" maxWidth="100%">
+      <div style={{ overflowX: "auto", maxWidth: "100%" }}>
         {canReorder ? (
           <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="board-columns" direction="horizontal" type="COLUMN">
+            <Droppable
+              droppableId="board-columns"
+              direction="horizontal"
+              type="COLUMN"
+              ignoreContainerClipping
+            >
               {(provided) => (
-                <XStack
-                  ref={provided.innerRef}
-                  gap="$4"
-                  alignItems="flex-start"
-                  minWidth="max-content"
-                  {...provided.droppableProps}
-                >
-                  {board.columns.map((column, columnIndex) => (
-                    <Draggable key={column.id} draggableId={column.id} index={columnIndex}>
-                      {(columnProvided) => (
-                        <YStack
-                          ref={columnProvided.innerRef}
-                          width={320}
-                          minWidth={320}
-                          gap="$3"
-                          {...columnProvided.draggableProps}
-                        >
-                          <BoardLaneView
-                            lane={{
-                              id: column.id,
-                              title: column.title,
-                              laneKind: "column",
-                              originalColumnId: column.id,
-                              columnVersion: column.version,
-                              cards: column.cards.map((card) => ({
-                                ...card,
-                                originalColumnId: column.id,
-                                originalColumnTitle: column.title,
-                              })),
-                            }}
-                            canReorder={canReorder}
-                            dragHandleProps={columnProvided.dragHandleProps}
-                            onOpenCard={onOpenCard}
-                            onOpenCreateCard={onOpenCreateCard}
-                            onRenameColumn={onRenameColumn}
-                            renamePendingColumnId={renamePendingColumnId}
-                            onOpenCreateColumnAfter={onOpenCreateColumnAfter}
-                            onMoveColumn={onMoveColumn}
-                            onMoveCard={onMoveCard}
-                          />
-                        </YStack>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
+                <div style={dndHorizontalRowStyle}>
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    style={dndHorizontalRowStyle}
+                  >
+                    {board.columns.map((column, columnIndex) => (
+                      <Draggable key={column.id} draggableId={column.id} index={columnIndex}>
+                        {(columnProvided) => {
+                          const { rest: colDragRest, style: colDragStyle } = mergeDraggableStyle(
+                            dndColumnShellStyle,
+                            columnProvided.draggableProps,
+                          );
+                          return (
+                            <div
+                              ref={columnProvided.innerRef}
+                              {...colDragRest}
+                              style={colDragStyle}
+                            >
+                              <BoardLaneView
+                                lane={{
+                                  id: column.id,
+                                  title: column.title,
+                                  laneKind: "column",
+                                  originalColumnId: column.id,
+                                  columnVersion: column.version,
+                                  cards: column.cards.map((card) => ({
+                                    ...card,
+                                    originalColumnId: column.id,
+                                    originalColumnTitle: column.title,
+                                  })),
+                                }}
+                                canReorder={canReorder}
+                                dragHandleProps={columnProvided.dragHandleProps}
+                                onOpenCard={onOpenCard}
+                                onOpenCreateCard={onOpenCreateCard}
+                                onRenameColumn={onRenameColumn}
+                                renamePendingColumnId={renamePendingColumnId}
+                                onOpenCreateColumnAfter={onOpenCreateColumnAfter}
+                                onMoveColumn={onMoveColumn}
+                                onMoveCard={onMoveCard}
+                              />
+                            </div>
+                          );
+                        }}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
                   <AddColumnLane onOpen={() => onOpenCreateColumnAfter(lastColumnId)} />
-                </XStack>
+                </div>
               )}
             </Droppable>
           </DragDropContext>
@@ -133,7 +188,7 @@ export function BoardCanvas({
             ) : null}
           </XStack>
         )}
-      </YStack>
+      </div>
     </YStack>
   );
 }
@@ -149,7 +204,7 @@ function ColumnHeaderWithInlineRename({
 }: Readonly<{
   lane: BoardLane;
   columnId: string;
-  dragHandleProps?: Record<string, unknown>;
+  dragHandleProps?: DraggableProvided["dragHandleProps"];
   onMoveColumn: (columnId: string, direction: "left" | "right") => void;
   onOpenCreateColumnAfter: (columnId?: string | null) => void;
   onRenameColumn: (input: {
@@ -206,104 +261,106 @@ function ColumnHeaderWithInlineRename({
 
   return (
     <YStack gap="$2">
-      <XStack alignItems="flex-start" justifyContent="space-between" gap="$3" {...dragHandleProps}>
-        <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
-          <Stack
-            width={12}
-            height={12}
-            marginTop={4}
-            borderRadius={9999}
-            backgroundColor="$boardTextSubtle"
-          />
-          {editing ? (
-            <YStack gap="$2" flex={1} minWidth={0}>
-              <YStack tag="label" gap="$2" htmlFor={`${labelId}-field`}>
-                <Text id={labelId} fontWeight="600" color="$boardHeading">
-                  Column title
-                </Text>
-                <Input
-                  id={`${labelId}-field`}
-                  value={draft}
-                  onChangeText={setDraft}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setDraft(e.currentTarget.value)}
-                  disabled={saving}
-                  autoFocus
-                  aria-labelledby={labelId}
-                  onBlur={() => {
-                    if (skipBlurSave.current || saving) {
-                      return;
-                    }
+      <div {...(dragHandleProps ?? {})} style={{ width: "100%" }}>
+        <XStack alignItems="flex-start" justifyContent="space-between" gap="$3">
+          <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
+            <Stack
+              width={12}
+              height={12}
+              marginTop={4}
+              borderRadius={9999}
+              backgroundColor="$boardTextSubtle"
+            />
+            {editing ? (
+              <YStack gap="$2" flex={1} minWidth={0}>
+                <YStack tag="label" gap="$2" htmlFor={`${labelId}-field`}>
+                  <Text id={labelId} fontWeight="600" color="$boardHeading">
+                    Column title
+                  </Text>
+                  <Input
+                    id={`${labelId}-field`}
+                    value={draft}
+                    onChangeText={setDraft}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setDraft(e.currentTarget.value)}
+                    disabled={saving}
+                    autoFocus
+                    aria-labelledby={labelId}
+                    onBlur={() => {
+                      if (skipBlurSave.current || saving) {
+                        return;
+                      }
 
-                    void commit();
-                  }}
-                  onKeyDown={(e: { nativeEvent?: { key?: string }; key?: string }) => {
-                    const key = e.key ?? e.nativeEvent?.key ?? "";
-                    if (key === "Escape") {
-                      cancel();
-                    }
-
-                    if (key === "Enter") {
                       void commit();
-                    }
-                  }}
-                  backgroundColor="$boardPanelSurfaceStrong"
-                  borderColor="$boardShellBorder"
-                />
+                    }}
+                    onKeyDown={(e: { nativeEvent?: { key?: string }; key?: string }) => {
+                      const key = e.key ?? e.nativeEvent?.key ?? "";
+                      if (key === "Escape") {
+                        cancel();
+                      }
+
+                      if (key === "Enter") {
+                        void commit();
+                      }
+                    }}
+                    backgroundColor="$boardPanelSurfaceStrong"
+                    borderColor="$boardShellBorder"
+                  />
+                </YStack>
+                <XStack gap="$2" flexWrap="wrap">
+                  <BoardActionButton tone="accent" disabled={saving} onPress={() => void commit()}>
+                    {saving ? "Saving…" : "Save"}
+                  </BoardActionButton>
+                  <BoardActionButton tone="ghost" disabled={saving} onPress={cancel}>
+                    Cancel
+                  </BoardActionButton>
+                </XStack>
               </YStack>
-              <XStack gap="$2" flexWrap="wrap">
-                <BoardActionButton tone="accent" disabled={saving} onPress={() => void commit()}>
-                  {saving ? "Saving…" : "Save"}
-                </BoardActionButton>
-                <BoardActionButton tone="ghost" disabled={saving} onPress={cancel}>
-                  Cancel
-                </BoardActionButton>
+            ) : (
+              <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
+                <Text fontWeight="800" color="$boardHeading" fontSize="$6" numberOfLines={1}>
+                  {lane.title}
+                </Text>
+                <BoardPill>{lane.cards.length}</BoardPill>
               </XStack>
-            </YStack>
-          ) : (
-            <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
-              <Text fontWeight="800" color="$boardHeading" fontSize="$6" numberOfLines={1}>
-                {lane.title}
-              </Text>
-              <BoardPill>{lane.cards.length}</BoardPill>
-            </XStack>
-          )}
-        </XStack>
-        {!editing ? (
-          <XStack gap="$2" flexWrap="wrap">
-            <BoardActionButton
-              tone="ghost"
-              disabled={blockActions}
-              onPress={() => onMoveColumn(columnId, "left")}
-            >
-              ←
-            </BoardActionButton>
-            <BoardActionButton
-              tone="ghost"
-              disabled={blockActions}
-              onPress={() => onMoveColumn(columnId, "right")}
-            >
-              →
-            </BoardActionButton>
-            <BoardActionButton
-              tone="ghost"
-              disabled={blockActions}
-              onPress={() => {
-                setDraft(lane.title);
-                setEditing(true);
-              }}
-            >
-              Rename
-            </BoardActionButton>
-            <BoardActionButton
-              tone="ghost"
-              disabled={blockActions}
-              onPress={() => onOpenCreateColumnAfter(columnId)}
-            >
-              Add after
-            </BoardActionButton>
+            )}
           </XStack>
-        ) : null}
-      </XStack>
+          {!editing ? (
+            <XStack gap="$2" flexWrap="wrap">
+              <BoardActionButton
+                tone="ghost"
+                disabled={blockActions}
+                onPress={() => onMoveColumn(columnId, "left")}
+              >
+                ←
+              </BoardActionButton>
+              <BoardActionButton
+                tone="ghost"
+                disabled={blockActions}
+                onPress={() => onMoveColumn(columnId, "right")}
+              >
+                →
+              </BoardActionButton>
+              <BoardActionButton
+                tone="ghost"
+                disabled={blockActions}
+                onPress={() => {
+                  setDraft(lane.title);
+                  setEditing(true);
+                }}
+              >
+                Rename
+              </BoardActionButton>
+              <BoardActionButton
+                tone="ghost"
+                disabled={blockActions}
+                onPress={() => onOpenCreateColumnAfter(columnId)}
+              >
+                Add after
+              </BoardActionButton>
+            </XStack>
+          ) : null}
+        </XStack>
+      </div>
     </YStack>
   );
 }
@@ -322,7 +379,7 @@ function BoardLaneView({
 }: Readonly<{
   lane: BoardLane;
   canReorder: boolean;
-  dragHandleProps?: Record<string, unknown>;
+  dragHandleProps?: DraggableProvided["dragHandleProps"];
   onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (columnId: string) => void;
   onRenameColumn: (input: {
@@ -352,58 +409,65 @@ function BoardLaneView({
               renamePendingColumnId={renamePendingColumnId}
             />
           ) : (
-            <XStack
-              alignItems="center"
-              justifyContent="space-between"
-              gap="$3"
-              {...dragHandleProps}
-            >
-              <XStack alignItems="center" gap="$3" minWidth={0}>
-                <Stack width={12} height={12} borderRadius={9999} backgroundColor="$boardAccent" />
-                <Text fontWeight="800" color="$boardHeading" fontSize="$6" numberOfLines={1}>
-                  {lane.title}
-                </Text>
-                <BoardPill>{lane.cards.length}</BoardPill>
+            <div {...(dragHandleProps ?? {})} style={{ width: "100%" }}>
+              <XStack alignItems="center" justifyContent="space-between" gap="$3">
+                <XStack alignItems="center" gap="$3" minWidth={0}>
+                  <Stack
+                    width={12}
+                    height={12}
+                    borderRadius={9999}
+                    backgroundColor="$boardAccent"
+                  />
+                  <Text fontWeight="800" color="$boardHeading" fontSize="$6" numberOfLines={1}>
+                    {lane.title}
+                  </Text>
+                  <BoardPill>{lane.cards.length}</BoardPill>
+                </XStack>
               </XStack>
-            </XStack>
+            </div>
           )}
           {lane.helperText ? <Text color="$boardTextMuted">{lane.helperText}</Text> : null}
         </YStack>
 
         {canReorder && isRealColumn ? (
-          <Droppable droppableId={isRealColumn} type="CARD">
+          <Droppable droppableId={isRealColumn} type="CARD" ignoreContainerClipping>
             {(provided) => (
-              <YStack ref={provided.innerRef} gap="$3" minHeight={120} {...provided.droppableProps}>
-                {lane.cards.map((card, index) => (
-                  <Draggable key={card.id} draggableId={card.id} index={index}>
-                    {(cardProvided) => (
-                      <YStack
-                        ref={cardProvided.innerRef}
-                        {...cardProvided.draggableProps}
-                        {...cardProvided.dragHandleProps}
-                      >
-                        <CardPreview
-                          card={card}
-                          showColumnContext={lane.laneKind === "priority"}
-                          canMove
-                          onOpen={() => onOpenCard(card.id)}
-                          onMove={onMoveCard}
-                        />
-                      </YStack>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-                <LaneEmptyState
-                  isVisible={lane.cards.length === 0}
-                  isRealColumn={Boolean(isRealColumn)}
-                  onOpenCreateCard={() => {
-                    if (isRealColumn) {
+              <div style={{ display: "flex", flexDirection: "column", gap: BOARD_DND_GAP_PX }}>
+                <div ref={provided.innerRef} {...provided.droppableProps} style={dndCardListStyle}>
+                  {lane.cards.map((card, index) => (
+                    <Draggable key={card.id} draggableId={card.id} index={index}>
+                      {(cardProvided) => {
+                        const { rest: cardDragRest, style: cardDragStyle } = mergeDraggableStyle(
+                          dndCardShellStyle,
+                          cardProvided.draggableProps,
+                        );
+                        return (
+                          <div ref={cardProvided.innerRef} {...cardDragRest} style={cardDragStyle}>
+                            <CardInterior
+                              card={card}
+                              showColumnContext={lane.laneKind === "priority"}
+                              canMove
+                              dragHandleProps={cardProvided.dragHandleProps}
+                              onOpen={() => onOpenCard(card.id)}
+                              onMove={onMoveCard}
+                            />
+                          </div>
+                        );
+                      }}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+                {lane.cards.length === 0 ? (
+                  <LaneEmptyState
+                    isVisible
+                    isRealColumn={Boolean(isRealColumn)}
+                    onOpenCreateCard={() => {
                       onOpenCreateCard(isRealColumn);
-                    }
-                  }}
-                />
-              </YStack>
+                    }}
+                  />
+                ) : null}
+              </div>
             )}
           </Droppable>
         ) : (
@@ -440,6 +504,71 @@ function BoardLaneView({
   );
 }
 
+/** Tamagui-only card body; drag handle is a plain `div` for hello-pangea. */
+function CardInterior({
+  card,
+  showColumnContext,
+  canMove,
+  dragHandleProps,
+  onOpen,
+  onMove,
+}: Readonly<{
+  card: BoardLane["cards"][number];
+  showColumnContext: boolean;
+  canMove: boolean;
+  dragHandleProps?: DraggableProvided["dragHandleProps"];
+  onOpen: () => void;
+  onMove: (cardId: string, direction: "up" | "down" | "left" | "right") => void;
+}>) {
+  return (
+    <YStack gap="$3">
+      <div
+        {...(dragHandleProps ?? {})}
+        style={{
+          cursor: dragHandleProps ? "grab" : undefined,
+        }}
+      >
+        <XStack justifyContent="space-between" alignItems="flex-start" gap="$3">
+          <Text tag="h3" fontWeight="700" color="$boardHeading" flex={1}>
+            {card.title}
+          </Text>
+          <PriorityPill priority={card.priority} />
+        </XStack>
+      </div>
+      {card.description ? (
+        <Text color="$boardTextMuted" numberOfLines={3}>
+          {card.description}
+        </Text>
+      ) : (
+        <Text color="$boardTextSubtle">No description yet.</Text>
+      )}
+
+      <XStack gap="$2" flexWrap="wrap" alignItems="center">
+        <BoardActionButton tone="ghost" onPress={onOpen}>
+          Open
+        </BoardActionButton>
+        {canMove ? (
+          <>
+            <BoardActionButton tone="ghost" onPress={() => onMove(card.id, "up")}>
+              ↑
+            </BoardActionButton>
+            <BoardActionButton tone="ghost" onPress={() => onMove(card.id, "down")}>
+              ↓
+            </BoardActionButton>
+            <BoardActionButton tone="ghost" onPress={() => onMove(card.id, "left")}>
+              ←
+            </BoardActionButton>
+            <BoardActionButton tone="ghost" onPress={() => onMove(card.id, "right")}>
+              →
+            </BoardActionButton>
+          </>
+        ) : null}
+        {showColumnContext ? <BoardPill>{card.originalColumnTitle}</BoardPill> : null}
+      </XStack>
+    </YStack>
+  );
+}
+
 function CardPreview({
   card,
   showColumnContext,
@@ -455,46 +584,13 @@ function CardPreview({
 }>) {
   return (
     <BoardSurface padding="$4">
-      <YStack gap="$3">
-        <YStack gap="$2">
-          <XStack justifyContent="space-between" alignItems="flex-start" gap="$3">
-            <Text tag="h3" fontWeight="700" color="$boardHeading" flex={1}>
-              {card.title}
-            </Text>
-            <PriorityPill priority={card.priority} />
-          </XStack>
-          {card.description ? (
-            <Text color="$boardTextMuted" numberOfLines={3}>
-              {card.description}
-            </Text>
-          ) : (
-            <Text color="$boardTextSubtle">No description yet.</Text>
-          )}
-        </YStack>
-
-        <XStack gap="$2" flexWrap="wrap" alignItems="center">
-          <BoardActionButton tone="ghost" onPress={onOpen}>
-            Open
-          </BoardActionButton>
-          {canMove ? (
-            <>
-              <BoardActionButton tone="ghost" onPress={() => onMove(card.id, "up")}>
-                ↑
-              </BoardActionButton>
-              <BoardActionButton tone="ghost" onPress={() => onMove(card.id, "down")}>
-                ↓
-              </BoardActionButton>
-              <BoardActionButton tone="ghost" onPress={() => onMove(card.id, "left")}>
-                ←
-              </BoardActionButton>
-              <BoardActionButton tone="ghost" onPress={() => onMove(card.id, "right")}>
-                →
-              </BoardActionButton>
-            </>
-          ) : null}
-          {showColumnContext ? <BoardPill>{card.originalColumnTitle}</BoardPill> : null}
-        </XStack>
-      </YStack>
+      <CardInterior
+        card={card}
+        showColumnContext={showColumnContext}
+        canMove={canMove}
+        onOpen={onOpen}
+        onMove={onMove}
+      />
     </BoardSurface>
   );
 }
@@ -532,7 +628,13 @@ function LaneEmptyState({
 
 function AddColumnLane({ onOpen }: Readonly<{ onOpen: () => void }>) {
   return (
-    <YStack width={280} minWidth={280}>
+    <div
+      style={{
+        width: ADD_COLUMN_LANE_WIDTH_PX,
+        minWidth: ADD_COLUMN_LANE_WIDTH_PX,
+        flexShrink: 0,
+      }}
+    >
       <BoardSurface padding="$4">
         <YStack gap="$3">
           <Text fontWeight="700" color="$boardHeading">
@@ -546,6 +648,6 @@ function AddColumnLane({ onOpen }: Readonly<{ onOpen: () => void }>) {
           </BoardActionButton>
         </YStack>
       </BoardSurface>
-    </YStack>
+    </div>
   );
 }

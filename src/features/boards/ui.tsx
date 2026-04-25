@@ -82,7 +82,6 @@ export function BoardSurface({
       borderRadius="$boardShell"
       padding={padding}
       gap="$4"
-      backdropFilter="blur(20px)"
       boxShadow="rgba(89, 103, 62, 0.08) 0px 20px 60px"
     >
       {children}

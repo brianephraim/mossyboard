@@ -341,6 +341,14 @@ export function BoardDetailScreen({
       return;
     }
 
+    if (result.type !== "CARD") {
+      return;
+    }
+
+    if (result.destination.droppableId === "board-columns") {
+      return;
+    }
+
     const sourceColumnId = result.source.droppableId;
     const destinationColumnId = result.destination.droppableId;
     const cardLocation = getCardPosition(board, result.draggableId);
