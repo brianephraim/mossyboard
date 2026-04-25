@@ -15,6 +15,7 @@ const INSERT_COLUMN_BUTTON_SIZE_PX = 26;
 const INSERT_COLUMN_BUTTON_OFFSET_PX = Math.round(
   BOARD_DND_GAP_PX / 2 + INSERT_COLUMN_BUTTON_SIZE_PX / 2,
 );
+const INSERT_COLUMN_BUTTON_SAFE_TOP_PX = 24;
 
 const dndHorizontalRowStyle: CSSProperties = {
   display: "flex",
@@ -111,7 +112,14 @@ export function BoardCanvas({
         </YStack>
       ) : null}
 
-      <div style={{ overflowX: "auto", maxWidth: "100%", width: "100%" }}>
+      <div
+        style={{
+          overflowX: "auto",
+          overflowY: "visible",
+          maxWidth: "100%",
+          width: "100%",
+        }}
+      >
         {canReorder ? (
           <DragDropContext onDragEnd={onDragEnd}>
             <Droppable
@@ -126,6 +134,7 @@ export function BoardCanvas({
                     ...dndHorizontalRowStyle,
                     paddingLeft: "var(--c-space-5)",
                     paddingRight: "var(--c-space-5)",
+                    paddingTop: INSERT_COLUMN_BUTTON_SAFE_TOP_PX,
                   }}
                 >
                   <div style={dndHorizontalRowStyle}>
@@ -228,7 +237,13 @@ export function BoardCanvas({
             </Droppable>
           </DragDropContext>
         ) : (
-          <XStack gap="$4" alignItems="flex-start" minWidth="max-content" paddingHorizontal="$5">
+          <XStack
+            gap="$4"
+            alignItems="flex-start"
+            minWidth="max-content"
+            paddingHorizontal="$5"
+            paddingTop={INSERT_COLUMN_BUTTON_SAFE_TOP_PX}
+          >
             {showColumnManagement && columns.length === 0 ? (
               <YStack width={COLUMN_WIDTH_PX} minWidth={COLUMN_WIDTH_PX} padding="$5">
                 <InsertColumnCircleButton
@@ -720,6 +735,7 @@ function InsertColumnCircleButton({
       borderColor="$boardShellBorder"
       backgroundColor="$boardPanelSurfaceStrong"
       hoverStyle={{ backgroundColor: "$boardAccentWash" }}
+      marginTop={-20}
     >
       +
     </BoardActionButton>

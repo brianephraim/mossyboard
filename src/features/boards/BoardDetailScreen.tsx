@@ -465,7 +465,7 @@ export function BoardDetailScreen({
     }
 
     return (
-      <YStack gap="$4">
+      <YStack gap="$0">
         <YStack padding="$5" paddingBottom="$0" gap="$4">
           {boardQuery.error ? (
             <BoardInlineNotice
@@ -518,7 +518,7 @@ export function BoardDetailScreen({
         </YStack>
 
         {search.view === "board" ? (
-          <YStack paddingBottom="$5">
+          <YStack paddingBottom="$5" paddingTop="$0">
             <BoardCanvas
               board={board}
               search={search}
@@ -596,7 +596,9 @@ export function BoardDetailScreen({
         onDeleted={() => {
           updateRouteSearch({ card: undefined });
         }}
-        onBoardChanged={refreshBoard}
+        onBoardChanged={async () => {
+          await refreshBoard();
+        }}
         onAnnounce={setAnnouncement}
       />
 
