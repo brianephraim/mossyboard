@@ -1,14 +1,13 @@
-import type { FormEvent, RefObject } from "react";
+import type { RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Button } from "@tamagui/button";
-import { Input } from "@tamagui/input";
 import { Text } from "@tamagui/core";
 import { YStack } from "@tamagui/stacks";
 
+import { FormRoot, FormTextField } from "../../form";
 import { trpc } from "../../trpc/client";
-import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
 import { mapPasswordResetSendError } from "./firebase-auth-errors";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -58,38 +57,33 @@ export function ResetPasswordForm({ redirectTo, formHeadingRef }: ResetPasswordF
     retry: false,
   });
 
-  const submit = form.handleSubmit(
-    async (values) => {
-      form.clearErrors("root");
-      setSendSucceeded(false);
-      try {
-        await sendReset.mutateAsync({ email: values.email.trim() });
-        setSendSucceeded(true);
-        setCooldown(30);
-        successRef.current?.focus();
-      } catch (err) {
-        const message = mapPasswordResetSendError(err);
-        form.setError("root", { message });
-      }
-    },
-    (errors) => {
-      if (errors.email) {
-        void form.setFocus("email");
-      }
-    },
-  );
-
-  const onFormSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    if (cooldown > 0) {
-      return;
-    }
-
-    void submit();
-  };
-
   return (
-    <YStack tag="form" gap="$4" onSubmit={onFormSubmit}>
+    <FormRoot
+      form={form}
+      gap="$4"
+      onSubmit={async (values) => {
+        if (cooldown > 0) {
+          return;
+        }
+
+        form.clearErrors("root");
+        setSendSucceeded(false);
+        try {
+          await sendReset.mutateAsync({ email: values.email.trim() });
+          setSendSucceeded(true);
+          setCooldown(30);
+          successRef.current?.focus();
+        } catch (err) {
+          const message = mapPasswordResetSendError(err);
+          form.setError("root", { message });
+        }
+      }}
+      onError={(errors) => {
+        if (errors.email) {
+          void form.setFocus("email");
+        }
+      }}
+    >
       <Text
         ref={formHeadingRef as RefObject<HTMLSpanElement>}
         tabIndex={-1}
@@ -103,59 +97,35 @@ export function ResetPasswordForm({ redirectTo, formHeadingRef }: ResetPasswordF
 
       <Text color="$color11">Enter your email and we&apos;ll send a password reset link.</Text>
 
-      <YStack gap="$2" tag="label">
-        <Text fontWeight="600" color="$color12" id="reset-email-label">
-          Email
-        </Text>
-        <Controller
-          control={form.control}
-          name="email"
-          rules={{
-            required: "Enter your email.",
-            maxLength: { value: 320, message: "Email is too long." },
-            validate: (v) => {
-              const t = v.trim();
-              if (!t) {
-                return "Enter your email.";
-              }
+      <FormTextField<ResetValues, "email">
+        name="email"
+        label="Email"
+        rules={{
+          required: "Enter your email.",
+          maxLength: { value: 320, message: "Email is too long." },
+          validate: (value) => {
+            const trimmed = value.trim();
+            if (!trimmed) {
+              return "Enter your email.";
+            }
 
-              if (!emailPattern.test(t)) {
-                return "Enter a valid email address.";
-              }
+            if (!emailPattern.test(trimmed)) {
+              return "Enter a valid email address.";
+            }
 
-              return true;
-            },
-          }}
-          render={({ field, fieldState }) => (
-            <>
-              <Input
-                value={field.value}
-                onChange={tamaguiInputValueOnChange(field.onChange)}
-                onBlur={field.onBlur}
-                placeholder="you@example.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                aria-labelledby="reset-email-label"
-                aria-invalid={fieldState.invalid}
-                aria-describedby={
-                  fieldState.error
-                    ? "reset-email-error"
-                    : sendSucceeded
-                      ? "reset-success"
-                      : undefined
-                }
-                borderColor={fieldState.invalid ? "$red8" : "$borderColor"}
-              />
-              {fieldState.error ? (
-                <Text id="reset-email-error" color="$red10" role="alert">
-                  {fieldState.error.message}
-                </Text>
-              ) : null}
-            </>
-          )}
-        />
-      </YStack>
+            return true;
+          },
+        }}
+        fieldProps={{ gap: "$2" }}
+        labelProps={{ fontWeight: "600", color: "$color12" }}
+        placeholder="you@example.com"
+        type="email"
+        inputMode="email"
+        autoCapitalize="none"
+        autoComplete="email"
+        defaultBorderColor="$borderColor"
+        additionalDescribedBy={sendSucceeded ? "reset-success" : undefined}
+      />
 
       {form.formState.errors.root ? (
         <YStack
@@ -211,6 +181,6 @@ export function ResetPasswordForm({ redirectTo, formHeadingRef }: ResetPasswordF
           Back to sign in
         </Text>
       </Button>
-    </YStack>
+    </FormRoot>
   );
 }

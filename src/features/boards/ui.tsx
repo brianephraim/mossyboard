@@ -174,12 +174,16 @@ export function BoardSectionHeading({
 
 export function BoardActionButton({
   children,
+  form,
   tone = "default",
+  type,
   ...props
 }: Readonly<
   {
     children: ReactNode;
+    form?: string;
     tone?: "default" | "accent" | "danger" | "ghost";
+    type?: "button" | "reset" | "submit";
   } & ComponentProps<typeof Button>
 >) {
   const styles = (
@@ -220,6 +224,7 @@ export function BoardActionButton({
       paddingHorizontal="$4"
       fontWeight="600"
       {...styles}
+      {...({ form, type } as unknown as ComponentProps<typeof Button>)}
       {...props}
     >
       {children}

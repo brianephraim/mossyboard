@@ -1,17 +1,16 @@
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useId, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { useLinkProps, useNavigate } from "@tanstack/react-router";
-import { Input } from "@tamagui/input";
 import { Stack, Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import { useAuthSession, useRequiresEmailVerification } from "../../auth/session";
 import { AccountSignOutControl } from "../../features/auth/AccountSignOutControl";
 import { VerificationReminderBanner } from "../../features/auth/VerificationReminderBanner";
+import { FormRoot, FormTextField } from "../../form";
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
 import { trpc } from "../../trpc/client";
-import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
 import {
   BoardActionButton,
   BoardLiveRegion,
@@ -102,6 +101,7 @@ export function BoardShell({
   const requiresEmailVerification = useRequiresEmailVerification();
   const [createBoardOpen, setCreateBoardOpen] = useState(false);
   const [shellAnnouncement, setShellAnnouncement] = useState<string | null>(null);
+  const createBoardFormId = useId();
   const boardsQuery = trpc.board.list.useQuery({});
   const createBoardForm = useForm<CreateBoardForm>({
     defaultValues: {
@@ -121,10 +121,6 @@ export function BoardShell({
         search: { view: "board", groupBy: "column", card: undefined, priority: undefined },
       });
     },
-  });
-
-  const submitCreateBoard = createBoardForm.handleSubmit(async (values) => {
-    await createBoard.mutateAsync(values);
   });
 
   useEffect(() => {
@@ -309,8 +305,9 @@ export function BoardShell({
             </BoardActionButton>
             <BoardActionButton
               tone="accent"
+              type="submit"
+              form={createBoardFormId}
               disabled={createBoard.isPending}
-              onPress={() => void submitCreateBoard()}
             >
               {createBoard.isPending ? "Creating…" : "Create board"}
             </BoardActionButton>
@@ -318,40 +315,30 @@ export function BoardShell({
         }
       >
         <YStack gap="$3">
-          <YStack tag="label" gap="$2">
-            <Text color="$boardHeading" fontWeight="600">
-              Board name
-            </Text>
-            <Controller
-              control={createBoardForm.control}
+          <FormRoot
+            id={createBoardFormId}
+            form={createBoardForm}
+            gap="$3"
+            onSubmit={async (values) => {
+              await createBoard.mutateAsync(values);
+            }}
+          >
+            <FormTextField<CreateBoardForm, "name">
               name="name"
+              label="Board name"
               rules={{
                 required: "Board name is required.",
                 minLength: { value: 1, message: "Board name is required." },
                 maxLength: { value: 80, message: "Keep the name under 80 characters." },
               }}
-              render={({ field }) => (
-                <Input
-                  value={field.value}
-                  onChange={tamaguiInputValueOnChange(field.onChange)}
-                  onBlur={field.onBlur}
-                  onKeyDown={(e) => {
-                    if (e.key !== "Enter") return;
-                    if ("isComposing" in e.nativeEvent && e.nativeEvent.isComposing) return;
-                    e.preventDefault();
-                    void submitCreateBoard();
-                  }}
-                  placeholder="Product launch"
-                  autoFocus
-                  backgroundColor="$boardPanelSurfaceStrong"
-                  borderColor="$boardShellBorder"
-                />
-              )}
+              fieldProps={{ gap: "$2" }}
+              labelProps={{ color: "$boardHeading", fontWeight: "600" }}
+              placeholder="Product launch"
+              autoFocus
+              backgroundColor="$boardPanelSurfaceStrong"
+              defaultBorderColor="$boardShellBorder"
             />
-          </YStack>
-          {createBoardForm.formState.errors.name ? (
-            <Text color="$boardDangerText">{createBoardForm.formState.errors.name.message}</Text>
-          ) : null}
+          </FormRoot>
           {createBoard.error ? (
             <Text color="$boardDangerText">{createBoard.error.message}</Text>
           ) : null}

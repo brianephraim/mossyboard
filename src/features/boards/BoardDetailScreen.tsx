@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useId, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import type { DropResult } from "@hello-pangea/dnd";
 import { useNavigate } from "@tanstack/react-router";
-import { Input } from "@tamagui/input";
 import { Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
+import { FormRoot, FormTextField } from "../../form";
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
 import {
   selectGroupedBoardReorderEnabled,
@@ -13,7 +13,6 @@ import {
 } from "../../store/board-grouping-preferences-slice";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { trpc } from "../../trpc/client";
-import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
 import { BoardShell } from "./BoardShell";
 import { BoardCanvas } from "./BoardCanvas";
 import { CardDetailSurface } from "./CardDetailSurface";
@@ -85,6 +84,9 @@ export function BoardDetailScreen({
   );
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
   const [confirmBoardDelete, setConfirmBoardDelete] = useState(false);
+  const createCardFormId = useId();
+  const createColumnFormId = useId();
+  const renameBoardFormId = useId();
 
   const boardQuery = trpc.board.getWithColumnsAndCards.useQuery(
     { boardId },
@@ -871,17 +873,9 @@ export function BoardDetailScreen({
             </BoardActionButton>
             <BoardActionButton
               tone="accent"
+              type="submit"
+              form={createCardFormId}
               disabled={createCard.isPending}
-              onPress={createCardForm.handleSubmit(async (values) => {
-                if (!createCardColumnId) {
-                  return;
-                }
-
-                await createCard.mutateAsync({
-                  columnId: createCardColumnId,
-                  title: values.title,
-                });
-              })}
             >
               {createCard.isPending ? "Creating…" : "Create card"}
             </BoardActionButton>
@@ -889,33 +883,36 @@ export function BoardDetailScreen({
         }
       >
         <YStack gap="$3">
-          <YStack tag="label" gap="$2">
-            <Text fontWeight="700" color="$boardHeading">
-              Title
-            </Text>
-            <Controller
-              control={createCardForm.control}
+          <FormRoot
+            id={createCardFormId}
+            form={createCardForm}
+            gap="$3"
+            onSubmit={async (values) => {
+              if (!createCardColumnId) {
+                return;
+              }
+
+              await createCard.mutateAsync({
+                columnId: createCardColumnId,
+                title: values.title,
+              });
+            }}
+          >
+            <FormTextField<CreateCardForm, "title">
               name="title"
+              label="Title"
               rules={{
                 required: "Card title is required.",
                 maxLength: { value: 200, message: "Keep the title under 200 characters." },
               }}
-              render={({ field }) => (
-                <Input
-                  value={field.value}
-                  onChange={tamaguiInputValueOnChange(field.onChange)}
-                  onBlur={field.onBlur}
-                  autoFocus
-                  backgroundColor="$boardPanelSurfaceStrong"
-                  borderColor="$boardShellBorder"
-                  placeholder="Define launch goals"
-                />
-              )}
+              fieldProps={{ gap: "$2" }}
+              labelProps={{ fontWeight: "700", color: "$boardHeading" }}
+              autoFocus
+              backgroundColor="$boardPanelSurfaceStrong"
+              defaultBorderColor="$boardShellBorder"
+              placeholder="Define launch goals"
             />
-          </YStack>
-          {createCardForm.formState.errors.title ? (
-            <Text color="$boardDangerText">{createCardForm.formState.errors.title.message}</Text>
-          ) : null}
+          </FormRoot>
           {createCard.error ? (
             <Text color="$boardDangerText">{createCard.error.message}</Text>
           ) : null}
@@ -938,32 +935,9 @@ export function BoardDetailScreen({
             </BoardActionButton>
             <BoardActionButton
               tone="accent"
+              type="submit"
+              form={createColumnFormId}
               disabled={createColumn.isPending}
-              onPress={createColumnForm.handleSubmit(async (values) => {
-                const activeBoard = board;
-                if (!activeBoard) {
-                  return;
-                }
-
-                const previousColumn =
-                  createColumnAfterId === null
-                    ? activeBoard.columns[activeBoard.columns.length - 1]
-                    : activeBoard.columns.find((column) => column.id === createColumnAfterId);
-                const previousIndex = previousColumn
-                  ? activeBoard.columns.findIndex((column) => column.id === previousColumn.id)
-                  : -1;
-                const nextColumn =
-                  previousIndex >= 0
-                    ? activeBoard.columns[previousIndex + 1]
-                    : activeBoard.columns[0];
-
-                await createColumn.mutateAsync({
-                  boardId,
-                  title: values.title,
-                  prevColumnId: previousColumn?.id ?? null,
-                  nextColumnId: nextColumn?.id ?? null,
-                });
-              })}
             >
               {createColumn.isPending ? "Creating…" : "Create column"}
             </BoardActionButton>
@@ -971,33 +945,51 @@ export function BoardDetailScreen({
         }
       >
         <YStack gap="$3">
-          <YStack tag="label" gap="$2">
-            <Text fontWeight="700" color="$boardHeading">
-              Column title
-            </Text>
-            <Controller
-              control={createColumnForm.control}
+          <FormRoot
+            id={createColumnFormId}
+            form={createColumnForm}
+            gap="$3"
+            onSubmit={async (values) => {
+              const activeBoard = board;
+              if (!activeBoard) {
+                return;
+              }
+
+              const previousColumn =
+                createColumnAfterId === null
+                  ? activeBoard.columns[activeBoard.columns.length - 1]
+                  : activeBoard.columns.find((column) => column.id === createColumnAfterId);
+              const previousIndex = previousColumn
+                ? activeBoard.columns.findIndex((column) => column.id === previousColumn.id)
+                : -1;
+              const nextColumn =
+                previousIndex >= 0
+                  ? activeBoard.columns[previousIndex + 1]
+                  : activeBoard.columns[0];
+
+              await createColumn.mutateAsync({
+                boardId,
+                title: values.title,
+                prevColumnId: previousColumn?.id ?? null,
+                nextColumnId: nextColumn?.id ?? null,
+              });
+            }}
+          >
+            <FormTextField<CreateColumnForm, "title">
               name="title"
+              label="Column title"
               rules={{
                 required: "Column title is required.",
                 maxLength: { value: 80, message: "Keep the title under 80 characters." },
               }}
-              render={({ field }) => (
-                <Input
-                  value={field.value}
-                  onChange={tamaguiInputValueOnChange(field.onChange)}
-                  onBlur={field.onBlur}
-                  autoFocus
-                  backgroundColor="$boardPanelSurfaceStrong"
-                  borderColor="$boardShellBorder"
-                  placeholder="Review"
-                />
-              )}
+              fieldProps={{ gap: "$2" }}
+              labelProps={{ fontWeight: "700", color: "$boardHeading" }}
+              autoFocus
+              backgroundColor="$boardPanelSurfaceStrong"
+              defaultBorderColor="$boardShellBorder"
+              placeholder="Review"
             />
-          </YStack>
-          {createColumnForm.formState.errors.title ? (
-            <Text color="$boardDangerText">{createColumnForm.formState.errors.title.message}</Text>
-          ) : null}
+          </FormRoot>
           {createColumn.error ? (
             <Text color="$boardDangerText">{createColumn.error.message}</Text>
           ) : null}
@@ -1016,43 +1008,39 @@ export function BoardDetailScreen({
             </BoardActionButton>
             <BoardActionButton
               tone="accent"
+              type="submit"
+              form={renameBoardFormId}
               disabled={renameBoard.isPending}
-              onPress={renameBoardForm.handleSubmit(async (values) => {
-                await renameBoard.mutateAsync({
-                  boardId,
-                  name: values.name,
-                });
-              })}
             >
               {renameBoard.isPending ? "Saving…" : "Save board name"}
             </BoardActionButton>
           </>
         }
       >
-        <YStack gap="$4">
-          <YStack tag="label" gap="$2">
-            <Text fontWeight="700" color="$boardHeading">
-              Board name
-            </Text>
-            <Controller
-              control={renameBoardForm.control}
-              name="name"
-              rules={{
-                required: "Board name is required.",
-                maxLength: { value: 80, message: "Keep the board name under 80 characters." },
-              }}
-              render={({ field }) => (
-                <Input
-                  value={field.value}
-                  onChange={tamaguiInputValueOnChange(field.onChange)}
-                  onBlur={field.onBlur}
-                  autoFocus
-                  backgroundColor="$boardPanelSurfaceStrong"
-                  borderColor="$boardShellBorder"
-                />
-              )}
-            />
-          </YStack>
+        <FormRoot
+          id={renameBoardFormId}
+          form={renameBoardForm}
+          gap="$4"
+          onSubmit={async (values) => {
+            await renameBoard.mutateAsync({
+              boardId,
+              name: values.name,
+            });
+          }}
+        >
+          <FormTextField<RenameBoardForm, "name">
+            name="name"
+            label="Board name"
+            rules={{
+              required: "Board name is required.",
+              maxLength: { value: 80, message: "Keep the board name under 80 characters." },
+            }}
+            fieldProps={{ gap: "$2" }}
+            labelProps={{ fontWeight: "700", color: "$boardHeading" }}
+            autoFocus
+            backgroundColor="$boardPanelSurfaceStrong"
+            defaultBorderColor="$boardShellBorder"
+          />
           {renameBoard.error ? (
             <Text color="$boardDangerText">{renameBoard.error.message}</Text>
           ) : null}
@@ -1091,7 +1079,7 @@ export function BoardDetailScreen({
               </BoardActionButton>
             </YStack>
           </BoardSurface>
-        </YStack>
+        </FormRoot>
       </PrettyModalWrap>
     </>
   );

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { Checkbox } from "@tamagui/checkbox";
-import { Input, TextArea } from "@tamagui/input";
+import { Input } from "@tamagui/input";
 import { Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
+import { FormOptionButtonsField, FormRoot, FormTextAreaField, FormTextField } from "../../form";
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
-import { tamaguiInputValueOnChange, tamaguiTextAreaValueOnChange } from "../../tamaguiRhfWebField";
+import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
 import { trpc } from "../../trpc/client";
 import { boardPriorityMeta, boardPriorityValues } from "./model";
 import type { CardPriority } from "./types";
@@ -175,7 +176,6 @@ export function CardDetailSurface({
   }
 
   const card = cardQuery.data?.card;
-  const selectedPriority = form.watch("priority");
 
   if (!card) {
     return null;
@@ -200,74 +200,69 @@ export function CardDetailSurface({
         ) : null}
 
         <BoardSurface padding="$4">
-          <YStack gap="$3">
-            <YStack tag="label" gap="$2">
-              <Text fontWeight="700" color="$boardHeading">
-                Title
-              </Text>
-              <Controller
-                control={form.control}
-                name="title"
-                rules={{
-                  required: "Title is required.",
-                  minLength: { value: 1, message: "Title is required." },
-                  maxLength: { value: 200, message: "Keep the title under 200 characters." },
-                }}
-                render={({ field }) => (
-                  <Input
-                    value={field.value}
-                    onChange={tamaguiInputValueOnChange(field.onChange)}
-                    onBlur={field.onBlur}
-                    backgroundColor="$boardPanelSurfaceStrong"
-                    borderColor="$boardShellBorder"
-                  />
-                )}
-              />
-            </YStack>
+          <FormRoot
+            form={form}
+            gap="$3"
+            onSubmit={async (values) => {
+              await updateCard.mutateAsync({
+                cardId: card.id,
+                title: values.title,
+                description: values.description,
+                priority: values.priority,
+                expectedVersion: card.version,
+              });
+            }}
+          >
+            <FormTextField<CardDetailForm, "title">
+              name="title"
+              label="Title"
+              rules={{
+                required: "Title is required.",
+                minLength: { value: 1, message: "Title is required." },
+                maxLength: { value: 200, message: "Keep the title under 200 characters." },
+              }}
+              fieldProps={{ gap: "$2" }}
+              labelProps={{ fontWeight: "700", color: "$boardHeading" }}
+              backgroundColor="$boardPanelSurfaceStrong"
+              defaultBorderColor="$boardShellBorder"
+            />
 
-            <YStack tag="label" gap="$2">
-              <Text fontWeight="700" color="$boardHeading">
-                Description
-              </Text>
-              <Controller
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <TextArea
-                    value={field.value}
-                    onChange={tamaguiTextAreaValueOnChange(field.onChange)}
-                    onBlur={field.onBlur}
-                    numberOfLines={8}
-                    minHeight={180}
-                    backgroundColor="$boardPanelSurfaceStrong"
-                    borderColor="$boardShellBorder"
-                  />
-                )}
-              />
-            </YStack>
+            <FormTextAreaField<CardDetailForm, "description">
+              name="description"
+              label="Description"
+              fieldProps={{ gap: "$2" }}
+              labelProps={{ fontWeight: "700", color: "$boardHeading" }}
+              numberOfLines={8}
+              minHeight={180}
+              backgroundColor="$boardPanelSurfaceStrong"
+              defaultBorderColor="$boardShellBorder"
+            />
 
-            <YStack gap="$2">
-              <Text fontWeight="700" color="$boardHeading">
-                Priority
-              </Text>
-              <XStack gap="$2" flexWrap="wrap">
-                {boardPriorityValues.map((priority) => {
-                  const isSelected = selectedPriority === priority;
-                  const meta = boardPriorityMeta[priority];
+            <FormOptionButtonsField<CardDetailForm, "priority", CardPriority>
+              name="priority"
+              label="Priority"
+              fieldProps={{ gap: "$2" }}
+              labelProps={{ fontWeight: "700", color: "$boardHeading" }}
+              options={boardPriorityValues.map((priority) => ({
+                label: boardPriorityMeta[priority].label,
+                value: priority,
+              }))}
+              optionsProps={{ gap: "$2", flexWrap: "wrap" }}
+              renderOption={({ buttonProps, option, selected }) => {
+                const meta = boardPriorityMeta[option.value];
 
-                  return (
-                    <BoardActionButton
-                      key={priority}
-                      tone={isSelected ? "accent" : "ghost"}
-                      backgroundColor={isSelected ? meta.accentColor : undefined}
-                      onPress={() => form.setValue("priority", priority, { shouldDirty: true })}
-                    >
-                      {meta.label}
-                    </BoardActionButton>
-                  );
-                })}
-              </XStack>
-            </YStack>
+                return (
+                  <BoardActionButton
+                    {...buttonProps}
+                    key={option.value}
+                    tone={selected ? "accent" : "ghost"}
+                    backgroundColor={selected ? meta.accentColor : undefined}
+                  >
+                    {option.label}
+                  </BoardActionButton>
+                );
+              }}
+            />
 
             <XStack gap="$2" flexWrap="wrap">
               <BoardPill>{card.columnTitle}</BoardPill>
@@ -276,17 +271,9 @@ export function CardDetailSurface({
 
             <XStack gap="$3" flexWrap="wrap">
               <BoardActionButton
+                type="submit"
                 tone="accent"
                 disabled={!form.formState.isDirty || updateCard.isPending}
-                onPress={form.handleSubmit(async (values) => {
-                  await updateCard.mutateAsync({
-                    cardId: card.id,
-                    title: values.title,
-                    description: values.description,
-                    priority: values.priority,
-                    expectedVersion: card.version,
-                  });
-                })}
               >
                 {updateCard.isPending ? "Saving…" : "Save card"}
               </BoardActionButton>
@@ -324,7 +311,7 @@ export function CardDetailSurface({
                     : "Delete card"}
               </BoardActionButton>
             </XStack>
-          </YStack>
+          </FormRoot>
         </BoardSurface>
 
         <BoardSurface padding="$4">

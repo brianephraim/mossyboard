@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SignInForm } from "./SignInForm";
@@ -29,5 +29,8 @@ describe("SignInForm", () => {
 
     expect(await screen.findByText(/enter your email/i)).toBeTruthy();
     expect(screen.getByText(/enter your password/i)).toBeTruthy();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByLabelText(/^email$/i));
+    });
   });
 });

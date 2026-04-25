@@ -1,14 +1,13 @@
-import type { FormEvent, RefObject } from "react";
+import type { RefObject } from "react";
 import { useRef } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@tamagui/button";
-import { Input } from "@tamagui/input";
 import { Text } from "@tamagui/core";
 import { YStack } from "@tamagui/stacks";
 
 import { signUpWithEmail } from "../../auth/client";
-import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
+import { FormRoot, FormTextField } from "../../form";
 import { useAuthAnnounceOptional } from "./AuthAnnounceContext";
 import { mapSignUpError } from "./firebase-auth-errors";
 
@@ -33,34 +32,29 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
     mode: "onSubmit",
   });
 
-  const submit = form.handleSubmit(
-    async (values) => {
-      form.clearErrors("root");
-      try {
-        await signUpWithEmail({ email: values.email.trim(), password: values.password });
-        announce?.announce("Account created. Redirecting.");
-      } catch (err) {
-        const message = mapSignUpError(err);
-        form.setError("root", { message });
-        formErrorRef.current?.focus();
-      }
-    },
-    (errors) => {
-      const order: (keyof SignUpValues)[] = ["email", "password"];
-      const first = order.find((k) => errors[k]);
-      if (first) {
-        void form.setFocus(first);
-      }
-    },
-  );
-
-  const onFormSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    void submit();
-  };
-
   return (
-    <YStack tag="form" gap="$4" onSubmit={onFormSubmit}>
+    <FormRoot
+      form={form}
+      gap="$4"
+      onSubmit={async (values) => {
+        form.clearErrors("root");
+        try {
+          await signUpWithEmail({ email: values.email.trim(), password: values.password });
+          announce?.announce("Account created. Redirecting.");
+        } catch (err) {
+          const message = mapSignUpError(err);
+          form.setError("root", { message });
+          formErrorRef.current?.focus();
+        }
+      }}
+      onError={(errors) => {
+        const order: (keyof SignUpValues)[] = ["email", "password"];
+        const first = order.find((key) => errors[key]);
+        if (first) {
+          void form.setFocus(first);
+        }
+      }}
+    >
       <Text
         ref={formHeadingRef as RefObject<HTMLSpanElement>}
         tabIndex={-1}
@@ -75,88 +69,49 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
       <Text color="$color11">Use your email and password to create a Kanban account.</Text>
 
       <YStack gap="$3">
-        <YStack gap="$2" tag="label">
-          <Text fontWeight="600" color="$color12" id="signup-email-label">
-            Email
-          </Text>
-          <Controller
-            control={form.control}
-            name="email"
-            rules={{
-              required: "Enter your email.",
-              maxLength: { value: 320, message: "Email is too long." },
-              validate: (v) => {
-                const t = v.trim();
-                if (!t) {
-                  return "Enter your email.";
-                }
+        <FormTextField<SignUpValues, "email">
+          name="email"
+          label="Email"
+          rules={{
+            required: "Enter your email.",
+            maxLength: { value: 320, message: "Email is too long." },
+            validate: (value) => {
+              const trimmed = value.trim();
+              if (!trimmed) {
+                return "Enter your email.";
+              }
 
-                if (!emailPattern.test(t)) {
-                  return "Enter a valid email address.";
-                }
+              if (!emailPattern.test(trimmed)) {
+                return "Enter a valid email address.";
+              }
 
-                return true;
-              },
-            }}
-            render={({ field, fieldState }) => (
-              <>
-                <Input
-                  value={field.value}
-                  onChange={tamaguiInputValueOnChange(field.onChange)}
-                  onBlur={field.onBlur}
-                  placeholder="you@example.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  aria-labelledby="signup-email-label"
-                  aria-invalid={fieldState.invalid}
-                  aria-describedby={fieldState.error ? "signup-email-error" : undefined}
-                  borderColor={fieldState.invalid ? "$red8" : "$borderColor"}
-                />
-                {fieldState.error ? (
-                  <Text id="signup-email-error" color="$red10" role="alert">
-                    {fieldState.error.message}
-                  </Text>
-                ) : null}
-              </>
-            )}
-          />
-        </YStack>
+              return true;
+            },
+          }}
+          fieldProps={{ gap: "$2" }}
+          labelProps={{ fontWeight: "600", color: "$color12" }}
+          placeholder="you@example.com"
+          type="email"
+          inputMode="email"
+          autoCapitalize="none"
+          autoComplete="email"
+          defaultBorderColor="$borderColor"
+        />
 
-        <YStack gap="$2" tag="label">
-          <Text fontWeight="600" color="$color12" id="signup-password-label">
-            Password
-          </Text>
-          <Controller
-            control={form.control}
-            name="password"
-            rules={{
-              required: "Enter your password.",
-              minLength: { value: 6, message: "Password must be at least 6 characters." },
-              maxLength: { value: 128, message: "Password is too long." },
-            }}
-            render={({ field, fieldState }) => (
-              <>
-                <Input
-                  value={field.value}
-                  onChange={tamaguiInputValueOnChange(field.onChange)}
-                  onBlur={field.onBlur}
-                  secureTextEntry
-                  autoComplete="new-password"
-                  aria-labelledby="signup-password-label"
-                  aria-invalid={fieldState.invalid}
-                  aria-describedby={fieldState.error ? "signup-password-error" : undefined}
-                  borderColor={fieldState.invalid ? "$red8" : "$borderColor"}
-                />
-                {fieldState.error ? (
-                  <Text id="signup-password-error" color="$red10" role="alert">
-                    {fieldState.error.message}
-                  </Text>
-                ) : null}
-              </>
-            )}
-          />
-        </YStack>
+        <FormTextField<SignUpValues, "password">
+          name="password"
+          label="Password"
+          rules={{
+            required: "Enter your password.",
+            minLength: { value: 6, message: "Password must be at least 6 characters." },
+            maxLength: { value: 128, message: "Password is too long." },
+          }}
+          fieldProps={{ gap: "$2" }}
+          labelProps={{ fontWeight: "600", color: "$color12" }}
+          type="password"
+          autoComplete="new-password"
+          defaultBorderColor="$borderColor"
+        />
       </YStack>
 
       {form.formState.errors.root ? (
@@ -200,6 +155,6 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
           Sign in instead
         </Text>
       </Button>
-    </YStack>
+    </FormRoot>
   );
 }
