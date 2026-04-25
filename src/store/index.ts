@@ -1,10 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 
+import { boardGroupingPreferencesReducer } from "./board-grouping-preferences-slice";
 import { counterPageCheckboxReducer } from "./counter-page-checkbox-slice";
 
 export function makeStore() {
   return configureStore({
     reducer: {
+      boardGroupingPreferences: boardGroupingPreferencesReducer,
       counterPageCheckbox: counterPageCheckboxReducer,
     },
   });

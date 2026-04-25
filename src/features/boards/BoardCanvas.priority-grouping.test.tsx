@@ -77,8 +77,8 @@ describe("BoardCanvas priority grouping", () => {
           board={board}
           search={priorityGroupedSearch}
           canReorder={false}
-          priorityGroupReorderEnabled={false}
-          onTogglePriorityGroupReorderEnabled={vi.fn()}
+          groupedBoardReorderEnabled={false}
+          onToggleGroupedBoardReorderEnabled={vi.fn()}
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
@@ -106,7 +106,7 @@ describe("BoardCanvas priority grouping", () => {
   });
 
   it("renders the priority-mode reorder opt-in checkbox", () => {
-    const onTogglePriorityGroupReorderEnabled = vi.fn();
+    const onToggleGroupedBoardReorderEnabled = vi.fn();
 
     render(
       <TamaguiRootProvider>
@@ -114,8 +114,8 @@ describe("BoardCanvas priority grouping", () => {
           board={board}
           search={priorityGroupedSearch}
           canReorder={false}
-          priorityGroupReorderEnabled={false}
-          onTogglePriorityGroupReorderEnabled={onTogglePriorityGroupReorderEnabled}
+          groupedBoardReorderEnabled={false}
+          onToggleGroupedBoardReorderEnabled={onToggleGroupedBoardReorderEnabled}
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
@@ -134,6 +134,31 @@ describe("BoardCanvas priority grouping", () => {
     });
     fireEvent.click(checkbox);
 
-    expect(onTogglePriorityGroupReorderEnabled).toHaveBeenCalledWith(true);
+    expect(onToggleGroupedBoardReorderEnabled).toHaveBeenCalledWith(true);
+  });
+
+  it("shows column move controls when grouped reorder is enabled", () => {
+    render(
+      <TamaguiRootProvider>
+        <BoardCanvas
+          board={board}
+          search={priorityGroupedSearch}
+          canReorder={false}
+          groupedBoardReorderEnabled
+          onToggleGroupedBoardReorderEnabled={vi.fn()}
+          onDragEnd={vi.fn()}
+          onOpenCard={vi.fn()}
+          onOpenCreateCard={vi.fn()}
+          onRenameColumn={vi.fn().mockResolvedValue(undefined)}
+          renamePendingColumnId={null}
+          onOpenCreateColumnAfter={vi.fn()}
+          onMoveColumn={vi.fn()}
+          onMoveCard={vi.fn()}
+          onMovePriorityGroupCard={vi.fn()}
+        />
+      </TamaguiRootProvider>,
+    );
+
+    expect(screen.getAllByRole("button", { name: /move column/i })).toHaveLength(4);
   });
 });

@@ -7,6 +7,11 @@ import { Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
+import {
+  selectGroupedBoardReorderEnabled,
+  setGroupedBoardReorderEnabled,
+} from "../../store/board-grouping-preferences-slice";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { trpc } from "../../trpc/client";
 import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
 import { BoardShell } from "./BoardShell";
@@ -61,14 +66,15 @@ export function BoardDetailScreen({
   boardId: string;
   rawSearch: RawBoardDetailSearch;
 }>) {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate({ from: "/boards/$boardId" });
   const utils = trpc.useUtils();
   const search = parseBoardDetailSearch(rawSearch as Record<string, unknown>);
   const columnReorderEnabled = canReorderBoard(search);
+  const groupedBoardReorderPreference = useAppSelector(selectGroupedBoardReorderEnabled);
   const [announcement, setAnnouncement] = useState<string | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [optimisticBoard, setOptimisticBoard] = useState<LoadedBoard | null>(null);
-  const [priorityGroupingReorderEnabled, setPriorityGroupingReorderEnabled] = useState(false);
   const [createCardColumnId, setCreateCardColumnId] = useState<string | null>(null);
   const [createColumnAfterId, setCreateColumnAfterId] = useState<string | null | undefined>(
     undefined,
@@ -107,13 +113,14 @@ export function BoardDetailScreen({
   });
 
   const board = optimisticBoard ?? boardQuery.data?.board;
+  const groupedBoardReorderEnabled =
+    search.view === "board" && search.groupBy !== "column" && groupedBoardReorderPreference;
   const priorityGroupReorderEnabled =
-    search.view === "board" && search.groupBy === "priority" && priorityGroupingReorderEnabled;
+    search.view === "board" && search.groupBy === "priority" && groupedBoardReorderEnabled;
 
   useEffect(() => {
     setOptimisticBoard(null);
     setConflictMessage(null);
-    setPriorityGroupingReorderEnabled(false);
   }, [boardId]);
 
   useEffect(() => {
@@ -386,12 +393,16 @@ export function BoardDetailScreen({
       return;
     }
 
-    if (!columnReorderEnabled) {
+    if (result.type === "COLUMN") {
+      if (!columnReorderEnabled && !groupedBoardReorderEnabled) {
+        return;
+      }
+
+      void commitColumnPlacement(board, result.draggableId, result.destination.index);
       return;
     }
 
-    if (result.type === "COLUMN") {
-      void commitColumnPlacement(board, result.draggableId, result.destination.index);
+    if (!columnReorderEnabled) {
       return;
     }
 
@@ -421,7 +432,7 @@ export function BoardDetailScreen({
   };
 
   const handleMoveColumn = (columnId: string, direction: "left" | "right") => {
-    if (!board || !columnReorderEnabled) {
+    if (!board || (!columnReorderEnabled && !groupedBoardReorderEnabled)) {
       return;
     }
 
@@ -626,8 +637,10 @@ export function BoardDetailScreen({
               board={board}
               search={search}
               canReorder={columnReorderEnabled}
-              priorityGroupReorderEnabled={priorityGroupReorderEnabled}
-              onTogglePriorityGroupReorderEnabled={setPriorityGroupingReorderEnabled}
+              groupedBoardReorderEnabled={groupedBoardReorderEnabled}
+              onToggleGroupedBoardReorderEnabled={(enabled) => {
+                dispatch(setGroupedBoardReorderEnabled(enabled));
+              }}
               onDragEnd={handleDragEnd}
               onOpenCard={(cardId) => {
                 updateRouteSearch({ card: cardId });
