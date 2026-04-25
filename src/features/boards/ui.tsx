@@ -137,7 +137,7 @@ export function BoardSectionHeading({
   actions,
 }: Readonly<{
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   actions?: ReactNode;
 }>) {
@@ -154,9 +154,13 @@ export function BoardSectionHeading({
             {eyebrow}
           </Text>
         ) : null}
-        <Text tag="h1" fontSize="$10" fontWeight="800" color="$boardHeading" lineHeight="$9">
-          {title}
-        </Text>
+        {typeof title === "string" ? (
+          <Text tag="h1" fontSize="$10" fontWeight="800" color="$boardHeading" lineHeight="$9">
+            {title}
+          </Text>
+        ) : (
+          title
+        )}
         {subtitle ? (
           <Text fontSize="$5" color="$boardTextMuted" maxWidth={760}>
             {subtitle}

@@ -27,7 +27,7 @@ type CreateBoardForm = {
 
 type BoardShellProps = {
   currentBoardId?: string;
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   announcement?: string | null;
   headerActions?: ReactNode;

@@ -16,6 +16,7 @@ import { trpc } from "../../trpc/client";
 import { BoardShell } from "./BoardShell";
 import { BoardCanvas } from "./BoardCanvas";
 import { CardDetailSurface } from "./CardDetailSurface";
+import { EditableBoardTitle } from "./EditableBoardTitle";
 import {
   boardPriorityMeta,
   canReorderBoard,
@@ -214,7 +215,6 @@ export function BoardDetailScreen({
   const renameBoard = trpc.board.rename.useMutation({
     onSuccess: async () => {
       await refreshBoard();
-      setBoardSettingsOpen(false);
       setAnnouncement("Board renamed.");
     },
     onError: async (error) => {
@@ -828,7 +828,22 @@ export function BoardDetailScreen({
       <BoardLiveRegion message={announcement} />
       <BoardShell
         currentBoardId={boardId}
-        title={board?.name ?? "Board"}
+        title={
+          board ? (
+            <EditableBoardTitle
+              title={board.name}
+              disabled={renameBoard.isPending}
+              onSave={async (name) => {
+                await renameBoard.mutateAsync({
+                  boardId,
+                  name,
+                });
+              }}
+            />
+          ) : (
+            "Board"
+          )
+        }
         subtitle="Plan, filter, regroup, and move work without leaving the board route."
         headerActions={
           <BoardActionButton onPress={() => setBoardSettingsOpen(true)}>
@@ -1026,6 +1041,7 @@ export function BoardDetailScreen({
               boardId,
               name: values.name,
             });
+            setBoardSettingsOpen(false);
           }}
         >
           <FormTextField<RenameBoardForm, "name">
