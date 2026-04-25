@@ -3,23 +3,25 @@ import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import {
   cloneElement,
   isValidElement,
-  type ChangeEvent,
   type CSSProperties,
   type FocusEvent,
   type ReactElement,
   type ReactNode,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { Checkbox } from "@tamagui/checkbox";
 import { Input } from "@tamagui/input";
 import { Stack, Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import { BoardActionButton, BoardInlineNotice, BoardPill, BoardSurface, PriorityPill } from "./ui";
 import { boardPriorityMeta, buildBoardLanes, groupListItemsByPriority } from "./model";
-import type { BoardDetailSearch, BoardLane, LoadedBoard } from "./types";
+import { getPriorityGroupDroppableId } from "./priorityGrouping";
+import type { BoardDetailSearch, BoardLane, CardPriority, LoadedBoard } from "./types";
 
 const BOARD_DND_GAP_PX = 16;
 const COLUMN_WIDTH_PX = 320;
@@ -103,6 +105,8 @@ type BoardCanvasProps = {
   board: LoadedBoard;
   search: BoardDetailSearch;
   canReorder: boolean;
+  priorityGroupReorderEnabled: boolean;
+  onTogglePriorityGroupReorderEnabled: (enabled: boolean) => void;
   onDragEnd: (result: DropResult) => void;
   onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (columnId: string) => void;
@@ -115,12 +119,19 @@ type BoardCanvasProps = {
   onOpenCreateColumnAfter: (columnId?: string | null) => void;
   onMoveColumn: (columnId: string, direction: "left" | "right") => void;
   onMoveCard: (cardId: string, direction: "up" | "down" | "left" | "right") => void;
+  onMovePriorityGroupCard: (
+    cardId: string,
+    priority: CardPriority,
+    direction: "up" | "down",
+  ) => void;
 };
 
 export function BoardCanvas({
   board,
   search,
   canReorder,
+  priorityGroupReorderEnabled,
+  onTogglePriorityGroupReorderEnabled,
   onDragEnd,
   onOpenCard,
   onOpenCreateCard,
@@ -129,6 +140,7 @@ export function BoardCanvas({
   onOpenCreateColumnAfter,
   onMoveColumn,
   onMoveCard,
+  onMovePriorityGroupCard,
 }: Readonly<BoardCanvasProps>) {
   const lanes = buildBoardLanes(board, {
     groupBy: search.groupBy,
@@ -136,14 +148,18 @@ export function BoardCanvas({
   });
   const showColumnManagement = true;
   const hasActivePriorityFilters = search.priority.length > 0;
+  const isPriorityGrouping = search.groupBy === "priority";
+  const showPriorityGroupingNotice = search.view === "board" && isPriorityGrouping;
   const columns = board.columns;
   const sensorApiRef = useRef<SensorAPI | null>(null);
   const boardNoticeMessage =
-    !canReorder && search.groupBy === "priority"
+    showPriorityGroupingNotice && !priorityGroupReorderEnabled
       ? "Priority grouping is display-only for now. Cards stay in their saved column order underneath, so drag and keyboard reorder are off in this view."
-      : !canReorder && search.view === "board"
-        ? "Drag and keyboard reorder controls are available only in board view grouped by column with no active priority filters."
-        : null;
+      : showPriorityGroupingNotice && priorityGroupReorderEnabled
+        ? "Priority-group reordering is on. Moving cards here updates the saved user order."
+        : !canReorder && search.view === "board"
+          ? "Drag and keyboard reorder controls are available only in board view grouped by column with no active priority filters."
+          : null;
 
   const programmaticSensor: Sensor = useMemo(() => {
     return (api) => {
@@ -222,7 +238,18 @@ export function BoardCanvas({
     <YStack gap="$4" flex={1} minHeight={0} overflow="hidden">
       {boardNoticeMessage ? (
         <YStack paddingHorizontal="$5">
-          <BoardInlineNotice tone="warning" message={boardNoticeMessage} />
+          <BoardInlineNotice
+            tone={showPriorityGroupingNotice && priorityGroupReorderEnabled ? "success" : "warning"}
+            message={boardNoticeMessage}
+            actions={
+              showPriorityGroupingNotice ? (
+                <PriorityGroupReorderToggle
+                  checked={priorityGroupReorderEnabled}
+                  onCheckedChange={onTogglePriorityGroupReorderEnabled}
+                />
+              ) : undefined
+            }
+          />
         </YStack>
       ) : null}
 
@@ -336,6 +363,7 @@ export function BoardCanvas({
                                   canReorder={canReorder}
                                   groupBy={search.groupBy}
                                   hasActivePriorityFilters={hasActivePriorityFilters}
+                                  priorityGroupReorderEnabled={priorityGroupReorderEnabled}
                                   dragHandleProps={columnProvided.dragHandleProps}
                                   onOpenCard={onOpenCard}
                                   onOpenCreateCard={onOpenCreateCard}
@@ -344,6 +372,7 @@ export function BoardCanvas({
                                   onOpenCreateColumnAfter={onOpenCreateColumnAfter}
                                   onMoveColumn={moveColumnProgrammatically}
                                   onMoveCard={canReorder ? moveCardProgrammatically : onMoveCard}
+                                  onMovePriorityGroupCard={onMovePriorityGroupCard}
                                 />
                               </div>
                             );
@@ -356,6 +385,86 @@ export function BoardCanvas({
                 </div>
               )}
             </Droppable>
+          </DragDropContext>
+        ) : priorityGroupReorderEnabled ? (
+          <DragDropContext onDragEnd={onDragEnd}>
+            <XStack
+              gap="$4"
+              alignItems="stretch"
+              height="100%"
+              minWidth="max-content"
+              paddingHorizontal="$5"
+              paddingTop={INSERT_COLUMN_BUTTON_SAFE_TOP_PX}
+              paddingBottom="$5"
+            >
+              {showColumnManagement && columns.length === 0 ? (
+                <YStack width={COLUMN_WIDTH_PX} minWidth={COLUMN_WIDTH_PX} padding="$5">
+                  <InsertColumnCircleButton
+                    ariaLabel="Add first column"
+                    onPress={() => onOpenCreateColumnAfter(null)}
+                  />
+                </YStack>
+              ) : null}
+
+              {lanes.map((lane, laneIndex) => (
+                <YStack
+                  key={lane.id}
+                  width={320}
+                  minWidth={320}
+                  height="100%"
+                  flexShrink={0}
+                  position="relative"
+                >
+                  {showColumnManagement && laneIndex === 0 ? (
+                    <YStack
+                      position="absolute"
+                      left={-INSERT_COLUMN_BUTTON_OFFSET_PX}
+                      top={6}
+                      zIndex={2}
+                    >
+                      <InsertColumnCircleButton
+                        ariaLabel="Add column before first column"
+                        onPress={() => onOpenCreateColumnAfter(null)}
+                      />
+                    </YStack>
+                  ) : null}
+
+                  {showColumnManagement ? (
+                    <YStack
+                      position="absolute"
+                      right={-INSERT_COLUMN_BUTTON_OFFSET_PX}
+                      top={6}
+                      zIndex={2}
+                    >
+                      <InsertColumnCircleButton
+                        ariaLabel={
+                          laneIndex === lanes.length - 1
+                            ? "Add column after last column"
+                            : "Add column between columns"
+                        }
+                        onPress={() => onOpenCreateColumnAfter(lane.id)}
+                      />
+                    </YStack>
+                  ) : null}
+
+                  <BoardLaneView
+                    lane={lane}
+                    canReorder={false}
+                    groupBy={search.groupBy}
+                    hasActivePriorityFilters={hasActivePriorityFilters}
+                    priorityGroupReorderEnabled={priorityGroupReorderEnabled}
+                    onOpenCard={onOpenCard}
+                    onOpenCreateCard={onOpenCreateCard}
+                    onRenameColumn={onRenameColumn}
+                    renamePendingColumnId={renamePendingColumnId}
+                    onOpenCreateColumnAfter={onOpenCreateColumnAfter}
+                    onMoveColumn={onMoveColumn}
+                    onMoveCard={onMoveCard}
+                    onMovePriorityGroupCard={onMovePriorityGroupCard}
+                  />
+                </YStack>
+              ))}
+            </XStack>
           </DragDropContext>
         ) : (
           <XStack
@@ -422,6 +531,7 @@ export function BoardCanvas({
                   canReorder={false}
                   groupBy={search.groupBy}
                   hasActivePriorityFilters={hasActivePriorityFilters}
+                  priorityGroupReorderEnabled={priorityGroupReorderEnabled}
                   onOpenCard={onOpenCard}
                   onOpenCreateCard={onOpenCreateCard}
                   onRenameColumn={onRenameColumn}
@@ -429,6 +539,7 @@ export function BoardCanvas({
                   onOpenCreateColumnAfter={onOpenCreateColumnAfter}
                   onMoveColumn={canReorder ? moveColumnProgrammatically : onMoveColumn}
                   onMoveCard={canReorder ? moveCardProgrammatically : onMoveCard}
+                  onMovePriorityGroupCard={onMovePriorityGroupCard}
                 />
               </YStack>
             ))}
@@ -436,6 +547,37 @@ export function BoardCanvas({
         )}
       </div>
     </YStack>
+  );
+}
+
+function PriorityGroupReorderToggle({
+  checked,
+  onCheckedChange,
+}: Readonly<{
+  checked: boolean;
+  onCheckedChange: (enabled: boolean) => void;
+}>) {
+  const checkboxId = useId();
+
+  return (
+    <XStack tag="label" htmlFor={checkboxId} alignItems="center" gap="$2" cursor="pointer">
+      <Checkbox
+        id={checkboxId}
+        checked={checked}
+        size="$3"
+        aria-label="Allow re-ordering in this view, which will impact the user order"
+        onCheckedChange={(value) => {
+          onCheckedChange(value === true);
+        }}
+      >
+        <Checkbox.Indicator>
+          <Text fontWeight="800">✓</Text>
+        </Checkbox.Indicator>
+      </Checkbox>
+      <Text color="$boardHeading" fontSize="$2" fontWeight="600" maxWidth={280}>
+        Allow re-ordering in this view, which will impact the user order
+      </Text>
+    </XStack>
   );
 }
 
@@ -696,6 +838,7 @@ function BoardLaneView({
   canReorder,
   groupBy,
   hasActivePriorityFilters,
+  priorityGroupReorderEnabled,
   dragHandleProps,
   onOpenCard,
   onOpenCreateCard,
@@ -704,11 +847,13 @@ function BoardLaneView({
   onOpenCreateColumnAfter,
   onMoveColumn,
   onMoveCard,
+  onMovePriorityGroupCard,
 }: Readonly<{
   lane: BoardLane;
   canReorder: boolean;
   groupBy: BoardDetailSearch["groupBy"];
   hasActivePriorityFilters: boolean;
+  priorityGroupReorderEnabled: boolean;
   dragHandleProps?: DraggableProvided["dragHandleProps"];
   onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (columnId: string) => void;
@@ -721,6 +866,11 @@ function BoardLaneView({
   onOpenCreateColumnAfter: (columnId?: string | null) => void;
   onMoveColumn: (columnId: string, direction: "left" | "right") => void;
   onMoveCard: (cardId: string, direction: "up" | "down" | "left" | "right") => void;
+  onMovePriorityGroupCard: (
+    cardId: string,
+    priority: CardPriority,
+    direction: "up" | "down",
+  ) => void;
 }>) {
   const isRealColumn = lane.laneKind === "column" && lane.originalColumnId;
 
@@ -840,8 +990,10 @@ function BoardLaneView({
             lane={lane}
             groupBy={groupBy}
             hasActivePriorityFilters={hasActivePriorityFilters}
+            priorityGroupReorderEnabled={priorityGroupReorderEnabled}
             onOpenCard={onOpenCard}
             onMoveCard={onMoveCard}
+            onMovePriorityGroupCard={onMovePriorityGroupCard}
           />
         )}
 
@@ -861,14 +1013,22 @@ function StaticLaneCards({
   lane,
   groupBy,
   hasActivePriorityFilters,
+  priorityGroupReorderEnabled,
   onOpenCard,
   onMoveCard,
+  onMovePriorityGroupCard,
 }: Readonly<{
   lane: BoardLane;
   groupBy: BoardDetailSearch["groupBy"];
   hasActivePriorityFilters: boolean;
+  priorityGroupReorderEnabled: boolean;
   onOpenCard: (cardId: string) => void;
   onMoveCard: (cardId: string, direction: "up" | "down" | "left" | "right") => void;
+  onMovePriorityGroupCard: (
+    cardId: string,
+    priority: CardPriority,
+    direction: "up" | "down",
+  ) => void;
 }>) {
   if (groupBy === "priority") {
     const visibleGroups = groupListItemsByPriority(lane.cards).filter(
@@ -888,9 +1048,12 @@ function StaticLaneCards({
           <PriorityGroupSection
             key={`${lane.id}-${group.priority}`}
             group={group}
+            laneId={lane.id}
             showDivider={index > 0}
+            canReorder={priorityGroupReorderEnabled}
             onOpenCard={onOpenCard}
             onMoveCard={onMoveCard}
+            onMovePriorityGroupCard={onMovePriorityGroupCard}
           />
         ))}
         <LaneEmptyState
@@ -932,14 +1095,24 @@ function StaticLaneCards({
 
 function PriorityGroupSection({
   group,
+  laneId,
   showDivider,
+  canReorder,
   onOpenCard,
   onMoveCard,
+  onMovePriorityGroupCard,
 }: Readonly<{
   group: ReturnType<typeof groupListItemsByPriority>[number];
+  laneId: string;
   showDivider: boolean;
+  canReorder: boolean;
   onOpenCard: (cardId: string) => void;
   onMoveCard: (cardId: string, direction: "up" | "down" | "left" | "right") => void;
+  onMovePriorityGroupCard: (
+    cardId: string,
+    priority: CardPriority,
+    direction: "up" | "down",
+  ) => void;
 }>) {
   return (
     <YStack
@@ -963,18 +1136,71 @@ function PriorityGroupSection({
         </BoardPill>
       </XStack>
 
-      <YStack gap="$3">
-        {group.cards.map((card) => (
-          <CardPreview
-            key={card.id}
-            card={card}
-            showColumnContext={false}
-            canMove={false}
-            onOpen={() => onOpenCard(card.id)}
-            onMove={onMoveCard}
-          />
-        ))}
-      </YStack>
+      {canReorder ? (
+        <Droppable
+          droppableId={getPriorityGroupDroppableId(laneId, group.priority)}
+          type={getPriorityGroupDroppableId(laneId, group.priority)}
+          ignoreContainerClipping
+        >
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              style={{ ...dndCardListStyle, paddingTop: 0, minHeight: 0 }}
+            >
+              {group.cards.map((card, index) => (
+                <Draggable
+                  key={card.id}
+                  draggableId={card.id}
+                  index={index}
+                  disableInteractiveElementBlocking
+                >
+                  {(cardProvided) => {
+                    const { rest: cardDragRest, style: cardDragStyle } = mergeDraggableStyle(
+                      dndCardShellStyle,
+                      cardProvided.draggableProps,
+                    );
+                    return (
+                      <div ref={cardProvided.innerRef} {...cardDragRest} style={cardDragStyle}>
+                        <CardInterior
+                          card={card}
+                          showColumnContext={false}
+                          canMove
+                          moveDirections={["up", "down"]}
+                          dragHandleProps={cardProvided.dragHandleProps}
+                          onOpen={() => onOpenCard(card.id)}
+                          onMove={(cardId, direction) => {
+                            if (direction === "up" || direction === "down") {
+                              onMovePriorityGroupCard(cardId, group.priority, direction);
+                              return;
+                            }
+
+                            onMoveCard(cardId, direction);
+                          }}
+                        />
+                      </div>
+                    );
+                  }}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      ) : (
+        <YStack gap="$3">
+          {group.cards.map((card) => (
+            <CardPreview
+              key={card.id}
+              card={card}
+              showColumnContext={false}
+              canMove={false}
+              onOpen={() => onOpenCard(card.id)}
+              onMove={onMoveCard}
+            />
+          ))}
+        </YStack>
+      )}
     </YStack>
   );
 }
@@ -984,6 +1210,7 @@ function CardInterior({
   card,
   showColumnContext,
   canMove,
+  moveDirections = ["up", "down", "left", "right"],
   dragHandleProps,
   onOpen,
   onMove,
@@ -991,6 +1218,7 @@ function CardInterior({
   card: BoardLane["cards"][number];
   showColumnContext: boolean;
   canMove: boolean;
+  moveDirections?: Array<"up" | "down" | "left" | "right">;
   dragHandleProps?: DraggableProvided["dragHandleProps"];
   onOpen: () => void;
   onMove: (cardId: string, direction: "up" | "down" | "left" | "right") => void;
@@ -998,6 +1226,10 @@ function CardInterior({
   const [edgeHoverCount, setEdgeHoverCount] = useState(0);
   const [isFocusWithin, setIsFocusWithin] = useState(false);
   const moveControlsVisible = canMove && (edgeHoverCount > 0 || isFocusWithin);
+  const canMoveLeft = moveDirections.includes("left");
+  const canMoveRight = moveDirections.includes("right");
+  const canMoveUp = moveDirections.includes("up");
+  const canMoveDown = moveDirections.includes("down");
 
   return (
     <div
@@ -1024,23 +1256,88 @@ function CardInterior({
       >
         {canMove ? (
           <>
-            <Stack
-              position="absolute"
-              left={-CARD_CHROME_PADDING_PX}
-              top={-CARD_CHROME_PADDING_PX}
-              bottom={-CARD_CHROME_PADDING_PX}
-              width={CARD_MOVE_EDGE_SIZE_PX}
-              zIndex={2}
-              opacity={moveControlsVisible ? 1 : 0}
-              onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
-              onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
-            >
+            {canMoveLeft ? (
+              <Stack
+                position="absolute"
+                left={-CARD_CHROME_PADDING_PX}
+                top={-CARD_CHROME_PADDING_PX}
+                bottom={-CARD_CHROME_PADDING_PX}
+                width={CARD_MOVE_EDGE_SIZE_PX}
+                zIndex={2}
+                opacity={moveControlsVisible ? 1 : 0}
+                onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
+                onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
+              >
+                <BoardActionButton
+                  tone="ghost"
+                  aria-label="Move card left"
+                  onPress={() => onMove(card.id, "left")}
+                  width="100%"
+                  height="100%"
+                  borderWidth={0}
+                  borderRadius={0}
+                  paddingHorizontal={0}
+                  paddingVertical={0}
+                  justifyContent="center"
+                  alignItems="center"
+                  backgroundColor="rgba(255, 255, 255, 0.01)"
+                  hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
+                  pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
+                >
+                  <Text fontSize="$6" fontWeight="800" color="$boardTextMuted">
+                    ‹
+                  </Text>
+                </BoardActionButton>
+              </Stack>
+            ) : null}
+
+            {canMoveRight ? (
+              <Stack
+                position="absolute"
+                right={-CARD_CHROME_PADDING_PX}
+                top={-CARD_CHROME_PADDING_PX}
+                bottom={-CARD_CHROME_PADDING_PX}
+                width={CARD_MOVE_EDGE_SIZE_PX}
+                zIndex={2}
+                opacity={moveControlsVisible ? 1 : 0}
+                onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
+                onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
+              >
+                <BoardActionButton
+                  tone="ghost"
+                  aria-label="Move card right"
+                  onPress={() => onMove(card.id, "right")}
+                  width="100%"
+                  height="100%"
+                  borderWidth={0}
+                  borderRadius={0}
+                  paddingHorizontal={0}
+                  paddingVertical={0}
+                  justifyContent="center"
+                  alignItems="center"
+                  backgroundColor="rgba(255, 255, 255, 0.01)"
+                  hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
+                  pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
+                >
+                  <Text fontSize="$6" fontWeight="800" color="$boardTextMuted">
+                    ›
+                  </Text>
+                </BoardActionButton>
+              </Stack>
+            ) : null}
+
+            {canMoveUp ? (
               <BoardActionButton
                 tone="ghost"
-                aria-label="Move card left"
-                onPress={() => onMove(card.id, "left")}
-                width="100%"
-                height="100%"
+                aria-label="Move card up"
+                onPress={() => onMove(card.id, "up")}
+                position="absolute"
+                left={-CARD_CHROME_PADDING_PX}
+                right={-CARD_CHROME_PADDING_PX}
+                top={-CARD_CHROME_PADDING_PX}
+                height={CARD_MOVE_EDGE_SIZE_PX}
+                zIndex={2}
+                opacity={moveControlsVisible ? 1 : 0}
                 borderWidth={0}
                 borderRadius={0}
                 paddingHorizontal={0}
@@ -1050,30 +1347,27 @@ function CardInterior({
                 backgroundColor="rgba(255, 255, 255, 0.01)"
                 hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
                 pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
+                onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
+                onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
               >
-                <Text fontSize="$6" fontWeight="800" color="$boardTextMuted">
-                  ‹
+                <Text fontSize="$5" fontWeight="900" color="$boardTextMuted">
+                  ˄
                 </Text>
               </BoardActionButton>
-            </Stack>
+            ) : null}
 
-            <Stack
-              position="absolute"
-              right={-CARD_CHROME_PADDING_PX}
-              top={-CARD_CHROME_PADDING_PX}
-              bottom={-CARD_CHROME_PADDING_PX}
-              width={CARD_MOVE_EDGE_SIZE_PX}
-              zIndex={2}
-              opacity={moveControlsVisible ? 1 : 0}
-              onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
-              onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
-            >
+            {canMoveDown ? (
               <BoardActionButton
                 tone="ghost"
-                aria-label="Move card right"
-                onPress={() => onMove(card.id, "right")}
-                width="100%"
-                height="100%"
+                aria-label="Move card down"
+                onPress={() => onMove(card.id, "down")}
+                position="absolute"
+                left={-CARD_CHROME_PADDING_PX}
+                right={-CARD_CHROME_PADDING_PX}
+                bottom={-CARD_CHROME_PADDING_PX}
+                height={CARD_MOVE_EDGE_SIZE_PX}
+                zIndex={2}
+                opacity={moveControlsVisible ? 1 : 0}
                 borderWidth={0}
                 borderRadius={0}
                 paddingHorizontal={0}
@@ -1083,68 +1377,14 @@ function CardInterior({
                 backgroundColor="rgba(255, 255, 255, 0.01)"
                 hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
                 pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
+                onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
+                onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
               >
-                <Text fontSize="$6" fontWeight="800" color="$boardTextMuted">
-                  ›
+                <Text fontSize="$5" fontWeight="900" color="$boardTextMuted">
+                  ˅
                 </Text>
               </BoardActionButton>
-            </Stack>
-
-            <BoardActionButton
-              tone="ghost"
-              aria-label="Move card up"
-              onPress={() => onMove(card.id, "up")}
-              position="absolute"
-              left={-CARD_CHROME_PADDING_PX}
-              right={-CARD_CHROME_PADDING_PX}
-              top={-CARD_CHROME_PADDING_PX}
-              height={CARD_MOVE_EDGE_SIZE_PX}
-              zIndex={2}
-              opacity={moveControlsVisible ? 1 : 0}
-              borderWidth={0}
-              borderRadius={0}
-              paddingHorizontal={0}
-              paddingVertical={0}
-              justifyContent="center"
-              alignItems="center"
-              backgroundColor="rgba(255, 255, 255, 0.01)"
-              hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
-              pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
-              onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
-              onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
-            >
-              <Text fontSize="$5" fontWeight="900" color="$boardTextMuted">
-                ˄
-              </Text>
-            </BoardActionButton>
-
-            <BoardActionButton
-              tone="ghost"
-              aria-label="Move card down"
-              onPress={() => onMove(card.id, "down")}
-              position="absolute"
-              left={-CARD_CHROME_PADDING_PX}
-              right={-CARD_CHROME_PADDING_PX}
-              bottom={-CARD_CHROME_PADDING_PX}
-              height={CARD_MOVE_EDGE_SIZE_PX}
-              zIndex={2}
-              opacity={moveControlsVisible ? 1 : 0}
-              borderWidth={0}
-              borderRadius={0}
-              paddingHorizontal={0}
-              paddingVertical={0}
-              justifyContent="center"
-              alignItems="center"
-              backgroundColor="rgba(255, 255, 255, 0.01)"
-              hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
-              pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
-              onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
-              onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
-            >
-              <Text fontSize="$5" fontWeight="900" color="$boardTextMuted">
-                ˅
-              </Text>
-            </BoardActionButton>
+            ) : null}
           </>
         ) : null}
 

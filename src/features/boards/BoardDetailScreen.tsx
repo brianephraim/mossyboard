@@ -24,6 +24,7 @@ import {
   serializePriorityFilter,
   togglePrioritySelection,
 } from "./model";
+import { getPriorityGroupPlacement, parsePriorityGroupDroppableId } from "./priorityGrouping";
 import type { BoardDetailSearch, CardPriority, LoadedBoard } from "./types";
 import {
   BoardActionButton,
@@ -63,10 +64,11 @@ export function BoardDetailScreen({
   const navigate = useNavigate({ from: "/boards/$boardId" });
   const utils = trpc.useUtils();
   const search = parseBoardDetailSearch(rawSearch as Record<string, unknown>);
-  const reorderEnabled = canReorderBoard(search);
+  const columnReorderEnabled = canReorderBoard(search);
   const [announcement, setAnnouncement] = useState<string | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [optimisticBoard, setOptimisticBoard] = useState<LoadedBoard | null>(null);
+  const [priorityGroupingReorderEnabled, setPriorityGroupingReorderEnabled] = useState(false);
   const [createCardColumnId, setCreateCardColumnId] = useState<string | null>(null);
   const [createColumnAfterId, setCreateColumnAfterId] = useState<string | null | undefined>(
     undefined,
@@ -105,10 +107,13 @@ export function BoardDetailScreen({
   });
 
   const board = optimisticBoard ?? boardQuery.data?.board;
+  const priorityGroupReorderEnabled =
+    search.view === "board" && search.groupBy === "priority" && priorityGroupingReorderEnabled;
 
   useEffect(() => {
     setOptimisticBoard(null);
     setConflictMessage(null);
+    setPriorityGroupingReorderEnabled(false);
   }, [boardId]);
 
   useEffect(() => {
@@ -332,7 +337,50 @@ export function BoardDetailScreen({
   };
 
   const handleDragEnd = (result: DropResult) => {
-    if (!board || !result.destination || !reorderEnabled) {
+    if (!board || !result.destination) {
+      return;
+    }
+
+    const sourcePriorityGroup = parsePriorityGroupDroppableId(result.source.droppableId);
+    const destinationPriorityGroup = parsePriorityGroupDroppableId(result.destination.droppableId);
+
+    if (priorityGroupReorderEnabled && sourcePriorityGroup && destinationPriorityGroup) {
+      if (
+        sourcePriorityGroup.columnId !== destinationPriorityGroup.columnId ||
+        sourcePriorityGroup.priority !== destinationPriorityGroup.priority ||
+        (result.source.droppableId === result.destination.droppableId &&
+          result.source.index === result.destination.index)
+      ) {
+        return;
+      }
+
+      const cardLocation = getCardPosition(board, result.draggableId);
+      if (!cardLocation) {
+        return;
+      }
+
+      const placement = getPriorityGroupPlacement(board, {
+        cardId: result.draggableId,
+        columnId: destinationPriorityGroup.columnId,
+        priority: destinationPriorityGroup.priority,
+        destinationIndex: result.destination.index,
+      });
+      if (!placement) {
+        return;
+      }
+
+      void commitCardPlacement(board, {
+        cardId: result.draggableId,
+        sourceColumnId: cardLocation.column.id,
+        sourceIndex: cardLocation.cardIndex,
+        destinationColumnId: placement.columnId,
+        destinationIndex: placement.destinationIndex,
+        expectedVersion: cardLocation.card.version,
+      });
+      return;
+    }
+
+    if (!columnReorderEnabled) {
       return;
     }
 
@@ -367,7 +415,7 @@ export function BoardDetailScreen({
   };
 
   const handleMoveColumn = (columnId: string, direction: "left" | "right") => {
-    if (!board || !reorderEnabled) {
+    if (!board || !columnReorderEnabled) {
       return;
     }
 
@@ -389,7 +437,7 @@ export function BoardDetailScreen({
   };
 
   const handleMoveCard = (cardId: string, direction: "up" | "down" | "left" | "right") => {
-    if (!board || !reorderEnabled) {
+    if (!board || !columnReorderEnabled) {
       return;
     }
 
@@ -427,6 +475,55 @@ export function BoardDetailScreen({
       sourceIndex: location.cardIndex,
       destinationColumnId,
       destinationIndex,
+      expectedVersion: location.card.version,
+    });
+  };
+
+  const handleMoveCardInPriorityGroup = (
+    cardId: string,
+    priority: CardPriority,
+    direction: "up" | "down",
+  ) => {
+    if (!board || !priorityGroupReorderEnabled) {
+      return;
+    }
+
+    const location = getCardPosition(board, cardId);
+    if (!location) {
+      return;
+    }
+
+    const priorityCards = location.column.cards.filter((card) => card.priority === priority);
+    const sourceGroupIndex = priorityCards.findIndex((card) => card.id === cardId);
+    if (sourceGroupIndex === -1) {
+      return;
+    }
+
+    const destinationGroupIndex =
+      direction === "up"
+        ? Math.max(sourceGroupIndex - 1, 0)
+        : Math.min(sourceGroupIndex + 1, priorityCards.length - 1);
+
+    if (destinationGroupIndex === sourceGroupIndex) {
+      return;
+    }
+
+    const placement = getPriorityGroupPlacement(board, {
+      cardId,
+      columnId: location.column.id,
+      priority,
+      destinationIndex: destinationGroupIndex,
+    });
+    if (!placement) {
+      return;
+    }
+
+    void commitCardPlacement(board, {
+      cardId,
+      sourceColumnId: location.column.id,
+      sourceIndex: location.cardIndex,
+      destinationColumnId: placement.columnId,
+      destinationIndex: placement.destinationIndex,
       expectedVersion: location.card.version,
     });
   };
@@ -522,7 +619,9 @@ export function BoardDetailScreen({
             <BoardCanvas
               board={board}
               search={search}
-              canReorder={reorderEnabled}
+              canReorder={columnReorderEnabled}
+              priorityGroupReorderEnabled={priorityGroupReorderEnabled}
+              onTogglePriorityGroupReorderEnabled={setPriorityGroupingReorderEnabled}
               onDragEnd={handleDragEnd}
               onOpenCard={(cardId) => {
                 updateRouteSearch({ card: cardId });
@@ -543,6 +642,7 @@ export function BoardDetailScreen({
               }}
               onMoveColumn={handleMoveColumn}
               onMoveCard={handleMoveCard}
+              onMovePriorityGroupCard={handleMoveCardInPriorityGroup}
             />
           </YStack>
         ) : (
@@ -886,7 +986,7 @@ function BoardControls({
                 tone={search.groupBy === "column" ? "accent" : "ghost"}
                 onPress={() => onSetGroupBy("column")}
               >
-                Column
+                User order
               </BoardActionButton>
               <BoardActionButton
                 tone={search.groupBy === "priority" ? "accent" : "ghost"}

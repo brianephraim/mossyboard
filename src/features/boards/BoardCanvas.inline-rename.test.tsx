@@ -45,6 +45,8 @@ describe("BoardCanvas inline column rename", () => {
           board={board}
           search={search}
           canReorder={false}
+          priorityGroupReorderEnabled={false}
+          onTogglePriorityGroupReorderEnabled={vi.fn()}
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
@@ -53,6 +55,7 @@ describe("BoardCanvas inline column rename", () => {
           onOpenCreateColumnAfter={vi.fn()}
           onMoveColumn={vi.fn()}
           onMoveCard={vi.fn()}
+          onMovePriorityGroupCard={vi.fn()}
         />
       </TamaguiRootProvider>,
     );
@@ -82,6 +85,8 @@ describe("BoardCanvas inline column rename", () => {
           board={board}
           search={search}
           canReorder={false}
+          priorityGroupReorderEnabled={false}
+          onTogglePriorityGroupReorderEnabled={vi.fn()}
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
@@ -90,6 +95,7 @@ describe("BoardCanvas inline column rename", () => {
           onOpenCreateColumnAfter={vi.fn()}
           onMoveColumn={vi.fn()}
           onMoveCard={vi.fn()}
+          onMovePriorityGroupCard={vi.fn()}
         />
       </TamaguiRootProvider>,
     );

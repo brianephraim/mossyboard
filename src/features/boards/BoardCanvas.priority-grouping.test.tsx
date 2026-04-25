@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BoardCanvas } from "./BoardCanvas";
@@ -77,6 +77,8 @@ describe("BoardCanvas priority grouping", () => {
           board={board}
           search={priorityGroupedSearch}
           canReorder={false}
+          priorityGroupReorderEnabled={false}
+          onTogglePriorityGroupReorderEnabled={vi.fn()}
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
@@ -85,6 +87,7 @@ describe("BoardCanvas priority grouping", () => {
           onOpenCreateColumnAfter={vi.fn()}
           onMoveColumn={vi.fn()}
           onMoveCard={vi.fn()}
+          onMovePriorityGroupCard={vi.fn()}
         />
       </TamaguiRootProvider>,
     );
@@ -100,5 +103,37 @@ describe("BoardCanvas priority grouping", () => {
     assert.ok(within(backlogColumn).getByRole("heading", { name: "Low" }));
     assert.ok(within(inProgressColumn).getByRole("heading", { name: "In progress" }));
     assert.ok(within(inProgressColumn).getByRole("heading", { name: "No priority" }));
+  });
+
+  it("renders the priority-mode reorder opt-in checkbox", () => {
+    const onTogglePriorityGroupReorderEnabled = vi.fn();
+
+    render(
+      <TamaguiRootProvider>
+        <BoardCanvas
+          board={board}
+          search={priorityGroupedSearch}
+          canReorder={false}
+          priorityGroupReorderEnabled={false}
+          onTogglePriorityGroupReorderEnabled={onTogglePriorityGroupReorderEnabled}
+          onDragEnd={vi.fn()}
+          onOpenCard={vi.fn()}
+          onOpenCreateCard={vi.fn()}
+          onRenameColumn={vi.fn().mockResolvedValue(undefined)}
+          renamePendingColumnId={null}
+          onOpenCreateColumnAfter={vi.fn()}
+          onMoveColumn={vi.fn()}
+          onMoveCard={vi.fn()}
+          onMovePriorityGroupCard={vi.fn()}
+        />
+      </TamaguiRootProvider>,
+    );
+
+    const checkbox = screen.getByRole("checkbox", {
+      name: /allow re-ordering in this view, which will impact the user order/i,
+    });
+    fireEvent.click(checkbox);
+
+    expect(onTogglePriorityGroupReorderEnabled).toHaveBeenCalledWith(true);
   });
 });
