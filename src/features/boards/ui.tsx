@@ -13,14 +13,9 @@ const pageBackground =
 export function BoardPageChrome({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <Theme name="light">
-      <YStack
-        minHeight="100vh"
-        backgroundImage={pageBackground}
-        position="relative"
-        overflow="hidden"
-      >
+      <YStack height="100vh" backgroundImage={pageBackground} position="relative" overflow="hidden">
         <BoardBackdropArt />
-        <YStack position="relative" zIndex={1} minHeight="100vh">
+        <YStack position="relative" zIndex={1} flex={1} minHeight={0}>
           {children}
         </YStack>
       </YStack>
@@ -73,7 +68,13 @@ function BoardBackdropArt() {
 export function BoardSurface({
   children,
   padding = "$5",
-}: Readonly<{ children: ReactNode; padding?: ComponentProps<typeof YStack>["padding"] }>) {
+  ...props
+}: Readonly<
+  { children: ReactNode; padding?: ComponentProps<typeof YStack>["padding"] } & Omit<
+    ComponentProps<typeof YStack>,
+    "children" | "padding"
+  >
+>) {
   return (
     <YStack
       backgroundColor="$boardShellSurface"
@@ -83,6 +84,7 @@ export function BoardSurface({
       padding={padding}
       gap="$4"
       boxShadow="rgba(89, 103, 62, 0.08) 0px 20px 60px"
+      {...props}
     >
       {children}
     </YStack>
@@ -336,7 +338,7 @@ export function BoardResponsiveColumns({
 
   if (media.maxMd) {
     return (
-      <YStack gap="$4" padding="$4">
+      <YStack gap="$4" padding="$4" flex={1} minHeight={0}>
         {rail}
         {content}
       </YStack>
@@ -344,11 +346,11 @@ export function BoardResponsiveColumns({
   }
 
   return (
-    <XStack gap="$4" padding="$4" alignItems="stretch">
-      <YStack width={288} flexShrink={0}>
+    <XStack gap="$4" padding="$4" alignItems="stretch" flex={1} minHeight={0}>
+      <YStack width={288} flexShrink={0} minHeight={0}>
         {rail}
       </YStack>
-      <YStack flex={1} minWidth={0}>
+      <YStack flex={1} minWidth={0} minHeight={0}>
         {content}
       </YStack>
     </XStack>

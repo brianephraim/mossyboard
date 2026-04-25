@@ -53,13 +53,13 @@ function BoardRailBoardRow({
   const linkProps = useLinkProps({
     to: "/boards/$boardId",
     params: { boardId },
+    search: { view: "board", groupBy: "column", card: undefined, priority: undefined },
   });
 
   return (
     <XStack
       {...(linkProps as Record<string, unknown>)}
       tag="a"
-      textDecorationLine="none"
       cursor="pointer"
       alignItems="center"
       justifyContent="space-between"
@@ -115,7 +115,11 @@ export function BoardShell({
       setCreateBoardOpen(false);
       setShellAnnouncement("Board created.");
       await utils.board.list.invalidate();
-      void navigate({ to: "/boards/$boardId", params: { boardId } });
+      void navigate({
+        to: "/boards/$boardId",
+        params: { boardId },
+        search: { view: "board", groupBy: "column", card: undefined, priority: undefined },
+      });
     },
   });
 
@@ -136,9 +140,10 @@ export function BoardShell({
 
   const boardList = boardsQuery.data?.boards ?? [];
   const boardRail = (
-    <BoardSurface padding="$4">
+    <BoardSurface padding="$4" flex={1} minHeight={0}>
       <YStack
         gap="$4"
+        flex={1}
         minHeight={
           media.maxMd
             ? "auto"
@@ -261,8 +266,18 @@ export function BoardShell({
       <BoardResponsiveColumns
         rail={boardRail}
         content={
-          <BoardSurface padding="$0">
-            <YStack padding="$5" paddingBottom="$0" gap="$5">
+          <BoardSurface
+            padding="$0"
+            flex={1}
+            overflow="hidden"
+            height={
+              media.maxMd
+                ? "auto"
+                : // BoardResponsiveColumns desktop XStack: $4 top+bottom. BoardSurface: 1px border each vertical side.
+                  "calc(100vh - 2 * var(--c-space-4) - 2px)"
+            }
+          >
+            <YStack padding="$5" paddingBottom="$0" gap="$5" flexShrink={0}>
               <BoardSectionHeading
                 eyebrow="Workspace"
                 title={title}
@@ -271,11 +286,13 @@ export function BoardShell({
               />
               {verificationBanner}
             </YStack>
-            {renderContent({
-              openCreateBoard: () => {
-                setCreateBoardOpen(true);
-              },
-            })}
+            <YStack flex={1} minHeight={0} overflow="hidden">
+              {renderContent({
+                openCreateBoard: () => {
+                  setCreateBoardOpen(true);
+                },
+              })}
+            </YStack>
           </BoardSurface>
         }
       />

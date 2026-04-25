@@ -30,8 +30,9 @@ const INSERT_COLUMN_BUTTON_SAFE_TOP_PX = 24;
 const dndHorizontalRowStyle: CSSProperties = {
   display: "flex",
   flexDirection: "row",
-  alignItems: "flex-start",
+  alignItems: "stretch",
   minWidth: "max-content",
+  height: "100%",
 };
 
 const dndColumnShellStyle: CSSProperties = {
@@ -39,6 +40,7 @@ const dndColumnShellStyle: CSSProperties = {
   minWidth: COLUMN_WIDTH_PX,
   flexShrink: 0,
   marginRight: BOARD_DND_GAP_PX,
+  height: "100%",
 };
 
 const dndCardListStyle: CSSProperties = {
@@ -131,7 +133,7 @@ export function BoardCanvas({
   const columns = board.columns;
 
   return (
-    <YStack gap="$4">
+    <YStack gap="$4" flex={1} minHeight={0} overflow="hidden">
       {!canReorder && search.view === "board" ? (
         <YStack paddingHorizontal="$5">
           <BoardInlineNotice
@@ -144,9 +146,11 @@ export function BoardCanvas({
       <div
         style={{
           overflowX: "auto",
-          overflowY: "visible",
+          overflowY: "hidden",
           maxWidth: "100%",
           width: "100%",
+          flex: "1 1 auto",
+          minHeight: 0,
         }}
       >
         {canReorder ? (
@@ -536,9 +540,9 @@ function BoardLaneView({
   const isRealColumn = lane.laneKind === "column" && lane.originalColumnId;
 
   return (
-    <BoardSurface padding="$4">
-      <YStack gap="$3">
-        <YStack gap="$2">
+    <BoardSurface padding="$4" height="100%">
+      <YStack gap="$3" flex={1} minHeight={0}>
+        <YStack gap="$2" flexShrink={0}>
           {isRealColumn ? (
             <ColumnHeaderWithInlineRename
               lane={lane}
@@ -572,8 +576,25 @@ function BoardLaneView({
         {canReorder && isRealColumn ? (
           <Droppable droppableId={isRealColumn} type="CARD" ignoreContainerClipping>
             {(provided) => (
-              <div style={{ display: "flex", flexDirection: "column", gap: BOARD_DND_GAP_PX }}>
-                <div ref={provided.innerRef} {...provided.droppableProps} style={dndCardListStyle}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: BOARD_DND_GAP_PX,
+                  flex: "1 1 auto",
+                  minHeight: 0,
+                }}
+              >
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  style={{
+                    ...dndCardListStyle,
+                    overflowY: "auto",
+                    flex: "1 1 auto",
+                    minHeight: 0,
+                  }}
+                >
                   {lane.cards.map((card, index) => (
                     <Draggable key={card.id} draggableId={card.id} index={index}>
                       {(cardProvided) => {
@@ -605,21 +626,23 @@ function BoardLaneView({
             )}
           </Droppable>
         ) : (
-          <YStack gap="$3" minHeight={120}>
-            {lane.cards.map((card) => (
-              <CardPreview
-                key={card.id}
-                card={card}
-                showColumnContext={lane.laneKind === "priority"}
-                canMove={false}
-                onOpen={() => onOpenCard(card.id)}
-                onMove={onMoveCard}
+          <YStack gap="$3" flex={1} minHeight={0}>
+            <YStack gap="$3" flex={1} minHeight={0} overflow="scroll">
+              {lane.cards.map((card) => (
+                <CardPreview
+                  key={card.id}
+                  card={card}
+                  showColumnContext={lane.laneKind === "priority"}
+                  canMove={false}
+                  onOpen={() => onOpenCard(card.id)}
+                  onMove={onMoveCard}
+                />
+              ))}
+              <LaneEmptyState
+                isVisible={lane.cards.length === 0}
+                isRealColumn={Boolean(isRealColumn)}
               />
-            ))}
-            <LaneEmptyState
-              isVisible={lane.cards.length === 0}
-              isRealColumn={Boolean(isRealColumn)}
-            />
+            </YStack>
           </YStack>
         )}
 

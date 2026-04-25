@@ -465,8 +465,8 @@ export function BoardDetailScreen({
     }
 
     return (
-      <YStack gap="$0">
-        <YStack padding="$5" paddingBottom="$0" gap="$4">
+      <YStack gap="$0" flex={1} minHeight={0} overflow="hidden">
+        <YStack padding="$5" paddingBottom="$0" gap="$4" flexShrink={0}>
           {boardQuery.error ? (
             <BoardInlineNotice
               tone="warning"
@@ -518,7 +518,7 @@ export function BoardDetailScreen({
         </YStack>
 
         {search.view === "board" ? (
-          <YStack paddingBottom="$5" paddingTop="$0">
+          <YStack paddingBottom="$5" paddingTop="$0" flex={1} minHeight={0} overflow="hidden">
             <BoardCanvas
               board={board}
               search={search}
@@ -546,7 +546,7 @@ export function BoardDetailScreen({
             />
           </YStack>
         ) : (
-          <YStack padding="$5" paddingTop="$0">
+          <YStack padding="$5" paddingTop="$0" flex={1} minHeight={0} overflow="scroll">
             <BoardListMode
               listItems={listItems}
               isLoading={listQuery.isLoading && !listQuery.data}
