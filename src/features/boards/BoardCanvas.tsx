@@ -163,7 +163,7 @@ export function BoardCanvas({
                               <div
                                 ref={columnProvided.innerRef}
                                 {...colDragRest}
-                                style={{ ...colDragStyle, position: "relative" }}
+                                style={{ position: "relative", ...colDragStyle }}
                               >
                                 {showColumnManagement && columnIndex === 0 ? (
                                   <div
