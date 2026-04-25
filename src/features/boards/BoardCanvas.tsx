@@ -647,7 +647,12 @@ function BoardLaneView({
                   }}
                 >
                   {lane.cards.map((card, index) => (
-                    <Draggable key={card.id} draggableId={card.id} index={index}>
+                    <Draggable
+                      key={card.id}
+                      draggableId={card.id}
+                      index={index}
+                      disableInteractiveElementBlocking
+                    >
                       {(cardProvided) => {
                         const { rest: cardDragRest, style: cardDragStyle } = mergeDraggableStyle(
                           dndCardShellStyle,
@@ -728,176 +733,176 @@ function CardInterior({
   const moveControlsVisible = canMove && (edgeHoverCount > 0 || isFocusWithin);
 
   return (
-    <YStack
-      gap="$3"
-      position="relative"
-      onFocus={() => setIsFocusWithin(true)}
-      onBlur={(e: FocusEvent) => {
-        const nextTarget = e.relatedTarget as unknown as Node | null;
-        if (!nextTarget) {
-          setIsFocusWithin(false);
-          return;
-        }
-
-        if (!e.currentTarget.contains(nextTarget)) {
-          setIsFocusWithin(false);
-        }
+    <div
+      {...(dragHandleProps ?? {})}
+      style={{
+        cursor: dragHandleProps ? "grab" : undefined,
       }}
     >
-      {canMove ? (
-        <>
-          <Stack
-            position="absolute"
-            left={-CARD_CHROME_PADDING_PX}
-            top={-CARD_CHROME_PADDING_PX}
-            bottom={-CARD_CHROME_PADDING_PX}
-            width={CARD_MOVE_EDGE_SIZE_PX}
-            zIndex={2}
-            opacity={moveControlsVisible ? 1 : 0}
-            onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
-            onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
-          >
-            <BoardActionButton
-              tone="ghost"
-              aria-label="Move card left"
-              onPress={() => onMove(card.id, "left")}
-              width="100%"
-              height="100%"
-              borderWidth={0}
-              borderRadius={0}
-              paddingHorizontal={0}
-              paddingVertical={0}
-              justifyContent="center"
-              alignItems="center"
-              backgroundColor="rgba(255, 255, 255, 0.01)"
-              hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
-              pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
-            >
-              <Text fontSize="$6" fontWeight="800" color="$boardTextMuted">
-                ‹
-              </Text>
-            </BoardActionButton>
-          </Stack>
+      <YStack
+        gap="$3"
+        position="relative"
+        onFocus={() => setIsFocusWithin(true)}
+        onBlur={(e: FocusEvent) => {
+          const nextTarget = e.relatedTarget as unknown as Node | null;
+          if (!nextTarget) {
+            setIsFocusWithin(false);
+            return;
+          }
 
-          <Stack
-            position="absolute"
-            right={-CARD_CHROME_PADDING_PX}
-            top={-CARD_CHROME_PADDING_PX}
-            bottom={-CARD_CHROME_PADDING_PX}
-            width={CARD_MOVE_EDGE_SIZE_PX}
-            zIndex={2}
-            opacity={moveControlsVisible ? 1 : 0}
-            onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
-            onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
-          >
-            <BoardActionButton
-              tone="ghost"
-              aria-label="Move card right"
-              onPress={() => onMove(card.id, "right")}
-              width="100%"
-              height="100%"
-              borderWidth={0}
-              borderRadius={0}
-              paddingHorizontal={0}
-              paddingVertical={0}
-              justifyContent="center"
-              alignItems="center"
-              backgroundColor="rgba(255, 255, 255, 0.01)"
-              hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
-              pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
-            >
-              <Text fontSize="$6" fontWeight="800" color="$boardTextMuted">
-                ›
-              </Text>
-            </BoardActionButton>
-          </Stack>
-
-          <BoardActionButton
-            tone="ghost"
-            aria-label="Move card up"
-            onPress={() => onMove(card.id, "up")}
-            position="absolute"
-            left={-CARD_CHROME_PADDING_PX}
-            right={-CARD_CHROME_PADDING_PX}
-            top={-CARD_CHROME_PADDING_PX}
-            height={CARD_MOVE_EDGE_SIZE_PX}
-            zIndex={2}
-            opacity={moveControlsVisible ? 1 : 0}
-            borderWidth={0}
-            borderRadius={0}
-            paddingHorizontal={0}
-            paddingVertical={0}
-            justifyContent="center"
-            alignItems="center"
-            backgroundColor="rgba(255, 255, 255, 0.01)"
-            hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
-            pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
-            onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
-            onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
-          >
-            <Text fontSize="$5" fontWeight="900" color="$boardTextMuted">
-              ˄
-            </Text>
-          </BoardActionButton>
-
-          <BoardActionButton
-            tone="ghost"
-            aria-label="Move card down"
-            onPress={() => onMove(card.id, "down")}
-            position="absolute"
-            left={-CARD_CHROME_PADDING_PX}
-            right={-CARD_CHROME_PADDING_PX}
-            bottom={-CARD_CHROME_PADDING_PX}
-            height={CARD_MOVE_EDGE_SIZE_PX}
-            zIndex={2}
-            opacity={moveControlsVisible ? 1 : 0}
-            borderWidth={0}
-            borderRadius={0}
-            paddingHorizontal={0}
-            paddingVertical={0}
-            justifyContent="center"
-            alignItems="center"
-            backgroundColor="rgba(255, 255, 255, 0.01)"
-            hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
-            pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
-            onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
-            onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
-          >
-            <Text fontSize="$5" fontWeight="900" color="$boardTextMuted">
-              ˅
-            </Text>
-          </BoardActionButton>
-        </>
-      ) : null}
-
-      <div
-        {...(dragHandleProps ?? {})}
-        style={{
-          cursor: dragHandleProps ? "grab" : undefined,
+          if (!e.currentTarget.contains(nextTarget)) {
+            setIsFocusWithin(false);
+          }
         }}
       >
+        {canMove ? (
+          <>
+            <Stack
+              position="absolute"
+              left={-CARD_CHROME_PADDING_PX}
+              top={-CARD_CHROME_PADDING_PX}
+              bottom={-CARD_CHROME_PADDING_PX}
+              width={CARD_MOVE_EDGE_SIZE_PX}
+              zIndex={2}
+              opacity={moveControlsVisible ? 1 : 0}
+              onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
+              onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
+            >
+              <BoardActionButton
+                tone="ghost"
+                aria-label="Move card left"
+                onPress={() => onMove(card.id, "left")}
+                width="100%"
+                height="100%"
+                borderWidth={0}
+                borderRadius={0}
+                paddingHorizontal={0}
+                paddingVertical={0}
+                justifyContent="center"
+                alignItems="center"
+                backgroundColor="rgba(255, 255, 255, 0.01)"
+                hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
+                pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
+              >
+                <Text fontSize="$6" fontWeight="800" color="$boardTextMuted">
+                  ‹
+                </Text>
+              </BoardActionButton>
+            </Stack>
+
+            <Stack
+              position="absolute"
+              right={-CARD_CHROME_PADDING_PX}
+              top={-CARD_CHROME_PADDING_PX}
+              bottom={-CARD_CHROME_PADDING_PX}
+              width={CARD_MOVE_EDGE_SIZE_PX}
+              zIndex={2}
+              opacity={moveControlsVisible ? 1 : 0}
+              onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
+              onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
+            >
+              <BoardActionButton
+                tone="ghost"
+                aria-label="Move card right"
+                onPress={() => onMove(card.id, "right")}
+                width="100%"
+                height="100%"
+                borderWidth={0}
+                borderRadius={0}
+                paddingHorizontal={0}
+                paddingVertical={0}
+                justifyContent="center"
+                alignItems="center"
+                backgroundColor="rgba(255, 255, 255, 0.01)"
+                hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
+                pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
+              >
+                <Text fontSize="$6" fontWeight="800" color="$boardTextMuted">
+                  ›
+                </Text>
+              </BoardActionButton>
+            </Stack>
+
+            <BoardActionButton
+              tone="ghost"
+              aria-label="Move card up"
+              onPress={() => onMove(card.id, "up")}
+              position="absolute"
+              left={-CARD_CHROME_PADDING_PX}
+              right={-CARD_CHROME_PADDING_PX}
+              top={-CARD_CHROME_PADDING_PX}
+              height={CARD_MOVE_EDGE_SIZE_PX}
+              zIndex={2}
+              opacity={moveControlsVisible ? 1 : 0}
+              borderWidth={0}
+              borderRadius={0}
+              paddingHorizontal={0}
+              paddingVertical={0}
+              justifyContent="center"
+              alignItems="center"
+              backgroundColor="rgba(255, 255, 255, 0.01)"
+              hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
+              pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
+              onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
+              onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
+            >
+              <Text fontSize="$5" fontWeight="900" color="$boardTextMuted">
+                ˄
+              </Text>
+            </BoardActionButton>
+
+            <BoardActionButton
+              tone="ghost"
+              aria-label="Move card down"
+              onPress={() => onMove(card.id, "down")}
+              position="absolute"
+              left={-CARD_CHROME_PADDING_PX}
+              right={-CARD_CHROME_PADDING_PX}
+              bottom={-CARD_CHROME_PADDING_PX}
+              height={CARD_MOVE_EDGE_SIZE_PX}
+              zIndex={2}
+              opacity={moveControlsVisible ? 1 : 0}
+              borderWidth={0}
+              borderRadius={0}
+              paddingHorizontal={0}
+              paddingVertical={0}
+              justifyContent="center"
+              alignItems="center"
+              backgroundColor="rgba(255, 255, 255, 0.01)"
+              hoverStyle={{ backgroundColor: "rgba(145, 168, 108, 0.12)" }}
+              pressStyle={{ backgroundColor: "rgba(145, 168, 108, 0.18)" }}
+              onMouseEnter={() => setEdgeHoverCount((v) => v + 1)}
+              onMouseLeave={() => setEdgeHoverCount((v) => Math.max(0, v - 1))}
+            >
+              <Text fontSize="$5" fontWeight="900" color="$boardTextMuted">
+                ˅
+              </Text>
+            </BoardActionButton>
+          </>
+        ) : null}
+
         <XStack justifyContent="space-between" alignItems="flex-start" gap="$3">
           <Text tag="h3" fontWeight="700" color="$boardHeading" flex={1}>
             {card.title}
           </Text>
           <PriorityPill priority={card.priority} />
         </XStack>
-      </div>
-      {card.description ? (
-        <Text color="$boardTextMuted" numberOfLines={3}>
-          {card.description}
-        </Text>
-      ) : (
-        <Text color="$boardTextSubtle">No description yet.</Text>
-      )}
+        {card.description ? (
+          <Text color="$boardTextMuted" numberOfLines={3}>
+            {card.description}
+          </Text>
+        ) : (
+          <Text color="$boardTextSubtle">No description yet.</Text>
+        )}
 
-      <XStack gap="$2" flexWrap="wrap" alignItems="center">
-        <BoardActionButton tone="ghost" onPress={onOpen}>
-          Open
-        </BoardActionButton>
-        {showColumnContext ? <BoardPill>{card.originalColumnTitle}</BoardPill> : null}
-      </XStack>
-    </YStack>
+        <XStack gap="$2" flexWrap="wrap" alignItems="center">
+          <BoardActionButton tone="ghost" onPress={onOpen}>
+            Open
+          </BoardActionButton>
+          {showColumnContext ? <BoardPill>{card.originalColumnTitle}</BoardPill> : null}
+        </XStack>
+      </YStack>
+    </div>
   );
 }
 
