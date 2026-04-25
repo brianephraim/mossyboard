@@ -33,6 +33,7 @@ const dndHorizontalRowStyle: CSSProperties = {
   alignItems: "stretch",
   minWidth: "max-content",
   height: "100%",
+  boxSizing: "border-box",
 };
 
 const dndColumnShellStyle: CSSProperties = {
