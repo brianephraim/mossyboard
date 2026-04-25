@@ -1,6 +1,16 @@
 import type { DraggableProvided, DropResult } from "@hello-pangea/dnd";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
-import { type ChangeEvent, type CSSProperties, useEffect, useRef, useState } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  type ChangeEvent,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Input } from "@tamagui/input";
 import { Stack, Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
@@ -21,7 +31,6 @@ const dndHorizontalRowStyle: CSSProperties = {
   display: "flex",
   flexDirection: "row",
   alignItems: "flex-start",
-  gap: BOARD_DND_GAP_PX,
   minWidth: "max-content",
 };
 
@@ -29,6 +38,7 @@ const dndColumnShellStyle: CSSProperties = {
   width: COLUMN_WIDTH_PX,
   minWidth: COLUMN_WIDTH_PX,
   flexShrink: 0,
+  marginRight: BOARD_DND_GAP_PX,
 };
 
 const dndCardListStyle: CSSProperties = {
@@ -60,6 +70,25 @@ function mergeDraggableStyle(
     rest: rest as Record<string, unknown>,
     style: { ...base, ...(dragStyle as CSSProperties | undefined) },
   };
+}
+
+function columnPlaceholder(placeholder: ReactNode) {
+  if (!placeholder || !isValidElement(placeholder)) {
+    return placeholder;
+  }
+
+  const props = (placeholder.props ?? {}) as { style?: CSSProperties };
+  return cloneElement(
+    placeholder as ReactElement<any>,
+    {
+      style: {
+        ...(props.style ?? {}),
+        flex: "0 0 auto",
+        flexShrink: 0,
+        marginRight: BOARD_DND_GAP_PX,
+      },
+    } as any,
+  );
 }
 
 type BoardCanvasProps = {
@@ -135,13 +164,14 @@ export function BoardCanvas({
                     paddingLeft: "var(--c-space-5)",
                     paddingRight: "var(--c-space-5)",
                     paddingTop: INSERT_COLUMN_BUTTON_SAFE_TOP_PX,
+                    marginRight: -BOARD_DND_GAP_PX,
                   }}
                 >
                   <div style={dndHorizontalRowStyle}>
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      style={dndHorizontalRowStyle}
+                      style={{ ...dndHorizontalRowStyle, marginRight: -BOARD_DND_GAP_PX }}
                     >
                       {showColumnManagement && columns.length === 0 ? (
                         <YStack width={COLUMN_WIDTH_PX} minWidth={COLUMN_WIDTH_PX} padding="$5">
@@ -229,7 +259,7 @@ export function BoardCanvas({
                           }}
                         </Draggable>
                       ))}
-                      {provided.placeholder}
+                      {columnPlaceholder(provided.placeholder)}
                     </div>
                   </div>
                 </div>
