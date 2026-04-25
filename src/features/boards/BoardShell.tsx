@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useLinkProps, useNavigate } from "@tanstack/react-router";
 import { Input } from "@tamagui/input";
 import { Stack, Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
@@ -34,6 +34,58 @@ type BoardShellProps = {
   headerActions?: ReactNode;
   renderContent: (controls: { openCreateBoard: () => void }) => ReactNode;
 };
+
+type BoardRailBoardRowProps = {
+  boardId: string;
+  name: string;
+  columnCount: number;
+  cardCount: number;
+  isCurrent: boolean;
+};
+
+function BoardRailBoardRow({
+  boardId,
+  name,
+  columnCount,
+  cardCount,
+  isCurrent,
+}: Readonly<BoardRailBoardRowProps>) {
+  const linkProps = useLinkProps({
+    to: "/boards/$boardId",
+    params: { boardId },
+  });
+
+  return (
+    <XStack
+      {...(linkProps as Record<string, unknown>)}
+      tag="a"
+      textDecorationLine="none"
+      cursor="pointer"
+      alignItems="center"
+      justifyContent="space-between"
+      gap="$3"
+      paddingHorizontal="$3"
+      paddingVertical="$3"
+      borderRadius="$8"
+      backgroundColor={isCurrent ? "$boardAccentSoft" : "transparent"}
+      borderWidth={1}
+      borderColor={isCurrent ? "$boardAccentWash" : "transparent"}
+      hoverStyle={{
+        backgroundColor: "$boardAccentWash",
+      }}
+    >
+      <YStack flex={1} gap="$1" minWidth={0}>
+        <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
+          {name}
+        </Text>
+        <Text color="$boardTextMuted" fontSize="$2">
+          {columnCount} columns • {cardCount} cards
+        </Text>
+      </YStack>
+      {isCurrent ? <BoardPill>Open</BoardPill> : null}
+    </XStack>
+  );
+}
 
 export function BoardShell({
   currentBoardId,
@@ -144,39 +196,16 @@ export function BoardShell({
             <Text color="$boardTextMuted">No boards yet. Create one to get moving.</Text>
           ) : (
             <YStack gap="$2">
-              {boardList.map((board) => {
-                const isCurrent = board.id === currentBoardId;
-
-                return (
-                  <Link key={board.id} to="/boards/$boardId" params={{ boardId: board.id }}>
-                    <XStack
-                      cursor="pointer"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      gap="$3"
-                      paddingHorizontal="$3"
-                      paddingVertical="$3"
-                      borderRadius="$8"
-                      backgroundColor={isCurrent ? "$boardAccentSoft" : "transparent"}
-                      borderWidth={1}
-                      borderColor={isCurrent ? "$boardAccentWash" : "transparent"}
-                      hoverStyle={{
-                        backgroundColor: "$boardAccentWash",
-                      }}
-                    >
-                      <YStack flex={1} gap="$1" minWidth={0}>
-                        <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
-                          {board.name}
-                        </Text>
-                        <Text color="$boardTextMuted" fontSize="$2">
-                          {board.columnCount} columns • {board.cardCount} cards
-                        </Text>
-                      </YStack>
-                      {isCurrent ? <BoardPill>Open</BoardPill> : null}
-                    </XStack>
-                  </Link>
-                );
-              })}
+              {boardList.map((board) => (
+                <BoardRailBoardRow
+                  key={board.id}
+                  boardId={board.id}
+                  name={board.name}
+                  columnCount={board.columnCount}
+                  cardCount={board.cardCount}
+                  isCurrent={board.id === currentBoardId}
+                />
+              ))}
             </YStack>
           )}
         </YStack>
