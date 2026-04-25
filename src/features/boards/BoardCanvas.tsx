@@ -30,7 +30,9 @@ const dndColumnShellStyle: CSSProperties = {
 const dndCardListStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: BOARD_DND_GAP_PX,
+  // Use margins for spacing so hello-pangea's placeholder preserves exact vertical rhythm.
+  // (The placeholder sizing logic accounts for margins; `gap` can visually "jump" on drag start.)
+  marginBottom: -BOARD_DND_GAP_PX,
   minHeight: 120,
 };
 
@@ -41,6 +43,7 @@ const dndCardShellStyle: CSSProperties = {
   backgroundColor: "#ffffff",
   boxShadow: "rgba(81, 102, 57, 0.1) 0px 8px 24px",
   padding: 16,
+  marginBottom: BOARD_DND_GAP_PX,
   boxSizing: "border-box",
 };
 
