@@ -261,8 +261,8 @@ export function BoardShell({
       <BoardResponsiveColumns
         rail={boardRail}
         content={
-          <BoardSurface padding="$5">
-            <YStack gap="$5">
+          <BoardSurface padding="$0">
+            <YStack padding="$5" paddingBottom="$0" gap="$5">
               <BoardSectionHeading
                 eyebrow="Workspace"
                 title={title}
@@ -270,12 +270,12 @@ export function BoardShell({
                 actions={headerControls}
               />
               {verificationBanner}
-              {renderContent({
-                openCreateBoard: () => {
-                  setCreateBoardOpen(true);
-                },
-              })}
             </YStack>
+            {renderContent({
+              openCreateBoard: () => {
+                setCreateBoardOpen(true);
+              },
+            })}
           </BoardSurface>
         }
       />

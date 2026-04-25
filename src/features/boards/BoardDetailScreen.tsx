@@ -466,95 +466,101 @@ export function BoardDetailScreen({
 
     return (
       <YStack gap="$4">
-        {boardQuery.error ? (
-          <BoardInlineNotice
-            tone="warning"
-            message="The latest board refresh failed. You’re still seeing the last loaded board state."
-            actions={
-              <BoardActionButton tone="ghost" onPress={() => void boardQuery.refetch()}>
-                Retry refresh
-              </BoardActionButton>
-            }
-          />
-        ) : null}
+        <YStack padding="$5" paddingBottom="$0" gap="$4">
+          {boardQuery.error ? (
+            <BoardInlineNotice
+              tone="warning"
+              message="The latest board refresh failed. You’re still seeing the last loaded board state."
+              actions={
+                <BoardActionButton tone="ghost" onPress={() => void boardQuery.refetch()}>
+                  Retry refresh
+                </BoardActionButton>
+              }
+            />
+          ) : null}
 
-        {conflictMessage ? (
-          <BoardInlineNotice
-            tone="danger"
-            message={conflictMessage}
-            actions={
-              <BoardActionButton
-                tone="ghost"
-                onPress={() => {
-                  void refreshBoard();
-                }}
-              >
-                Refresh board
-              </BoardActionButton>
-            }
-          />
-        ) : null}
+          {conflictMessage ? (
+            <BoardInlineNotice
+              tone="danger"
+              message={conflictMessage}
+              actions={
+                <BoardActionButton
+                  tone="ghost"
+                  onPress={() => {
+                    void refreshBoard();
+                  }}
+                >
+                  Refresh board
+                </BoardActionButton>
+              }
+            />
+          ) : null}
 
-        <BoardControls
-          search={search}
-          onSetView={(view) => {
-            updateRouteSearch({ view });
-          }}
-          onSetGroupBy={(groupBy) => {
-            updateRouteSearch({ groupBy });
-            setAnnouncement("Board grouping updated.");
-          }}
-          onTogglePriority={(priority) => {
-            const nextPriority = togglePrioritySelection(search.priority, priority);
-            updateRouteSearch({
-              priority: serializePriorityFilter(nextPriority),
-            });
-          }}
-          onClearPriority={() => {
-            updateRouteSearch({ priority: undefined });
-          }}
-        />
+          <BoardControls
+            search={search}
+            onSetView={(view) => {
+              updateRouteSearch({ view });
+            }}
+            onSetGroupBy={(groupBy) => {
+              updateRouteSearch({ groupBy });
+              setAnnouncement("Board grouping updated.");
+            }}
+            onTogglePriority={(priority) => {
+              const nextPriority = togglePrioritySelection(search.priority, priority);
+              updateRouteSearch({
+                priority: serializePriorityFilter(nextPriority),
+              });
+            }}
+            onClearPriority={() => {
+              updateRouteSearch({ priority: undefined });
+            }}
+          />
+        </YStack>
 
         {search.view === "board" ? (
-          <BoardCanvas
-            board={board}
-            search={search}
-            canReorder={reorderEnabled}
-            onDragEnd={handleDragEnd}
-            onOpenCard={(cardId) => {
-              updateRouteSearch({ card: cardId });
-            }}
-            onOpenCreateCard={(columnId) => {
-              setCreateCardColumnId(columnId);
-            }}
-            onRenameColumn={async (input) => {
-              await renameColumn.mutateAsync(input);
-            }}
-            renamePendingColumnId={
-              renameColumn.isPending && renameColumn.variables
-                ? renameColumn.variables.columnId
-                : null
-            }
-            onOpenCreateColumnAfter={(columnId) => {
-              setCreateColumnAfterId(columnId ?? null);
-            }}
-            onMoveColumn={handleMoveColumn}
-            onMoveCard={handleMoveCard}
-          />
+          <YStack paddingBottom="$5">
+            <BoardCanvas
+              board={board}
+              search={search}
+              canReorder={reorderEnabled}
+              onDragEnd={handleDragEnd}
+              onOpenCard={(cardId) => {
+                updateRouteSearch({ card: cardId });
+              }}
+              onOpenCreateCard={(columnId) => {
+                setCreateCardColumnId(columnId);
+              }}
+              onRenameColumn={async (input) => {
+                await renameColumn.mutateAsync(input);
+              }}
+              renamePendingColumnId={
+                renameColumn.isPending && renameColumn.variables
+                  ? renameColumn.variables.columnId
+                  : null
+              }
+              onOpenCreateColumnAfter={(columnId) => {
+                setCreateColumnAfterId(columnId ?? null);
+              }}
+              onMoveColumn={handleMoveColumn}
+              onMoveCard={handleMoveCard}
+            />
+          </YStack>
         ) : (
-          <BoardListMode
-            listItems={listItems}
-            isLoading={listQuery.isLoading && !listQuery.data}
-            isLoadingMore={listQuery.isFetchingNextPage}
-            errorMessage={listQuery.error?.message ?? null}
-            hasNextPage={Boolean(listQuery.hasNextPage)}
-            onLoadMore={() => {
-              void listQuery.fetchNextPage();
-            }}
-            onOpenCard={(cardId) => {
-              updateRouteSearch({ card: cardId });
-            }}
-          />
+          <YStack padding="$5" paddingTop="$0">
+            <BoardListMode
+              listItems={listItems}
+              isLoading={listQuery.isLoading && !listQuery.data}
+              isLoadingMore={listQuery.isFetchingNextPage}
+              errorMessage={listQuery.error?.message ?? null}
+              hasNextPage={Boolean(listQuery.hasNextPage)}
+              onLoadMore={() => {
+                void listQuery.fetchNextPage();
+              }}
+              onOpenCard={(cardId) => {
+                updateRouteSearch({ card: cardId });
+              }}
+            />
+          </YStack>
         )}
       </YStack>
     );

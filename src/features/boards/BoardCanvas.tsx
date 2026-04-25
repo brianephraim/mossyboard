@@ -99,13 +99,15 @@ export function BoardCanvas({
   return (
     <YStack gap="$4">
       {!canReorder && search.view === "board" ? (
-        <BoardInlineNotice
-          tone="warning"
-          message="Drag and keyboard reorder controls are available only in board view grouped by column with no active priority filters."
-        />
+        <YStack paddingHorizontal="$5">
+          <BoardInlineNotice
+            tone="warning"
+            message="Drag and keyboard reorder controls are available only in board view grouped by column with no active priority filters."
+          />
+        </YStack>
       ) : null}
 
-      <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+      <div style={{ overflowX: "auto", maxWidth: "100%", width: "100%" }}>
         {canReorder ? (
           <DragDropContext onDragEnd={onDragEnd}>
             <Droppable
@@ -115,62 +117,70 @@ export function BoardCanvas({
               ignoreContainerClipping
             >
               {(provided) => (
-                <div style={dndHorizontalRowStyle}>
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    style={dndHorizontalRowStyle}
-                  >
-                    {board.columns.map((column, columnIndex) => (
-                      <Draggable key={column.id} draggableId={column.id} index={columnIndex}>
-                        {(columnProvided) => {
-                          const { rest: colDragRest, style: colDragStyle } = mergeDraggableStyle(
-                            dndColumnShellStyle,
-                            columnProvided.draggableProps,
-                          );
-                          return (
-                            <div
-                              ref={columnProvided.innerRef}
-                              {...colDragRest}
-                              style={colDragStyle}
-                            >
-                              <BoardLaneView
-                                lane={{
-                                  id: column.id,
-                                  title: column.title,
-                                  laneKind: "column",
-                                  originalColumnId: column.id,
-                                  columnVersion: column.version,
-                                  cards: column.cards.map((card) => ({
-                                    ...card,
+                <div
+                  style={{
+                    ...dndHorizontalRowStyle,
+                    paddingLeft: "var(--c-space-5)",
+                    paddingRight: "var(--c-space-5)",
+                  }}
+                >
+                  <div style={dndHorizontalRowStyle}>
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      style={dndHorizontalRowStyle}
+                    >
+                      {board.columns.map((column, columnIndex) => (
+                        <Draggable key={column.id} draggableId={column.id} index={columnIndex}>
+                          {(columnProvided) => {
+                            const { rest: colDragRest, style: colDragStyle } = mergeDraggableStyle(
+                              dndColumnShellStyle,
+                              columnProvided.draggableProps,
+                            );
+                            return (
+                              <div
+                                ref={columnProvided.innerRef}
+                                {...colDragRest}
+                                style={colDragStyle}
+                              >
+                                <BoardLaneView
+                                  lane={{
+                                    id: column.id,
+                                    title: column.title,
+                                    laneKind: "column",
                                     originalColumnId: column.id,
-                                    originalColumnTitle: column.title,
-                                  })),
-                                }}
-                                canReorder={canReorder}
-                                dragHandleProps={columnProvided.dragHandleProps}
-                                onOpenCard={onOpenCard}
-                                onOpenCreateCard={onOpenCreateCard}
-                                onRenameColumn={onRenameColumn}
-                                renamePendingColumnId={renamePendingColumnId}
-                                onOpenCreateColumnAfter={onOpenCreateColumnAfter}
-                                onMoveColumn={onMoveColumn}
-                                onMoveCard={onMoveCard}
-                              />
-                            </div>
-                          );
-                        }}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
+                                    columnVersion: column.version,
+                                    cards: column.cards.map((card) => ({
+                                      ...card,
+                                      originalColumnId: column.id,
+                                      originalColumnTitle: column.title,
+                                    })),
+                                  }}
+                                  canReorder={canReorder}
+                                  dragHandleProps={columnProvided.dragHandleProps}
+                                  onOpenCard={onOpenCard}
+                                  onOpenCreateCard={onOpenCreateCard}
+                                  onRenameColumn={onRenameColumn}
+                                  renamePendingColumnId={renamePendingColumnId}
+                                  onOpenCreateColumnAfter={onOpenCreateColumnAfter}
+                                  onMoveColumn={onMoveColumn}
+                                  onMoveCard={onMoveCard}
+                                />
+                              </div>
+                            );
+                          }}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                    <AddColumnLane onOpen={() => onOpenCreateColumnAfter(lastColumnId)} />
                   </div>
-                  <AddColumnLane onOpen={() => onOpenCreateColumnAfter(lastColumnId)} />
                 </div>
               )}
             </Droppable>
           </DragDropContext>
         ) : (
-          <XStack gap="$4" alignItems="flex-start" minWidth="max-content">
+          <XStack gap="$4" alignItems="flex-start" minWidth="max-content" paddingHorizontal="$5">
             {lanes.map((lane) => (
               <YStack key={lane.id} width={320} minWidth={320}>
                 <BoardLaneView
