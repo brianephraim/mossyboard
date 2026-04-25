@@ -5,6 +5,7 @@ import { YStack } from "@tamagui/stacks";
 import { BoardInlineNotice } from "../ui";
 import { buildBoardLanes } from "../model";
 import type { BoardDetailSearch, CardPriority, LoadedBoard } from "../types";
+import type { BoardKey } from "../useDualBoardDnd";
 import { BoardColumnsLayout } from "./BoardColumnsLayout";
 import { BoardLaneView } from "./BoardLaneView";
 import { PriorityGroupReorderToggle } from "./PriorityGroupReorderToggle";
@@ -34,6 +35,9 @@ type BoardCanvasProps = {
     priority: CardPriority,
     direction: "up" | "down",
   ) => void;
+  dndScopeKey?: BoardKey;
+  bottomScrollPadding?: number;
+  wrapDragDropContext?: boolean;
 };
 
 export function BoardCanvas({
@@ -51,6 +55,9 @@ export function BoardCanvas({
   onMoveColumn,
   onMoveCard,
   onMovePriorityGroupCard,
+  dndScopeKey,
+  bottomScrollPadding,
+  wrapDragDropContext = true,
 }: Readonly<BoardCanvasProps>) {
   const lanes = buildBoardLanes(board, {
     groupBy: search.groupBy,
@@ -126,6 +133,8 @@ export function BoardCanvas({
       onMoveColumn={enableColumnDnD ? moveColumnProgrammatically : onMoveColumn}
       onMoveCard={enableCardReorder ? moveCardProgrammatically : onMoveCard}
       onMovePriorityGroupCard={onMovePriorityGroupCard}
+      dndScopeKey={dndScopeKey}
+      bottomScrollPadding={bottomScrollPadding}
     />
   );
 
@@ -168,6 +177,8 @@ export function BoardCanvas({
           onDragEnd={onDragEnd}
           onOpenCreateColumnAfter={onOpenCreateColumnAfter}
           renderLane={renderLane}
+          dndScopeKey={dndScopeKey}
+          wrapDragDropContext={wrapDragDropContext}
         />
       </div>
     </YStack>

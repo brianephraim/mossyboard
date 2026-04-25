@@ -90,6 +90,7 @@ describe("board model helpers", () => {
 
     assert.deepEqual(parsed, {
       card: undefined,
+      drawer: undefined,
       view: "list",
       groupBy: "priority",
       priority: ["medium", "high"],

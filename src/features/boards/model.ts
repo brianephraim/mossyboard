@@ -103,12 +103,14 @@ export function parseBoardDetailSearch(search: RawSearch): BoardDetailSearch {
   const view = normalizeSearchString(search.view);
   const groupBy = normalizeSearchString(search.groupBy);
   const priority = normalizeSearchString(search.priority);
+  const drawer = normalizeSearchString(search.drawer);
 
   return {
     card,
     view: isBoardViewMode(view) ? view : "board",
     groupBy: isBoardGroupBy(groupBy) ? groupBy : "column",
     priority: parsePriorityFilter(priority),
+    drawer,
   };
 }
 

@@ -23,6 +23,7 @@ type CardDetailSurfaceProps = {
   open: boolean;
   cardId?: string;
   boardId: string;
+  candidateBoardIds?: string[];
   onOpenChange: (open: boolean) => void;
   onDeleted: () => void;
   onBoardChanged: () => Promise<void>;
@@ -33,6 +34,7 @@ export function CardDetailSurface({
   open,
   cardId,
   boardId,
+  candidateBoardIds,
   onOpenChange,
   onDeleted,
   onBoardChanged,
@@ -40,19 +42,48 @@ export function CardDetailSurface({
 }: Readonly<CardDetailSurfaceProps>) {
   const utils = trpc.useUtils();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [resolvedBoardId, setResolvedBoardId] = useState<string>(boardId);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
+  useEffect(() => {
+    if (!open || !cardId) {
+      setResolvedBoardId(boardId);
+      return;
+    }
+    setResolvedBoardId(boardId);
+  }, [boardId, cardId, open]);
+
   const cardQuery = trpc.card.get.useQuery(
     {
       cardId: cardId ?? "00000000-0000-0000-0000-000000000000",
-      boardId,
+      boardId: resolvedBoardId,
     },
     {
       enabled: open && Boolean(cardId),
       retry: false,
     },
   );
+
+  useEffect(() => {
+    if (!open || !cardId || !cardQuery.isError) {
+      return;
+    }
+    const candidates = (candidateBoardIds ?? []).filter(Boolean);
+    if (candidates.length === 0) {
+      return;
+    }
+    const message = (cardQuery.error as { message?: string }).message ?? "";
+    const looksNotFound = message.toLowerCase().includes("not found");
+    if (!looksNotFound) {
+      return;
+    }
+    const currentIndex = candidates.indexOf(resolvedBoardId);
+    const next = candidates[currentIndex + 1];
+    if (next && next !== resolvedBoardId) {
+      setResolvedBoardId(next);
+    }
+  }, [candidateBoardIds, cardId, cardQuery.error, cardQuery.isError, open, resolvedBoardId]);
   const form = useForm<CardDetailForm>({
     defaultValues: {
       title: "",
@@ -79,7 +110,7 @@ export function CardDetailSurface({
       await Promise.all([
         cardQuery.refetch(),
         onBoardChanged(),
-        utils.card.listByBoard.invalidate({ boardId }),
+        utils.card.listByBoard.invalidate({ boardId: resolvedBoardId }),
       ]);
       onAnnounce("Card saved.");
     },
@@ -87,7 +118,10 @@ export function CardDetailSurface({
 
   const deleteCard = trpc.card.softDelete.useMutation({
     onSuccess: async () => {
-      await Promise.all([onBoardChanged(), utils.card.listByBoard.invalidate({ boardId })]);
+      await Promise.all([
+        onBoardChanged(),
+        utils.card.listByBoard.invalidate({ boardId: resolvedBoardId }),
+      ]);
       onAnnounce("Card deleted.");
       onDeleted();
     },
@@ -256,7 +290,7 @@ export function CardDetailSurface({
                     {...buttonProps}
                     key={option.value}
                     tone={selected ? "accent" : "ghost"}
-                    backgroundColor={selected ? meta.accentColor : undefined}
+                    backgroundColor={selected ? (meta.accentColor as any) : undefined}
                   >
                     {option.label}
                   </BoardActionButton>

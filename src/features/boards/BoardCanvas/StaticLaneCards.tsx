@@ -6,6 +6,8 @@ import { BoardPill } from "../ui";
 import { boardPriorityMeta, groupListItemsByPriority } from "../model";
 import { getPriorityGroupDroppableId } from "../priorityGrouping";
 import type { BoardDetailSearch, BoardLane, CardPriority } from "../types";
+import type { BoardKey } from "../useDualBoardDnd";
+import { scopeId } from "../useDualBoardDnd";
 import { CardInterior, CardPreview } from "./CardInterior";
 import { LaneEmptyState } from "./LaneEmptyState";
 import {
@@ -29,6 +31,8 @@ type StaticLaneCardsProps = {
     priority: CardPriority,
     direction: "up" | "down",
   ) => void;
+  dndScopeKey?: BoardKey;
+  bottomScrollPadding?: number;
 };
 
 export function StaticLaneCards({
@@ -39,6 +43,8 @@ export function StaticLaneCards({
   onOpenCard,
   onMoveCard,
   onMovePriorityGroupCard,
+  dndScopeKey,
+  bottomScrollPadding,
 }: Readonly<StaticLaneCardsProps>) {
   if (groupBy === "priority") {
     const visibleGroups = groupListItemsByPriority(lane.cards).filter(
@@ -64,6 +70,8 @@ export function StaticLaneCards({
             onOpenCard={onOpenCard}
             onMoveCard={onMoveCard}
             onMovePriorityGroupCard={onMovePriorityGroupCard}
+            dndScopeKey={dndScopeKey}
+            bottomScrollPadding={bottomScrollPadding}
           />
         ))}
         <LaneEmptyState
@@ -111,6 +119,8 @@ function PriorityGroupSection({
   onOpenCard,
   onMoveCard,
   onMovePriorityGroupCard,
+  dndScopeKey,
+  bottomScrollPadding,
 }: Readonly<{
   group: ReturnType<typeof groupListItemsByPriority>[number];
   laneId: string;
@@ -123,7 +133,10 @@ function PriorityGroupSection({
     priority: CardPriority,
     direction: "up" | "down",
   ) => void;
+  dndScopeKey?: BoardKey;
+  bottomScrollPadding?: number;
 }>) {
+  const scoped = (id: string) => (dndScopeKey ? scopeId(dndScopeKey, id) : id);
   return (
     <YStack
       gap="$2"
@@ -136,7 +149,7 @@ function PriorityGroupSection({
           width={8}
           height={8}
           borderRadius={9999}
-          backgroundColor={boardPriorityMeta[group.priority].accentColor}
+          backgroundColor={boardPriorityMeta[group.priority].accentColor as any}
           opacity={0.75}
         />
         <Text
@@ -156,7 +169,7 @@ function PriorityGroupSection({
 
       {canReorder ? (
         <Droppable
-          droppableId={getPriorityGroupDroppableId(laneId, group.priority)}
+          droppableId={scoped(getPriorityGroupDroppableId(laneId, group.priority))}
           type={PRIORITY_GROUP_CARD_DROP_TYPE}
           ignoreContainerClipping
         >
@@ -164,12 +177,17 @@ function PriorityGroupSection({
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              style={{ ...dndCardListStyle, paddingTop: 0, minHeight: 0 }}
+              style={{
+                ...dndCardListStyle,
+                paddingTop: 0,
+                minHeight: 0,
+                paddingBottom: bottomScrollPadding ?? undefined,
+              }}
             >
               {group.cards.map((card, index) => (
                 <Draggable
                   key={card.id}
-                  draggableId={card.id}
+                  draggableId={scoped(card.id)}
                   index={index}
                   disableInteractiveElementBlocking
                 >

@@ -32,6 +32,7 @@ type BoardShellProps = {
   announcement?: string | null;
   headerActions?: ReactNode;
   renderContent: (controls: { openCreateBoard: () => void }) => ReactNode;
+  onOpenInDrawer?: (boardId: string) => void;
 };
 
 type BoardRailBoardRowProps = {
@@ -40,6 +41,7 @@ type BoardRailBoardRowProps = {
   columnCount: number;
   cardCount: number;
   isCurrent: boolean;
+  onOpenInDrawer?: (boardId: string) => void;
 };
 
 function BoardRailBoardRow({
@@ -48,19 +50,24 @@ function BoardRailBoardRow({
   columnCount,
   cardCount,
   isCurrent,
+  onOpenInDrawer,
 }: Readonly<BoardRailBoardRowProps>) {
+  const media = useMedia();
   const linkProps = useLinkProps({
     to: "/boards/$boardId",
     params: { boardId },
-    search: { view: "board", groupBy: "column", card: undefined, priority: undefined },
+    search: {
+      view: "board",
+      groupBy: "column",
+      card: undefined,
+      priority: undefined,
+      drawer: undefined,
+    },
   });
 
   return (
     <XStack
-      {...(linkProps as Record<string, unknown>)}
-      tag="a"
-      cursor="pointer"
-      alignItems="center"
+      alignItems="stretch"
       justifyContent="space-between"
       gap="$3"
       paddingHorizontal="$3"
@@ -69,10 +76,14 @@ function BoardRailBoardRow({
       backgroundColor={isCurrent ? "$boardAccentSoft" : "transparent"}
       borderWidth={1}
       borderColor={isCurrent ? "$boardAccentWash" : "transparent"}
-      hoverStyle={{
-        backgroundColor: "$boardAccentWash",
-      }}
+      hoverStyle={{ backgroundColor: "$boardAccentWash" }}
     >
+      <XStack
+        width={4}
+        borderRadius="$8"
+        backgroundColor={isCurrent ? "$boardAccent" : "transparent"}
+        marginRight="$2"
+      />
       <YStack flex={1} gap="$1" minWidth={0}>
         <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
           {name}
@@ -80,8 +91,25 @@ function BoardRailBoardRow({
         <Text color="$boardTextMuted" fontSize="$2">
           {columnCount} columns • {cardCount} cards
         </Text>
+        <XStack gap="$2" marginTop="$2" flexWrap="wrap">
+          <BoardActionButton
+            {...(linkProps as Record<string, unknown>)}
+            tag="a"
+            tone={isCurrent ? "accent" : "ghost"}
+          >
+            Open
+          </BoardActionButton>
+          {!media.maxMd && onOpenInDrawer ? (
+            <BoardActionButton
+              tone="ghost"
+              disabled={isCurrent}
+              onPress={() => onOpenInDrawer(boardId)}
+            >
+              Open in drawer
+            </BoardActionButton>
+          ) : null}
+        </XStack>
       </YStack>
-      {isCurrent ? <BoardPill>Open</BoardPill> : null}
     </XStack>
   );
 }
@@ -93,6 +121,7 @@ export function BoardShell({
   announcement,
   headerActions,
   renderContent,
+  onOpenInDrawer,
 }: Readonly<BoardShellProps>) {
   const media = useMedia();
   const navigate = useNavigate();
@@ -118,7 +147,13 @@ export function BoardShell({
       void navigate({
         to: "/boards/$boardId",
         params: { boardId },
-        search: { view: "board", groupBy: "column", card: undefined, priority: undefined },
+        search: {
+          view: "board",
+          groupBy: "column",
+          card: undefined,
+          priority: undefined,
+          drawer: undefined,
+        },
       });
     },
   });
@@ -205,6 +240,7 @@ export function BoardShell({
                   columnCount={board.columnCount}
                   cardCount={board.cardCount}
                   isCurrent={board.id === currentBoardId}
+                  onOpenInDrawer={onOpenInDrawer}
                 />
               ))}
             </YStack>

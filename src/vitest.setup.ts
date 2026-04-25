@@ -1,8 +1,9 @@
 import "@testing-library/react";
 import { cleanup } from "@testing-library/react";
-import { afterEach } from "vitest";
+import { afterAll, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import type { Sql } from "postgres";
 
 // TanStack Router scroll restoration touches window.scrollTo, which jsdom doesn't implement.
 // We stub it for tests that mount the router.
@@ -13,6 +14,12 @@ Object.defineProperty(window, "scrollTo", {
 
 afterEach(() => {
   cleanup();
+});
+
+afterAll(async () => {
+  // `postgres()` keeps sockets open; close them so Vitest can exit cleanly.
+  const sql = (globalThis as unknown as { __sql__?: Sql }).__sql__;
+  await sql?.end({ timeout: 5 });
 });
 
 // Load `.env` for local test runs (gitignored).

@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import type { BoardLane } from "../types";
+import type { BoardKey } from "../useDualBoardDnd";
+import { scopeId } from "../useDualBoardDnd";
 import { InsertColumnCircleButton } from "./InsertColumnCircleButton";
 import {
   BOARD_DND_GAP_PX,
@@ -29,6 +31,8 @@ type BoardColumnsLayoutProps = {
   onDragEnd: (result: DropResult) => void;
   onOpenCreateColumnAfter: (columnId?: string | null) => void;
   renderLane: RenderLane;
+  dndScopeKey?: BoardKey;
+  wrapDragDropContext?: boolean;
 };
 
 export function BoardColumnsLayout({
@@ -38,71 +42,79 @@ export function BoardColumnsLayout({
   onDragEnd,
   onOpenCreateColumnAfter,
   renderLane,
+  dndScopeKey,
+  wrapDragDropContext = true,
 }: Readonly<BoardColumnsLayoutProps>) {
   const totalLanes = lanes.length;
+  const scoped = (id: string) => (dndScopeKey ? scopeId(dndScopeKey, id) : id);
 
   if (enableColumnDnD) {
-    return (
-      <DragDropContext onDragEnd={onDragEnd} sensors={dragSensors}>
-        <Droppable
-          droppableId="board-columns"
-          direction="horizontal"
-          type="COLUMN"
-          ignoreContainerClipping
-        >
-          {(provided) => (
-            <div
-              style={{
-                ...dndHorizontalRowStyle,
-                paddingLeft: "var(--c-space-5)",
-                paddingRight: "var(--c-space-5)",
-                paddingTop: INSERT_COLUMN_BUTTON_SAFE_TOP_PX,
-                paddingBottom: "var(--c-space-5)",
-                marginRight: -BOARD_DND_GAP_PX,
-              }}
-            >
-              <div style={dndHorizontalRowStyle}>
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  style={{ ...dndHorizontalRowStyle, marginRight: -BOARD_DND_GAP_PX }}
-                >
-                  {totalLanes === 0 ? (
-                    <EmptyBoardSlot onOpenCreateColumnAfter={onOpenCreateColumnAfter} />
-                  ) : null}
+    const content = (
+      <Droppable
+        droppableId={scoped("board-columns")}
+        direction="horizontal"
+        type="COLUMN"
+        ignoreContainerClipping
+      >
+        {(provided) => (
+          <div
+            style={{
+              ...dndHorizontalRowStyle,
+              paddingLeft: "var(--c-space-5)",
+              paddingRight: "var(--c-space-5)",
+              paddingTop: INSERT_COLUMN_BUTTON_SAFE_TOP_PX,
+              paddingBottom: "var(--c-space-5)",
+              marginRight: -BOARD_DND_GAP_PX,
+            }}
+          >
+            <div style={dndHorizontalRowStyle}>
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                style={{ ...dndHorizontalRowStyle, marginRight: -BOARD_DND_GAP_PX }}
+              >
+                {totalLanes === 0 ? (
+                  <EmptyBoardSlot onOpenCreateColumnAfter={onOpenCreateColumnAfter} />
+                ) : null}
 
-                  {lanes.map((lane, laneIndex) => (
-                    <Draggable key={lane.id} draggableId={lane.id} index={laneIndex}>
-                      {(columnProvided) => {
-                        const { rest: colDragRest, style: colDragStyle } = mergeDraggableStyle(
-                          dndColumnShellStyle,
-                          columnProvided.draggableProps,
-                        );
-                        return (
-                          <div
-                            ref={columnProvided.innerRef}
-                            {...colDragRest}
-                            style={{ position: "relative", ...colDragStyle }}
-                          >
-                            <InsertColumnEdgeButtons
-                              laneId={lane.id}
-                              laneIndex={laneIndex}
-                              totalLanes={totalLanes}
-                              onOpenCreateColumnAfter={onOpenCreateColumnAfter}
-                            />
-                            {renderLane(lane, laneIndex, columnProvided.dragHandleProps)}
-                          </div>
-                        );
-                      }}
-                    </Draggable>
-                  ))}
-                  {columnPlaceholder(provided.placeholder)}
-                </div>
+                {lanes.map((lane, laneIndex) => (
+                  <Draggable key={lane.id} draggableId={scoped(lane.id)} index={laneIndex}>
+                    {(columnProvided) => {
+                      const { rest: colDragRest, style: colDragStyle } = mergeDraggableStyle(
+                        dndColumnShellStyle,
+                        columnProvided.draggableProps,
+                      );
+                      return (
+                        <div
+                          ref={columnProvided.innerRef}
+                          {...colDragRest}
+                          style={{ position: "relative", ...colDragStyle }}
+                        >
+                          <InsertColumnEdgeButtons
+                            laneId={lane.id}
+                            laneIndex={laneIndex}
+                            totalLanes={totalLanes}
+                            onOpenCreateColumnAfter={onOpenCreateColumnAfter}
+                          />
+                          {renderLane(lane, laneIndex, columnProvided.dragHandleProps)}
+                        </div>
+                      );
+                    }}
+                  </Draggable>
+                ))}
+                {columnPlaceholder(provided.placeholder)}
               </div>
             </div>
-          )}
-        </Droppable>
+          </div>
+        )}
+      </Droppable>
+    );
+    return wrapDragDropContext ? (
+      <DragDropContext onDragEnd={onDragEnd} sensors={dragSensors}>
+        {content}
       </DragDropContext>
+    ) : (
+      content
     );
   }
 
@@ -141,7 +153,7 @@ export function BoardColumnsLayout({
     </XStack>
   );
 
-  if (dragSensors) {
+  if (wrapDragDropContext && dragSensors) {
     return (
       <DragDropContext onDragEnd={onDragEnd} sensors={dragSensors}>
         {staticContent}

@@ -5,6 +5,8 @@ import { XStack, YStack } from "@tamagui/stacks";
 
 import { BoardActionButton, BoardPill, BoardSurface } from "../ui";
 import type { BoardDetailSearch, BoardLane, CardPriority } from "../types";
+import type { BoardKey } from "../useDualBoardDnd";
+import { scopeId } from "../useDualBoardDnd";
 import { CardInterior } from "./CardInterior";
 import { ColumnHeaderWithInlineRename } from "./ColumnHeader";
 import { LaneEmptyState } from "./LaneEmptyState";
@@ -37,6 +39,8 @@ type BoardLaneViewProps = {
     priority: CardPriority,
     direction: "up" | "down",
   ) => void;
+  dndScopeKey?: BoardKey;
+  bottomScrollPadding?: number;
 };
 
 export function BoardLaneView({
@@ -54,8 +58,11 @@ export function BoardLaneView({
   onMoveColumn,
   onMoveCard,
   onMovePriorityGroupCard,
+  dndScopeKey,
+  bottomScrollPadding,
 }: Readonly<BoardLaneViewProps>) {
   const isRealColumn = lane.laneKind === "column" && lane.originalColumnId;
+  const scoped = (id: string) => (dndScopeKey ? scopeId(dndScopeKey, id) : id);
 
   return (
     <BoardSurface
@@ -104,7 +111,7 @@ export function BoardLaneView({
         </YStack>
 
         {canReorder && isRealColumn ? (
-          <Droppable droppableId={isRealColumn} type="CARD" ignoreContainerClipping>
+          <Droppable droppableId={scoped(isRealColumn)} type="CARD" ignoreContainerClipping>
             {(provided) => (
               <div
                 style={{
@@ -125,12 +132,13 @@ export function BoardLaneView({
                     paddingLeft: "var(--c-space-4)",
                     paddingRight: "var(--c-space-4)",
                     paddingTop: "var(--c-space-3)",
+                    paddingBottom: bottomScrollPadding ?? undefined,
                   }}
                 >
                   {lane.cards.map((card, index) => (
                     <Draggable
                       key={card.id}
-                      draggableId={card.id}
+                      draggableId={scoped(card.id)}
                       index={index}
                       disableInteractiveElementBlocking
                     >
@@ -177,6 +185,8 @@ export function BoardLaneView({
             onOpenCard={onOpenCard}
             onMoveCard={onMoveCard}
             onMovePriorityGroupCard={onMovePriorityGroupCard}
+            dndScopeKey={dndScopeKey}
+            bottomScrollPadding={bottomScrollPadding}
           />
         )}
 

@@ -437,10 +437,6 @@ async function placeCard(input: {
       throw trpcErrors.notFound("Column not found");
     }
 
-    if (targetColumn.boardId !== lockedCard.boardId) {
-      throw trpcErrors.badRequest("Target column must belong to the same board");
-    }
-
     const orderedCards = await listActiveCardsForColumn(tx, {
       columnId: targetColumn.id,
     });
@@ -484,6 +480,12 @@ async function placeCard(input: {
       boardId: lockedCard.boardId,
       now,
     });
+    if (targetColumn.boardId !== lockedCard.boardId) {
+      await touchBoard(tx, {
+        boardId: targetColumn.boardId,
+        now,
+      });
+    }
 
     return updated;
   });

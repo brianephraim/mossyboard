@@ -3,8 +3,10 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { CenteredBoardState } from "../features/boards/access";
 
-const BoardDetailScreen = lazy(() =>
-  import("../features/boards/BoardDetailScreen").then((m) => ({ default: m.BoardDetailScreen })),
+const BoardWorkspaceScreen = lazy(() =>
+  import("../features/boards/BoardWorkspaceScreen").then((m) => ({
+    default: m.BoardWorkspaceScreen,
+  })),
 );
 
 export const Route = createFileRoute("/boards/$boardId")({
@@ -13,6 +15,7 @@ export const Route = createFileRoute("/boards/$boardId")({
     view: search.view === "list" ? "list" : "board",
     groupBy: search.groupBy === "priority" ? "priority" : "column",
     priority: typeof search.priority === "string" ? search.priority : undefined,
+    drawer: typeof search.drawer === "string" ? search.drawer : undefined,
   }),
   component: BoardDetailRoute,
 });
@@ -30,7 +33,7 @@ function BoardDetailRoute() {
         />
       }
     >
-      <BoardDetailScreen boardId={params.boardId} rawSearch={search} />
+      <BoardWorkspaceScreen boardId={params.boardId} rawSearch={search} />
     </Suspense>
   );
 }
