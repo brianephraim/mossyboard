@@ -52,16 +52,19 @@ export function startAuthSession() {
   void setPersistence(auth, browserLocalPersistence);
 
   onIdTokenChanged(auth, async (user) => {
-    initialAuthResolved = true;
-    updateAuthSnapshot(user);
-
-    if (user) {
-      const token = await user.getIdToken();
-      setAuthToken(token);
-    } else {
+    try {
+      if (user) {
+        const token = await user.getIdToken();
+        setAuthToken(token);
+      } else {
+        setAuthToken(null);
+      }
+    } catch {
       setAuthToken(null);
     }
 
+    initialAuthResolved = true;
+    updateAuthSnapshot(user);
     notifyAuthListeners();
   });
 }
