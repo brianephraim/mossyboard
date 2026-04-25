@@ -12,7 +12,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { PortalProvider } from "@tamagui/portal";
 
-import "../tamagui.css";
+import "../../.tamagui/tamagui.css";
 
 import { startAuthSession } from "../auth/client";
 import { AuthAnnounceProvider } from "../features/auth/AuthAnnounceContext";

@@ -77,7 +77,7 @@ export default defineConfig({
         "@tamagui/checkbox",
         "@tamagui/linear-gradient",
       ],
-      outputCSS: "./src/tamagui.css",
+      outputCSS: "./.tamagui/tamagui.css",
       optimize: process.env.NODE_ENV === "production",
     }),
     nitro({ preset: "vercel" }),
