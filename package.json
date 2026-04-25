@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "drizzle-kit migrate",
     "dev": "vite",
     "build": "vite build",
     "start": "node .output/server/index.mjs",

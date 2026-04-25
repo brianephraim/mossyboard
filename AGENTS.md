@@ -46,6 +46,13 @@
 - Sensitive values (ID tokens, passwords, full card bodies) never appear in log lines. Log `userId`, `requestId`, `path`, and outcome — not payloads.
 - See `docs/app-architecture-overview.md` for the full rationale behind these rules.
 
+## Database Migrations
+
+- After running `npm run db:generate`, always follow with `npm run db:migrate` so the schema and the database stay in sync. A generated migration file that is never applied is the same as no migration at all.
+- `npm run dev` runs migrations automatically via the `predev` script. If you start the server some other way (custom node command, background process, debugging into TanStack Start), run `npm run db:migrate` first.
+- Before debugging any database-touching tRPC procedure, repo function, or server route, confirm the migration count under `drizzle/pg/*.sql` matches what the database has applied. A `relation "x" does not exist` (Postgres `42P01`) is almost always missing migrations, not a code bug — drizzle's `Failed query: ...` wrapper hides the underlying message, so check the table list before chasing the query.
+- Tests handle their own migrations via `migrateTestDb()` in `src/server/testing/database.ts` (targets `DATABASE_URL_TEST` / `DATABASE_URL_TEST_POOLER`). Do not add a blanket `pretest` migration step — it would target the wrong database.
+
 ## Formatting
 
 - Run `npx prettier --write <file>` on every file you create or modify before committing.
