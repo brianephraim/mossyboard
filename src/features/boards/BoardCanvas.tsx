@@ -228,6 +228,7 @@ export function BoardCanvas({
 
       <div
         style={{
+          display: "flex",
           overflowX: "auto",
           overflowY: "hidden",
           maxWidth: "100%",
@@ -359,7 +360,8 @@ export function BoardCanvas({
         ) : (
           <XStack
             gap="$4"
-            alignItems="flex-start"
+            alignItems="stretch"
+            height="100%"
             minWidth="max-content"
             paddingHorizontal="$5"
             paddingTop={INSERT_COLUMN_BUTTON_SAFE_TOP_PX}
@@ -375,7 +377,14 @@ export function BoardCanvas({
             ) : null}
 
             {lanes.map((lane, laneIndex) => (
-              <YStack key={lane.id} width={320} minWidth={320} position="relative">
+              <YStack
+                key={lane.id}
+                width={320}
+                minWidth={320}
+                height="100%"
+                flexShrink={0}
+                position="relative"
+              >
                 {showColumnManagement && laneIndex === 0 ? (
                   <YStack
                     position="absolute"
