@@ -24,6 +24,8 @@ test-results
 tsconfig.tsbuildinfo
 next-env.d.ts
 .vercel
+.worktrees
+.worktrees/**
 
 # Local analysis artifacts
 sizes.txt
