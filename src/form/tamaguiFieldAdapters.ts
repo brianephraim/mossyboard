@@ -8,6 +8,9 @@ type TamaguiTextInputChangeEvent =
   | ChangeEvent<HTMLInputElement>
   | ChangeEvent<HTMLTextAreaElement>
   | {
+      target?: {
+        value?: string | null;
+      };
       currentTarget?: {
         value?: string | null;
       };
@@ -21,6 +24,10 @@ function isNativeTextEvent(
 }
 
 export function readTamaguiTextInputValue(event: TamaguiTextInputChangeEvent): string {
+  if (event.target?.value) {
+    return event.target.value;
+  }
+
   if (event.currentTarget?.value) {
     return event.currentTarget.value;
   }

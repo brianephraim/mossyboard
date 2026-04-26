@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { Stack } from "@tamagui/core";
 import { FormInlineTextField } from "../../form";
@@ -19,44 +19,23 @@ export function EditableBoardTitle({
   const form = useForm<{ title: string }>({
     defaultValues: { title },
   });
-  const [editing, setEditing] = useState(false);
-  const editingRef = useRef(false);
-  const skipBlurSave = useRef(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
   useEffect(() => {
-    if (!editing) {
-      form.reset({ title });
-    }
-  }, [editing, form, title]);
-
-  const cancel = () => {
-    skipBlurSave.current = true;
-    editingRef.current = false;
     form.reset({ title });
-    setEditing(false);
-  };
+  }, [form, title]);
 
-  const commit = async () => {
-    const raw = inputRef.current?.value ?? form.getValues(name);
-    const next = raw.trim();
+  const submit = form.handleSubmit(async (values) => {
+    const next = values.title.trim();
     if (!next) {
-      cancel();
+      form.reset({ title });
       return;
     }
 
     if (next === title) {
-      editingRef.current = false;
-      setEditing(false);
       return;
     }
 
-    editingRef.current = false;
-    setEditing(false);
-    try {
-      await onSave(next);
-    } catch {}
-  };
+    await onSave(next);
+  });
 
   return (
     <Stack tag="h1" margin={0} flex={1} minWidth={0} maxWidth={760}>
@@ -64,34 +43,16 @@ export function EditableBoardTitle({
         <FormInlineTextField<{ title: string }, "title">
           name={name}
           aria-label="Board title"
-          inputRef={(node) => {
-            inputRef.current = node;
-          }}
+          defaultValue={title}
           maxLength={80}
-          onFocus={() => {
-            if (disabled) return;
-            form.reset({ title });
-            editingRef.current = true;
-            setEditing(true);
-          }}
           onBlur={() => {
-            if (skipBlurSave.current) {
-              skipBlurSave.current = false;
-              return;
-            }
-
             if (disabled) return;
-            void commit();
+            void submit();
           }}
           onKeyDown={(event: { key?: string; nativeEvent?: { key?: string } }) => {
             const key = event.key ?? event.nativeEvent?.key ?? "";
-            if (key === "Escape") {
-              cancel();
-              return;
-            }
-
             if (key === "Enter") {
-              void commit();
+              void submit();
             }
           }}
           width="auto"

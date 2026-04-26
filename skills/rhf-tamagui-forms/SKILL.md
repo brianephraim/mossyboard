@@ -42,6 +42,35 @@ The preferred consumer API is:
    - use a real form submit when possible
    - for modal footers outside the form body, submit via `form` id targeting
 
+## Inline “one-field form” pattern (board title style)
+
+For inline edits that still need a save lifecycle (trim, reset, API call) but do **not** need multi-field validation UI, prefer a minimal RHF form and submit on blur:
+
+- Feature component owns `useForm({ defaultValues })`.
+- Field binds by `name`.
+- `onBlur` calls `form.handleSubmit(...)` (no custom draft/editing state).
+- In the submit handler: `trim`, ignore blank, ignore unchanged, otherwise call the mutation.
+- If blank: `form.reset({ ...defaults })`.
+
+This avoids extra state (`editing`, `draft`, “skip blur save” flags) while still keeping behavior deterministic and testable.
+
+## Critical pitfall: do not clobber consumer handlers in shared fields
+
+When building `src/form/*Field` primitives, **compose** handlers instead of overwriting them:
+
+- Call RHF’s handler first (`field.onBlur()`, `field.onChange(...)`)
+- Then call the consumer prop (`onBlurProp?.(event)`, `onChangeProp?.(event)`)
+
+If you overwrite `onBlur`/`onChange` with RHF handlers, feature-level behavior like “save on blur” silently stops working.
+
+## Tamagui change events: always adapt through `readTamaguiTextInputValue`
+
+Tamagui’s `Input` `onChange` can deliver non-standard event shapes (web/native-ish hybrids).
+
+- Always use `readTamaguiTextInputValue(event)` (via `tamaguiFieldAdapters`) to derive the string value.
+- Avoid assuming `event.target.value` is present.
+- If a field primitive needs to call RHF with a synthetic event, ensure the adapter can read it.
+
 ## Prefer this
 
 ```tsx

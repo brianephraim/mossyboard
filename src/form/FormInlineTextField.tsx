@@ -7,10 +7,10 @@ import {
   type FieldPathValue,
   type FieldValues,
   type RegisterOptions,
-  type UseControllerProps,
 } from "react-hook-form";
 
 import { joinAriaIds } from "./FormFieldFrame";
+import { readTamaguiTextInputValue } from "./tamaguiFieldAdapters";
 
 type FormInlineTextFieldProps<
   TFieldValues extends FieldValues,
@@ -21,7 +21,7 @@ type FormInlineTextFieldProps<
   defaultValue?: FieldPathValue<TFieldValues, TName>;
   inputId?: string;
   name: TName;
-  rules?: RegisterOptions<TFieldValues, TName> | UseControllerProps<TFieldValues, TName>["rules"];
+  rules?: RegisterOptions<TFieldValues, TName>;
   inputRef?: (node: HTMLInputElement | null) => void;
 }> &
   Omit<
@@ -42,29 +42,33 @@ export function FormInlineTextField<
   ...inputProps
 }: FormInlineTextFieldProps<TFieldValues, TName>) {
   const generatedId = useId();
-  const { register, getFieldState, formState } = useFormContext<TFieldValues>();
+  const { register, setValue, getFieldState, formState } = useFormContext<TFieldValues>();
   const fieldState = getFieldState(name, formState);
   const resolvedInputId = inputId ?? `${generatedId}-field`;
   const describedBy = joinAriaIds(additionalDescribedBy);
   const { onBlur: onBlurProp, onChange: onChangeProp, ...restInputProps } = inputProps;
-  const registration = register(name, rules as RegisterOptions<TFieldValues, TName> | undefined);
+  const registration = register(name, rules);
 
   return (
     <Input
       {...restInputProps}
       id={resolvedInputId}
       name={registration.name}
-      defaultValue={defaultValue as string | undefined}
       ref={(node: HTMLInputElement | null) => {
         registration.ref(node);
         inputRef?.(node);
       }}
+      defaultValue={defaultValue as string | undefined}
       onBlur={(event) => {
         registration.onBlur(event);
         onBlurProp?.(event);
       }}
       onChange={(event) => {
-        registration.onChange(event);
+        const value = readTamaguiTextInputValue(event);
+        setValue(name, value as FieldPathValue<TFieldValues, TName>, {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
         onChangeProp?.(event);
       }}
       aria-describedby={describedBy}
