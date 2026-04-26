@@ -26,6 +26,8 @@ next-env.d.ts
 .vercel
 .worktrees
 .worktrees/**
+.firebase
+firebase-debug.log
 
 # Local analysis artifacts
 sizes.txt
