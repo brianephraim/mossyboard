@@ -115,6 +115,9 @@
 - **E2E**: Playwright (Chromium). Tests in `e2e/`, login helper at `e2e/helpers/login.ts`.
 - Run all tests: `npm run test`.
 - For full conventions (mock patterns, extraction heuristics), see the `test-writer` skill.
+- **DOM-aware assertions only.** Never pass a DOM node — or any value that may contain one (refs, `document.activeElement`, RTL queries, React refs, event targets) — to `node:assert/strict` `equal` / `deepEqual`. On failure, Node pretty-prints both operands; walking a rendered Tamagui tree explodes RSS into multiple GB and hangs the worker (silently — no stderr output until the OS kills it). Use Vitest's `expect(node).toBe(other)` / `.toEqual(...)` instead — they have DOM-aware, bounded serialization.
+- **Use `element.focus()`, not `fireEvent.focus(element)`, when a test needs `document.activeElement` to actually move.** In jsdom, `fireEvent.focus` only dispatches the focus event; the native `.focus()` method does both (move focus and fire the event), matching real browser behavior.
+- **Suspect a hanging or memory-runaway test?** Run it under `scripts/test-guard.sh <path-to-test-file> [timeout-sec=25] [rss-mb-cap=800]`. The guard launches `vitest run` in its own process group and SIGKILLs the entire tree on either timeout or RSS cap, so a runaway worker cannot OOM the host. See `skills/dom-and-focus-tests/SKILL.md` for context on the recurring trap this guard was built to contain.
 
 ## Worktrees
 
@@ -156,6 +159,7 @@ A skill is a set of local instructions to follow that is stored in a `SKILL.md` 
 - pretty-modal-wrap-enforcer: Enforce consistent modal implementation by requiring `src/Modal/PrettyModalWrap.tsx` for new dialogs and modal refactors. Use when a request adds, updates, debugs, or reviews modal UI/dialog overlays/popup flows. (file: skills/pretty-modal-wrap-enforcer/SKILL.md)
 - rhf-tamagui-forms: Standardize forms around `src/form` reusable RHF + Tamagui fields that bind by `name` through form context instead of inline `Controller` wiring. Use when a request adds, refactors, debugs, or reviews forms. (file: skills/rhf-tamagui-forms/SKILL.md)
 - test-writer: Write unit and E2E tests following project conventions (Vitest, node:assert/strict, @testing-library/react, Playwright). Use when a request adds, expands, debugs, or reviews tests. (file: skills/test-writer/SKILL.md)
+- dom-and-focus-tests: Write tests that interact with focus, DOM nodes, refs, or `document.activeElement` without falling into the `node:assert/strict` + DOM serializer OOM trap. Use when a request adds, debugs, or reviews any test that asserts on focus, an element, a ref, or an event target — or any time a vitest run is hanging / OOMing. (file: skills/dom-and-focus-tests/SKILL.md)
 
 ### How to use skills
 
