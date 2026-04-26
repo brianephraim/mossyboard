@@ -1,7 +1,7 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 
 import { db } from "../db/client";
-import { boards, cards, columns } from "../db/schema";
+import { boards, cards, cardTags, columns, tags } from "../db/schema";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -201,4 +201,80 @@ export async function listActiveCardsForColumn(
     .from(cards)
     .where(and(eq(cards.columnId, input.columnId), isNull(cards.deletedAt)))
     .orderBy(asc(cards.position), asc(cards.id));
+}
+
+export async function getOwnedTag(
+  executor: DatabaseExecutor,
+  input: { ownerId: string; tagId: string },
+) {
+  const [row] = await executor
+    .select({
+      id: tags.id,
+      ownerId: tags.ownerId,
+      name: tags.name,
+      normalizedName: tags.normalizedName,
+      version: tags.version,
+      updatedAt: tags.updatedAt,
+    })
+    .from(tags)
+    .where(and(eq(tags.id, input.tagId), eq(tags.ownerId, input.ownerId), isNull(tags.deletedAt)))
+    .limit(1);
+
+  return row ?? null;
+}
+
+export async function lockOwnedTag(
+  tx: DatabaseTransaction,
+  input: { ownerId: string; tagId: string },
+) {
+  const [row] = await tx
+    .select({
+      id: tags.id,
+      ownerId: tags.ownerId,
+      name: tags.name,
+      normalizedName: tags.normalizedName,
+      version: tags.version,
+      updatedAt: tags.updatedAt,
+    })
+    .from(tags)
+    .where(and(eq(tags.id, input.tagId), eq(tags.ownerId, input.ownerId), isNull(tags.deletedAt)))
+    .for("update")
+    .limit(1);
+
+  return row ?? null;
+}
+
+export async function listTagsForCards(
+  executor: DatabaseExecutor,
+  input: { ownerId: string; cardIds: string[] },
+): Promise<Map<string, Array<{ id: string; name: string; normalizedName: string }>>> {
+  const result = new Map<string, Array<{ id: string; name: string; normalizedName: string }>>();
+  if (input.cardIds.length === 0) return result;
+
+  const rows = await executor
+    .select({
+      cardId: cardTags.cardId,
+      id: tags.id,
+      name: tags.name,
+      normalizedName: tags.normalizedName,
+      createdAt: cardTags.createdAt,
+    })
+    .from(cardTags)
+    .innerJoin(tags, eq(tags.id, cardTags.tagId))
+    .where(
+      and(
+        inArray(cardTags.cardId, input.cardIds),
+        eq(tags.ownerId, input.ownerId),
+        isNull(tags.deletedAt),
+      ),
+    )
+    .orderBy(asc(cardTags.createdAt), asc(tags.id));
+
+  for (const row of rows) {
+    const list = result.get(row.cardId) ?? [];
+    list.push({ id: row.id, name: row.name, normalizedName: row.normalizedName });
+    result.set(row.cardId, list);
+  }
+
+  return result;
 }

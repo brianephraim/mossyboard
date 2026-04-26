@@ -509,7 +509,7 @@ EOF
 - Create: `src/server/tag/repo.ts`
 - Create: `src/server/tag/service.ts`
 
-- [ ] **Step 1: Add `getOwnedTag`, `lockOwnedTag`, `listTagsForCards` to `src/server/board/repo-shared.ts`**
+- [x] **Step 1: Add `getOwnedTag`, `lockOwnedTag`, `listTagsForCards` to `src/server/board/repo-shared.ts`**
 
 At the top of the file, update the schema import:
 
@@ -600,7 +600,7 @@ export async function listTagsForCards(
 }
 ```
 
-- [ ] **Step 2: Create `src/server/tag/repo.ts`**
+- [x] **Step 2: Create `src/server/tag/repo.ts`**
 
 ```ts
 import { randomUUID } from "node:crypto";
@@ -792,7 +792,7 @@ Notes for the implementer:
 - `trpcErrors.badRequest` / `trpcErrors.notFound` / `trpcErrors.conflict` already exist in `src/server/trpc/init.ts`. If `badRequest` is not exported, follow the existing convention used in `card/repo.ts` and re-throw a `TRPCError` directly with code `"BAD_REQUEST"`.
 - `result.rowCount` — drizzle's `delete` returns a result whose shape depends on driver. If `rowCount` isn't available on this driver, capture the deleted rows via `.returning({ cardId: cardTags.cardId })` and check length.
 
-- [ ] **Step 3: Create `src/server/tag/service.ts`**
+- [x] **Step 3: Create `src/server/tag/service.ts`**
 
 ```ts
 import { addTagToCard, detachTagFromCard, listTagsForOwner, type TagRow } from "./repo";
@@ -824,7 +824,7 @@ export function detachTagFromCardForUser(
 }
 ```
 
-- [ ] **Step 4: Format**
+- [x] **Step 4: Format**
 
 ```bash
 npx prettier --write \
@@ -833,7 +833,7 @@ npx prettier --write \
   src/server/tag/service.ts
 ```
 
-- [ ] **Step 5: Typecheck**
+- [x] **Step 5: Typecheck**
 
 ```bash
 npm run typecheck
@@ -841,7 +841,7 @@ npm run typecheck
 
 Expected: clean. (No tests yet — that's Task 4.)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
