@@ -108,7 +108,7 @@ async function pickDbFlavor(rl, detected) {
   const answer = (
     await rl.question(
       `Pick a local Postgres flavor (detected: ${detectedLabels}):\n` +
-        menu.map(([k, _id, label, note]) => `  ${k}) ${label} — ${note}`).join("\n") +
+        menu.map(([k, , label, note]) => `  ${k}) ${label} — ${note}`).join("\n") +
         `\n> `,
     )
   ).trim();
