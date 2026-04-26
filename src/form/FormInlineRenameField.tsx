@@ -6,7 +6,7 @@ import { FormInlineTextField } from "./FormInlineTextField";
 
 type InlineKeyDownEvent = {
   key?: string;
-  nativeEvent?: { key?: string };
+  nativeEvent?: { key?: string; isComposing?: boolean; keyCode?: number };
   preventDefault?: () => void;
   stopPropagation?: () => void;
 };
@@ -77,6 +77,9 @@ export function FormInlineRenameField({
           void submit();
         }}
         onKeyDown={(event: InlineKeyDownEvent) => {
+          if (event.nativeEvent?.isComposing === true || event.nativeEvent?.keyCode === 229) {
+            return;
+          }
           const key = event.key ?? event.nativeEvent?.key ?? "";
           if (key === "Enter") {
             if (disabled) return;
