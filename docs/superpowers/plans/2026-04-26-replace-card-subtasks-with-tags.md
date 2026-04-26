@@ -2052,7 +2052,7 @@ EOF
 
 - Modify: the Tamagui config file housing `$boardPriorityHighBg` etc.
 
-- [ ] **Step 1: Locate the priority token definitions**
+- [x] **Step 1: Locate the priority token definitions**
 
 ```bash
 rg -l "boardPriorityHighBg" src/
@@ -2060,7 +2060,7 @@ rg -l "boardPriorityHighBg" src/
 
 Open the matching file (likely `src/tamagui.config.ts` or `src/tamagui/tokens.ts` — exact path depends on the project layout). Note its structure: usually a `light` and `dark` map, each containing keyed CSS color values.
 
-- [ ] **Step 2: Add 8 paired swatches**
+- [x] **Step 2: Add 8 paired swatches**
 
 In the existing tokens file, in both light and dark token maps, add:
 
@@ -2107,13 +2107,13 @@ boardTagSwatch8Text: "#f1c2dc",
 
 (All eight pairs target ≥4.5:1 contrast for AA. If the project has a contrast-checking utility, run it on the new pairs and adjust any that fall short.)
 
-- [ ] **Step 3: Format**
+- [x] **Step 3: Format**
 
 ```bash
 npx prettier --write <path-from-step-1>
 ```
 
-- [ ] **Step 4: Typecheck**
+- [x] **Step 4: Typecheck**
 
 ```bash
 npm run typecheck
@@ -2121,7 +2121,7 @@ npm run typecheck
 
 Expected: clean. (The new tokens are not yet referenced by any code, so this just confirms the file still parses.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
