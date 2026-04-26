@@ -152,7 +152,8 @@ async function pickDbFlavor(rl, detected, dockerStatus) {
             ? "running"
             : "installed (not running)"
           : "not installed"
-      }):\n` +
+      }).\n` +
+        `Auth in dev uses the Firebase Auth Emulator; you can sign in with dev@example.com / password.\n` +
         menu.map(([k, , label, note]) => `  ${k}) ${label} — ${note}`).join("\n") +
         `\n> `,
     )
