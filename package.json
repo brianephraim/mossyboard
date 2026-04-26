@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "node scripts/db-migrate.mjs",
-    "dev": "vite",
+    "dev": "node scripts/dev-setup.mjs",
+    "dev:setup": "node scripts/dev-setup.mjs",
     "build": "vite build",
     "vercel-build": "node scripts/vercel-build.mjs",
     "start": "node .output/server/index.mjs",
@@ -16,6 +16,9 @@
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/db-migrate.mjs",
+    "db:migrate:prod": "KANBAN_ALLOW_REMOTE_MIGRATE=1 CONFIRM_PROD_MIGRATE=1 node scripts/db-migrate.mjs",
+    "db:seed": "node scripts/db-seed.mjs",
+    "db:reset": "node scripts/db-reset.mjs",
     "vercel:pull:preview": "vercel pull --yes --environment=preview --scope brianephraims-projects",
     "vercel:build": "vercel build --yes --scope brianephraims-projects",
     "vercel:deploy:preview": "vercel --yes --scope brianephraims-projects"
