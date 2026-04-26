@@ -77,6 +77,12 @@ function cmdOk(command, args) {
   return result.status === 0;
 }
 
+function getDockerStatus() {
+  const installed = cmdOk("docker", ["--version"]);
+  const running = installed && cmdOk("docker", ["info"]);
+  return { installed, running };
+}
+
 async function promptYesNo(rl, message, defaultYes = true) {
   const suffix = defaultYes ? " [Y/n] " : " [y/N] ";
   const answer = (await rl.question(`${message}${suffix}`)).trim().toLowerCase();
@@ -86,7 +92,7 @@ async function promptYesNo(rl, message, defaultYes = true) {
   return defaultYes;
 }
 
-async function pickDbFlavor(rl, detected) {
+async function pickDbFlavor(rl, detected, dockerStatus) {
   const order = ["supabase", "docker", "host"];
   const available = order.filter((f) => detected.has(f));
   if (available.length === 1) return available[0];
@@ -96,9 +102,14 @@ async function pickDbFlavor(rl, detected) {
       "1",
       "supabase",
       "Supabase CLI",
-      "Convenient local stack; `supabase start` usually runs via Docker.",
+      "Convenient local stack; usually requires Docker running for `supabase start`.",
     ],
-    ["2", "docker", "Docker", "Runs only Postgres via `docker compose` (no Supabase services)."],
+    [
+      "2",
+      "docker",
+      "Docker",
+      "Runs only Postgres via `docker compose` (no Supabase services). Requires Docker running.",
+    ],
     ["3", "host", "Host Postgres", "Uses a Postgres already running on your machine (no Docker)."],
   ];
 
@@ -107,7 +118,13 @@ async function pickDbFlavor(rl, detected) {
 
   const answer = (
     await rl.question(
-      `Pick a local Postgres flavor (detected: ${detectedLabels}):\n` +
+      `Pick a local Postgres flavor (detected: ${detectedLabels}; docker: ${
+        dockerStatus.installed
+          ? dockerStatus.running
+            ? "running"
+            : "installed (not running)"
+          : "not installed"
+      }):\n` +
         menu.map(([k, , label, note]) => `  ${k}) ${label} — ${note}`).join("\n") +
         `\n> `,
     )
@@ -265,15 +282,36 @@ try {
   upsertEnvKey(env, "RESEND_FROM_EMAIL", "dev@example.com");
 
   // Step 4: flavor selection + persistence.
+  const dockerStatus = getDockerStatus();
   const detected = new Set();
   if (cmdOk("supabase", ["--version"])) detected.add("supabase");
-  if (cmdOk("docker", ["info"])) detected.add("docker");
+  if (dockerStatus.installed) detected.add("docker");
   if (cmdOk("pg_isready", ["-h", "localhost"])) detected.add("host");
 
   let flavor = env.map.get("KANBAN_LOCAL_DB_FLAVOR");
-  if (!flavor) {
-    flavor = await pickDbFlavor(rl, detected);
+  while (true) {
+    if (!flavor) {
+      flavor = await pickDbFlavor(rl, detected, dockerStatus);
+    }
+
+    // If the chosen flavor requires Docker but Docker isn't running, don't hard-fail.
+    const needsDockerRunning = flavor === "supabase" || flavor === "docker";
+    if (needsDockerRunning && !dockerStatus.running) {
+      console.error("");
+      console.error("This option requires Docker to be running.");
+      console.error(
+        "Start Docker Desktop (or your Docker daemon), then re-run `npm run dev`, or pick option 3 (Host Postgres) to avoid Docker.",
+      );
+      console.error("");
+
+      const repick = await promptYesNo(rl, "Re-pick a different option now?", true);
+      if (!repick) process.exit(1);
+      flavor = await pickDbFlavor(rl, detected, dockerStatus);
+      continue;
+    }
+
     setEnvKey(env, "KANBAN_LOCAL_DB_FLAVOR", flavor);
+    break;
   }
 
   // Step 5: tool installed check.
@@ -281,19 +319,13 @@ try {
     console.error("Supabase CLI not found. Install: brew install supabase/tap/supabase");
     process.exit(1);
   }
-  if (flavor === "docker" && !cmdOk("docker", ["info"])) {
-    console.error("Docker not available. Install/start Docker Desktop.");
+  if (flavor === "docker" && !dockerStatus.installed) {
+    console.error("Docker not available. Install Docker Desktop.");
     process.exit(1);
   }
   if (flavor === "host" && !cmdOk("pg_isready", ["-h", "localhost"])) {
     console.error(
       "Host Postgres not detected. Install Postgres (e.g. brew install postgresql@16).",
-    );
-    process.exit(1);
-  }
-  if (flavor === "supabase" && !cmdOk("docker", ["info"])) {
-    console.error(
-      "Supabase CLI mode typically requires Docker to run `supabase start`. Start Docker Desktop or pick option 3 (Host Postgres).",
     );
     process.exit(1);
   }
