@@ -15,7 +15,6 @@ import {
   BoardActionButton,
   BoardLiveRegion,
   BoardPageChrome,
-  BoardPill,
   BoardResponsiveColumns,
   BoardSectionHeading,
   BoardSurface,

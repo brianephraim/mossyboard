@@ -230,7 +230,7 @@ export function useDualBoardDnd(input: {
       return;
     }
 
-    const nextFrom = reorderBoardCards(from.board, {
+    reorderBoardCards(from.board, {
       cardId,
       sourceColumnId: sourceLocation.column.id,
       sourceIndex: sourceLocation.cardIndex,
@@ -239,7 +239,6 @@ export function useDualBoardDnd(input: {
       destinationPriority,
       expectedVersion: sourceLocation.card.version,
     });
-    const removedFrom = nextFrom; // no-op reorder used above; we’ll do manual remove+insert below instead
 
     const fromColumns = from.board.columns.map((column) => ({
       ...column,

@@ -30,7 +30,7 @@ export async function incrementSharedCounter() {
 }
 
 export async function getSharedCounterWithRecentEvents(limit = 10) {
-  const row = await ensureRow();
+  await ensureRow();
 
   const withChildren = await db.query.sharedCounter.findFirst({
     where: eq(sharedCounter.key, SINGLETON_KEY),

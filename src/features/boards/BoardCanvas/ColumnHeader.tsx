@@ -1,5 +1,5 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@tamagui/input";
 import { Stack, Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
