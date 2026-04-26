@@ -234,6 +234,11 @@ async function ensureRolesAndDatabases(adminUrl) {
   }
 }
 
+function isMissingPostgresRoleError(err) {
+  const message = String(err ?? "");
+  return message.includes('role "postgres" does not exist');
+}
+
 function ensureDockerPostgresRunning() {
   if (!cmdOk("docker", ["info"])) {
     throw new Error("Docker is not available. Install/start Docker Desktop first.");
@@ -415,11 +420,48 @@ try {
     try {
       await ensureRolesAndDatabases(derivedAdminUrl);
     } catch (err) {
-      console.error(String(err));
-      console.error(
-        "Could not bootstrap roles/databases. If you are using host Postgres, pick option 3.",
-      );
-      process.exit(1);
+      if (isMissingPostgresRoleError(err)) {
+        console.error("");
+        console.error(
+          "Your Docker Postgres volume appears to have been initialized with a different superuser (not 'postgres').",
+        );
+        console.error(
+          "To fix this, we can reset the Docker dev Postgres volume (this deletes local dev data for Docker mode).",
+        );
+        console.error("");
+
+        const okReset = await promptYesNo(
+          rl,
+          "Reset the Docker dev Postgres volume and retry?",
+          true,
+        );
+        if (!okReset) process.exit(1);
+
+        const down = spawnSync(
+          "docker",
+          ["compose", "-f", "docker-compose.dev.yml", "down", "-v"],
+          {
+            stdio: "inherit",
+          },
+        );
+        if (down.status !== 0) process.exit(down.status ?? 1);
+
+        ensureDockerPostgresRunning();
+
+        // Wait briefly for readiness.
+        for (let i = 0; i < 20; i++) {
+          if (cmdOk("pg_isready", ["-h", "localhost", "-p", String(port)])) break;
+          await new Promise((r) => setTimeout(r, 250));
+        }
+
+        await ensureRolesAndDatabases(derivedAdminUrl);
+      } else {
+        console.error(String(err));
+        console.error(
+          "Could not bootstrap roles/databases. If you are using host Postgres, pick option 3.",
+        );
+        process.exit(1);
+      }
     }
   }
 
