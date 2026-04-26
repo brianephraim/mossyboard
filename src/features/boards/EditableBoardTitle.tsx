@@ -30,12 +30,6 @@ export function EditableBoardTitle({
     }
   }, [editing, form, title]);
 
-  useEffect(() => {
-    if (editing) {
-      inputRef.current?.select?.();
-    }
-  }, [editing]);
-
   const cancel = () => {
     skipBlurSave.current = true;
     editingRef.current = false;
@@ -108,20 +102,20 @@ export function EditableBoardTitle({
           color="$boardHeading"
           fontSize="$10"
           fontWeight="800"
-          lineHeight={52}
+          // lineHeight={52}
           height={72}
-          minHeight={72}
+          // minHeight={72}
           borderWidth={1}
           borderRadius="$4"
           borderColor="transparent"
           backgroundColor="transparent"
           boxShadow="transparent 0px 0px 0px 0px"
           paddingHorizontal={10}
-          paddingTop={14}
-          paddingBottom={14}
+          // paddingTop={14}
+          // paddingBottom={14}
           marginHorizontal={-10}
           marginTop={-4}
-          marginBottom={8}
+          // marginBottom={8}
           focusStyle={{ outlineWidth: 0 }}
           focusVisibleStyle={{
             outlineWidth: 0,
