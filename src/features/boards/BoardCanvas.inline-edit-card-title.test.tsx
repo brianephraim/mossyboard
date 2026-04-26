@@ -117,6 +117,8 @@ describe("BoardCanvas inline card title edit", () => {
     expect((field as HTMLInputElement).value).toBe("  Renamed via Enter  ");
 
     fireEvent.keyDown(field, { key: "Enter", code: "Enter", charCode: 13 });
+    // Simulate the common user flow where Enter causes the input to blur right after.
+    fireEvent.blur(field);
 
     await vi.waitFor(() => {
       expect(onRenameCardTitle).toHaveBeenCalledTimes(1);
@@ -128,9 +130,6 @@ describe("BoardCanvas inline card title edit", () => {
         expectedVersion: 7,
       });
     });
-
-    fireEvent.blur(field);
-    expect(onRenameCardTitle).toHaveBeenCalledTimes(1);
   });
 
   it("Open still works: clicking Open calls onOpenCard and does not focus the title input", () => {
