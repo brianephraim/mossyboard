@@ -1,4 +1,3 @@
-import assert from "node:assert/strict";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -11,15 +10,25 @@ const board: LoadedBoard = {
   name: "Test board",
   updatedAt: "2026-04-24T12:00:00.000Z",
   columnCount: 1,
-  cardCount: 0,
+  cardCount: 1,
   columns: [
     {
       id: "column-1",
       title: "To do",
       position: "1000",
       version: 3,
-      cardCount: 0,
-      cards: [],
+      cardCount: 1,
+      cards: [
+        {
+          id: "card-1",
+          columnId: "column-1",
+          title: "Initial title",
+          description: "Initial description",
+          priority: "high",
+          position: "1000",
+          version: 7,
+        },
+      ],
     },
   ],
 };
@@ -31,13 +40,13 @@ const search: BoardDetailSearch = {
   priority: [],
 };
 
-describe("BoardCanvas inline column rename", () => {
+describe("BoardCanvas inline card title edit", () => {
   afterEach(() => {
     cleanup();
   });
 
-  it("commits a new title on blur", async () => {
-    const onRenameColumn = vi.fn().mockResolvedValue(undefined);
+  it("blur saves: trims title and passes expectedVersion", async () => {
+    const onRenameCardTitle = vi.fn().mockResolvedValue(undefined);
 
     render(
       <TamaguiRootProvider>
@@ -50,8 +59,8 @@ describe("BoardCanvas inline column rename", () => {
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
-          onRenameCardTitle={vi.fn().mockResolvedValue(undefined)}
-          onRenameColumn={onRenameColumn}
+          onRenameCardTitle={onRenameCardTitle}
+          onRenameColumn={vi.fn().mockResolvedValue(undefined)}
           renamePendingColumnId={null}
           onOpenCreateColumnAfter={vi.fn()}
           onMoveColumn={vi.fn()}
@@ -61,22 +70,24 @@ describe("BoardCanvas inline column rename", () => {
       </TamaguiRootProvider>,
     );
 
-    const field = screen.getByRole("textbox", { name: /column title/i });
-    fireEvent.change(field, { target: { value: "To do-renamed" } });
-    assert.equal((field as HTMLInputElement).value, "To do-renamed");
+    const field = screen.getByRole("textbox", { name: /card title/i });
+    fireEvent.change(field, { target: { value: "  Renamed card title  " } });
+    expect((field as HTMLInputElement).value).toBe("  Renamed card title  ");
     fireEvent.blur(field);
 
     await vi.waitFor(() => {
-      expect(onRenameColumn).toHaveBeenCalledWith({
-        columnId: "column-1",
-        title: "To do-renamed",
-        expectedVersion: 3,
+      expect(onRenameCardTitle).toHaveBeenCalledWith({
+        cardId: "card-1",
+        title: "Renamed card title",
+        description: "Initial description",
+        priority: "high",
+        expectedVersion: 7,
       });
     });
   });
 
-  it("does not call onRenameColumn when the title is blank", () => {
-    const onRenameColumn = vi.fn();
+  it("Enter saves: submits once even if blur occurs", async () => {
+    const onRenameCardTitle = vi.fn().mockResolvedValue(undefined);
 
     render(
       <TamaguiRootProvider>
@@ -89,8 +100,8 @@ describe("BoardCanvas inline column rename", () => {
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
-          onRenameCardTitle={vi.fn().mockResolvedValue(undefined)}
-          onRenameColumn={onRenameColumn}
+          onRenameCardTitle={onRenameCardTitle}
+          onRenameColumn={vi.fn().mockResolvedValue(undefined)}
           renamePendingColumnId={null}
           onOpenCreateColumnAfter={vi.fn()}
           onMoveColumn={vi.fn()}
@@ -100,55 +111,59 @@ describe("BoardCanvas inline column rename", () => {
       </TamaguiRootProvider>,
     );
 
-    const field = screen.getByRole("textbox", { name: /column title/i });
-    fireEvent.change(field, { target: { value: "   " } });
-    fireEvent.blur(field);
-
-    expect(onRenameColumn).not.toHaveBeenCalled();
-  });
-
-  it("submits the new title on Enter (and does not double-submit on blur)", async () => {
-    const onRenameColumn = vi.fn().mockResolvedValue(undefined);
-
-    render(
-      <TamaguiRootProvider>
-        <BoardCanvas
-          board={board}
-          search={search}
-          canReorder={false}
-          groupedBoardReorderEnabled={false}
-          onToggleGroupedBoardReorderEnabled={vi.fn()}
-          onDragEnd={vi.fn()}
-          onOpenCard={vi.fn()}
-          onOpenCreateCard={vi.fn()}
-          onRenameCardTitle={vi.fn().mockResolvedValue(undefined)}
-          onRenameColumn={onRenameColumn}
-          renamePendingColumnId={null}
-          onOpenCreateColumnAfter={vi.fn()}
-          onMoveColumn={vi.fn()}
-          onMoveCard={vi.fn()}
-          onMovePriorityGroupCard={vi.fn()}
-        />
-      </TamaguiRootProvider>,
-    );
-
-    const field = screen.getByRole("textbox", { name: /column title/i });
+    const field = screen.getByRole("textbox", { name: /card title/i });
     field.focus();
-    fireEvent.change(field, { target: { value: "  To do-renamed  " } });
-    assert.equal((field as HTMLInputElement).value, "  To do-renamed  ");
+    fireEvent.change(field, { target: { value: "  Renamed via Enter  " } });
+    expect((field as HTMLInputElement).value).toBe("  Renamed via Enter  ");
 
     fireEvent.keyDown(field, { key: "Enter", code: "Enter", charCode: 13 });
+    // Simulate the common user flow where Enter causes the input to blur right after.
+    fireEvent.blur(field);
 
     await vi.waitFor(() => {
-      expect(onRenameColumn).toHaveBeenCalledTimes(1);
-      expect(onRenameColumn).toHaveBeenCalledWith({
-        columnId: "column-1",
-        title: "To do-renamed",
-        expectedVersion: 3,
+      expect(onRenameCardTitle).toHaveBeenCalledTimes(1);
+      expect(onRenameCardTitle).toHaveBeenCalledWith({
+        cardId: "card-1",
+        title: "Renamed via Enter",
+        description: "Initial description",
+        priority: "high",
+        expectedVersion: 7,
       });
     });
+  });
 
-    fireEvent.blur(field);
-    expect(onRenameColumn).toHaveBeenCalledTimes(1);
+  it("Open still works: clicking Open calls onOpenCard and does not focus the title input", () => {
+    const onOpenCard = vi.fn();
+
+    render(
+      <TamaguiRootProvider>
+        <BoardCanvas
+          board={board}
+          search={search}
+          canReorder={false}
+          groupedBoardReorderEnabled={false}
+          onToggleGroupedBoardReorderEnabled={vi.fn()}
+          onDragEnd={vi.fn()}
+          onOpenCard={onOpenCard}
+          onOpenCreateCard={vi.fn()}
+          onRenameCardTitle={vi.fn().mockResolvedValue(undefined)}
+          onRenameColumn={vi.fn().mockResolvedValue(undefined)}
+          renamePendingColumnId={null}
+          onOpenCreateColumnAfter={vi.fn()}
+          onMoveColumn={vi.fn()}
+          onMoveCard={vi.fn()}
+          onMovePriorityGroupCard={vi.fn()}
+        />
+      </TamaguiRootProvider>,
+    );
+
+    const titleInput = screen.getByRole("textbox", { name: /card title/i });
+    expect(document.activeElement).not.toBe(titleInput);
+
+    const openButton = screen.getByRole("button", { name: /^open$/i });
+    fireEvent.click(openButton);
+
+    expect(onOpenCard).toHaveBeenCalledWith("card-1");
+    expect(document.activeElement).not.toBe(titleInput);
   });
 });

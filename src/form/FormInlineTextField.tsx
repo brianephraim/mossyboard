@@ -267,16 +267,20 @@ export function FormInlineTextField<
         debugFocus("input received blur event", {
           activeElementAtBlur: describeNode(document.activeElement as Element | null),
         });
-        registration.onBlur(event);
-        onBlurProp?.(event);
+        // Tamagui's web/native event union doesn't line up cleanly with RHF's
+        // expected FocusEvent type, but the shape is compatible at runtime.
+        registration.onBlur(event as unknown as Parameters<typeof registration.onBlur>[0]);
+        (onBlurProp as unknown as ((e: typeof event) => void) | undefined)?.(event);
       }}
       onChange={(event) => {
-        const value = readTamaguiTextInputValue(event);
+        const value = readTamaguiTextInputValue(
+          event as unknown as Parameters<typeof readTamaguiTextInputValue>[0],
+        );
         setValue(name, value as FieldPathValue<TFieldValues, TName>, {
           shouldDirty: true,
           shouldTouch: true,
         });
-        onChangeProp?.(event);
+        (onChangeProp as unknown as ((e: typeof event) => void) | undefined)?.(event);
       }}
       aria-describedby={describedBy}
       aria-invalid={fieldState.invalid}

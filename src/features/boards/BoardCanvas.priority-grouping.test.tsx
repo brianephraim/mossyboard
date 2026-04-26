@@ -92,6 +92,7 @@ describe("BoardCanvas priority grouping", () => {
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
+          onRenameCardTitle={vi.fn().mockResolvedValue(undefined)}
           onRenameColumn={vi.fn().mockResolvedValue(undefined)}
           renamePendingColumnId={null}
           onOpenCreateColumnAfter={vi.fn()}
@@ -105,13 +106,16 @@ describe("BoardCanvas priority grouping", () => {
     const backlogColumn = screen.getByRole("region", { name: /backlog column/i });
     const inProgressColumn = screen.getByRole("region", { name: /in progress column/i });
 
-    expect(screen.getAllByRole("button", { name: /^rename$/i })).toHaveLength(2);
+    // Column titles are now always inline-editable inputs (no separate "Rename" button).
+    expect(screen.getAllByRole("textbox", { name: /column title/i })).toHaveLength(2);
     expect(screen.getAllByRole("button", { name: /^\+ add card$/i })).toHaveLength(2);
 
-    assert.ok(within(backlogColumn).getByRole("heading", { name: "Backlog" }));
+    assert.ok(within(backlogColumn).getByRole("textbox", { name: /column title/i }));
+    assert.ok(within(backlogColumn).getByDisplayValue("Backlog"));
     assert.ok(within(backlogColumn).getByRole("heading", { name: "High" }));
     assert.ok(within(backlogColumn).getByRole("heading", { name: "Low" }));
-    assert.ok(within(inProgressColumn).getByRole("heading", { name: "In progress" }));
+    assert.ok(within(inProgressColumn).getByRole("textbox", { name: /column title/i }));
+    assert.ok(within(inProgressColumn).getByDisplayValue("In progress"));
     assert.ok(within(inProgressColumn).getByRole("heading", { name: "No priority" }));
   });
 
@@ -129,6 +133,7 @@ describe("BoardCanvas priority grouping", () => {
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
+          onRenameCardTitle={vi.fn().mockResolvedValue(undefined)}
           onRenameColumn={vi.fn().mockResolvedValue(undefined)}
           renamePendingColumnId={null}
           onOpenCreateColumnAfter={vi.fn()}
@@ -159,6 +164,7 @@ describe("BoardCanvas priority grouping", () => {
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
+          onRenameCardTitle={vi.fn().mockResolvedValue(undefined)}
           onRenameColumn={vi.fn().mockResolvedValue(undefined)}
           renamePendingColumnId={null}
           onOpenCreateColumnAfter={vi.fn()}
@@ -184,6 +190,7 @@ describe("BoardCanvas priority grouping", () => {
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
+          onRenameCardTitle={vi.fn().mockResolvedValue(undefined)}
           onRenameColumn={vi.fn().mockResolvedValue(undefined)}
           renamePendingColumnId={null}
           onOpenCreateColumnAfter={vi.fn()}
@@ -218,6 +225,7 @@ describe("BoardCanvas priority grouping", () => {
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
+          onRenameCardTitle={vi.fn().mockResolvedValue(undefined)}
           onRenameColumn={vi.fn().mockResolvedValue(undefined)}
           renamePendingColumnId={null}
           onOpenCreateColumnAfter={vi.fn()}

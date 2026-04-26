@@ -31,6 +31,13 @@ type StaticLaneCardsProps = {
     priority: CardPriority,
     direction: "up" | "down",
   ) => void;
+  onRenameCardTitle: (input: {
+    cardId: string;
+    title: string;
+    description: string;
+    priority: CardPriority;
+    expectedVersion: number;
+  }) => Promise<void>;
   dndScopeKey?: BoardKey;
   bottomScrollPadding?: number;
 };
@@ -43,6 +50,7 @@ export function StaticLaneCards({
   onOpenCard,
   onMoveCard,
   onMovePriorityGroupCard,
+  onRenameCardTitle,
   dndScopeKey,
   bottomScrollPadding,
 }: Readonly<StaticLaneCardsProps>) {
@@ -70,6 +78,7 @@ export function StaticLaneCards({
             onOpenCard={onOpenCard}
             onMoveCard={onMoveCard}
             onMovePriorityGroupCard={onMovePriorityGroupCard}
+            onRenameCardTitle={onRenameCardTitle}
             dndScopeKey={dndScopeKey}
             bottomScrollPadding={bottomScrollPadding}
           />
@@ -100,6 +109,7 @@ export function StaticLaneCards({
           canMove={false}
           onOpen={() => onOpenCard(card.id)}
           onMove={onMoveCard}
+          onRenameTitle={onRenameCardTitle}
         />
       ))}
       <LaneEmptyState
@@ -119,6 +129,7 @@ function PriorityGroupSection({
   onOpenCard,
   onMoveCard,
   onMovePriorityGroupCard,
+  onRenameCardTitle,
   dndScopeKey,
   bottomScrollPadding,
 }: Readonly<{
@@ -133,6 +144,7 @@ function PriorityGroupSection({
     priority: CardPriority,
     direction: "up" | "down",
   ) => void;
+  onRenameCardTitle: StaticLaneCardsProps["onRenameCardTitle"];
   dndScopeKey?: BoardKey;
   bottomScrollPadding?: number;
 }>) {
@@ -205,6 +217,7 @@ function PriorityGroupSection({
                           moveDirections={["up", "down"]}
                           dragHandleProps={cardProvided.dragHandleProps}
                           onOpen={() => onOpenCard(card.id)}
+                          onRenameTitle={onRenameCardTitle}
                           onMove={(cardId, direction) => {
                             if (direction === "up" || direction === "down") {
                               onMovePriorityGroupCard(cardId, group.priority, direction);
@@ -233,6 +246,7 @@ function PriorityGroupSection({
               canMove={false}
               onOpen={() => onOpenCard(card.id)}
               onMove={onMoveCard}
+              onRenameTitle={onRenameCardTitle}
             />
           ))}
         </YStack>

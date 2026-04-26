@@ -24,7 +24,7 @@ describe("EditableBoardTitle", () => {
 
     render(
       <TamaguiRootProvider>
-        <EditableBoardTitle name="title" title="Roadmap" onSave={onSave} />
+        <EditableBoardTitle title="Roadmap" onSave={onSave} />
       </TamaguiRootProvider>,
     );
 
@@ -44,7 +44,7 @@ describe("EditableBoardTitle", () => {
 
     render(
       <TamaguiRootProvider>
-        <EditableBoardTitle name="title" title="Roadmap" onSave={onSave} />
+        <EditableBoardTitle title="Roadmap" onSave={onSave} />
       </TamaguiRootProvider>,
     );
 
@@ -61,7 +61,7 @@ describe("EditableBoardTitle", () => {
 
     render(
       <TamaguiRootProvider>
-        <EditableBoardTitle name="title" title="Roadmap" onSave={onSave} />
+        <EditableBoardTitle title="Roadmap" onSave={onSave} />
       </TamaguiRootProvider>,
     );
 
