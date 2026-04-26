@@ -302,7 +302,13 @@ export function BoardWorkspaceScreen({
                     void navigate({
                       to: "/boards/$boardId",
                       params: { boardId: drawerBoardId },
-                      search: { ...search, drawer: undefined },
+                      search: {
+                        card: search.card,
+                        view: search.view,
+                        groupBy: search.groupBy,
+                        priority: serializePriorityFilter(search.priority),
+                        drawer: undefined,
+                      },
                     });
                   }}
                   onHeightChange={(px) => {

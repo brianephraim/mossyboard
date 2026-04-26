@@ -25,6 +25,7 @@ const boardFixture: LoadedBoard = {
       cards: [
         {
           id: "card-1",
+          columnId: "column-1",
           title: "Write brief",
           description: "",
           priority: "low",
@@ -33,6 +34,7 @@ const boardFixture: LoadedBoard = {
         },
         {
           id: "card-2",
+          columnId: "column-1",
           title: "Define goals",
           description: "",
           priority: "high",
@@ -41,6 +43,7 @@ const boardFixture: LoadedBoard = {
         },
         {
           id: "card-3",
+          columnId: "column-1",
           title: "Collect screenshots",
           description: "",
           priority: "medium",
@@ -49,6 +52,7 @@ const boardFixture: LoadedBoard = {
         },
         {
           id: "card-4",
+          columnId: "column-1",
           title: "Approve copy",
           description: "",
           priority: "high",
@@ -57,6 +61,7 @@ const boardFixture: LoadedBoard = {
         },
         {
           id: "card-5",
+          columnId: "column-1",
           title: "Archive notes",
           description: "",
           priority: "none",
@@ -74,6 +79,7 @@ const boardFixture: LoadedBoard = {
       cards: [
         {
           id: "card-6",
+          columnId: "column-2",
           title: "Sync legal",
           description: "",
           priority: "none",
@@ -82,6 +88,7 @@ const boardFixture: LoadedBoard = {
         },
         {
           id: "card-7",
+          columnId: "column-2",
           title: "Prep recap",
           description: "",
           priority: "low",

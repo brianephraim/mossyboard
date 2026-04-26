@@ -63,7 +63,8 @@ export function BoardPane({
   const dispatch = useAppDispatch();
   const groupedBoardReorderPreference = useAppSelector(selectGroupedBoardReorderEnabled);
 
-  const board = state.optimisticBoard ?? boardQuery.data?.board ?? null;
+  const board =
+    state.optimisticBoard ?? (boardQuery.data as { board: LoadedBoard } | undefined)?.board ?? null;
   const columnReorderEnabled = canReorderBoard(search);
   const groupedBoardReorderEnabled =
     search.view === "board" &&

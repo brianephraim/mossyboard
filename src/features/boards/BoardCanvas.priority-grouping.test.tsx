@@ -22,6 +22,7 @@ const board: LoadedBoard = {
       cards: [
         {
           id: "card-1",
+          columnId: "column-1",
           title: "Add analytics",
           description: "",
           priority: "high",
@@ -30,6 +31,7 @@ const board: LoadedBoard = {
         },
         {
           id: "card-2",
+          columnId: "column-1",
           title: "Trim homepage copy",
           description: "",
           priority: "low",
@@ -47,6 +49,7 @@ const board: LoadedBoard = {
       cards: [
         {
           id: "card-3",
+          columnId: "column-2",
           title: "QA checkout flow",
           description: "",
           priority: "none",

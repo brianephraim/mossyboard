@@ -59,7 +59,7 @@ export function EditableBoardTitle({
   return (
     <Stack tag="h1" margin={0} flex={1} minWidth={0} maxWidth={760}>
       <Input
-        ref={(node) => {
+        ref={(node: HTMLInputElement | null) => {
           inputRef.current = node;
         }}
         aria-label="Board title"
@@ -100,9 +100,7 @@ export function EditableBoardTitle({
         flexShrink={1}
         alignSelf="flex-start"
         color="$boardHeading"
-        fontSize="$10"
-        fontWeight="800"
-        lineHeight="$9"
+        size="$6"
         borderWidth={1}
         borderRadius="$4"
         borderColor="transparent"

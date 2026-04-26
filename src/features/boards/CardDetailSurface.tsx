@@ -167,7 +167,7 @@ export function CardDetailSurface({
         description="Edit title, description, priority, and subtasks from this surface."
         footer={null}
         desktopPlacement="side"
-        desktopWidth="min(580px, 100vw)"
+        desktopWidth={580}
         fullScreenOnMobile
       >
         <BoardSurface padding="$4">
@@ -186,7 +186,7 @@ export function CardDetailSurface({
         description="Edit title, description, priority, and subtasks from this surface."
         footer={null}
         desktopPlacement="side"
-        desktopWidth="min(580px, 100vw)"
+        desktopWidth={580}
         fullScreenOnMobile
       >
         <BoardSurface padding="$4">
@@ -225,7 +225,7 @@ export function CardDetailSurface({
       description="Edit title, description, priority, and subtasks from this surface."
       footer={null}
       desktopPlacement="side"
-      desktopWidth="min(580px, 100vw)"
+      desktopWidth={580}
       fullScreenOnMobile
     >
       <YStack gap="$4">

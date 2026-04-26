@@ -1,6 +1,6 @@
 import type { DropResult } from "@hello-pangea/dnd";
 
-import type { TRPCClientUtils } from "../../trpc/client";
+import { trpc } from "../../trpc/client";
 import {
   getCardPosition,
   getColumnPosition,
@@ -46,7 +46,7 @@ export function useDualBoardDnd(input: {
   search: BoardDetailSearch;
   main: Pane;
   drawer: Pane | null;
-  utils: TRPCClientUtils;
+  utils: ReturnType<typeof trpc.useUtils>;
   setAnnouncement: (m: string | null) => void;
 }) {
   const getPane = (key: BoardKey) => {
@@ -229,16 +229,6 @@ export function useDualBoardDnd(input: {
     if (!destinationPlacement) {
       return;
     }
-
-    reorderBoardCards(from.board, {
-      cardId,
-      sourceColumnId: sourceLocation.column.id,
-      sourceIndex: sourceLocation.cardIndex,
-      destinationColumnId: sourceLocation.column.id,
-      destinationIndex: sourceLocation.cardIndex,
-      destinationPriority,
-      expectedVersion: sourceLocation.card.version,
-    });
 
     const fromColumns = from.board.columns.map((column) => ({
       ...column,

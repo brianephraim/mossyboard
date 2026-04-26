@@ -31,6 +31,7 @@ export type LoadedBoardRow = {
     cardCount: number;
     cards: Array<{
       id: string;
+      columnId: string;
       title: string;
       description: string;
       priority: CardPriority;
@@ -156,6 +157,7 @@ export async function getBoardWithColumnsAndCards(input: {
     const list = cardsByColumn.get(card.columnId) ?? [];
     list.push({
       id: card.id,
+      columnId: card.columnId,
       title: card.title,
       description: card.description,
       priority: card.priority,

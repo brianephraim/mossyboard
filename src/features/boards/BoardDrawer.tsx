@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@tamagui/button";
-import { Stack, Text } from "@tamagui/core";
+import { Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import { BoardActionButton, BoardSurface } from "./ui";
@@ -63,12 +63,13 @@ export function BoardDrawer({
     }
   };
 
-  const onPointerDown = (event: PointerEvent) => {
-    const target = event.currentTarget;
+  const onPointerDown = (event: any) => {
+    const native = event?.nativeEvent ?? event;
+    const target = event?.currentTarget;
     if (!target) {
       return;
     }
-    (target as HTMLElement).setPointerCapture(event.pointerId);
+    (target as HTMLElement).setPointerCapture?.(native.pointerId);
 
     const handleMove = (moveEvent: PointerEvent) => {
       const innerHeight = window.innerHeight;
@@ -86,37 +87,6 @@ export function BoardDrawer({
 
     window.addEventListener("pointermove", handleMove);
     window.addEventListener("pointerup", handleUp);
-  };
-
-  const onHandleKeyDown: React.KeyboardEventHandler = (event) => {
-    const step = 32;
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setHeightClamped(heightPx + step, true);
-      return;
-    }
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setHeightClamped(heightPx - step, true);
-      return;
-    }
-    if (event.key === "Home") {
-      event.preventDefault();
-      setHeightClamped(bounds.min, true);
-      return;
-    }
-    if (event.key === "End") {
-      event.preventDefault();
-      setHeightClamped(bounds.max, true);
-      return;
-    }
-    if (event.key === "Escape") {
-      const active = document.activeElement;
-      if (chromeRef.current && active && chromeRef.current.contains(active)) {
-        event.preventDefault();
-        onClose();
-      }
-    }
   };
 
   return (
@@ -150,16 +120,9 @@ export function BoardDrawer({
           gap="$3"
         >
           <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
-            <Stack
-              tabIndex={0}
-              role="separator"
-              aria-orientation="horizontal"
-              aria-label="Resize drawer"
-              aria-valuenow={heightPx}
-              aria-valuemin={bounds.min}
-              aria-valuemax={bounds.max}
+            <Button
+              chromeless
               onPointerDown={onPointerDown}
-              onKeyDown={onHandleKeyDown}
               cursor="ns-resize"
               paddingHorizontal="$3"
               paddingVertical="$2"
@@ -170,7 +133,7 @@ export function BoardDrawer({
               <Text color="$boardTextSubtle" fontWeight="800" aria-hidden>
                 ⋯
               </Text>
-            </Stack>
+            </Button>
 
             <Button
               chromeless
@@ -186,6 +149,20 @@ export function BoardDrawer({
           </XStack>
 
           <XStack gap="$2" alignItems="center">
+            <BoardActionButton
+              tone="ghost"
+              aria-label="Increase drawer height"
+              onPress={() => setHeightClamped(heightPx + 64, true)}
+            >
+              Taller
+            </BoardActionButton>
+            <BoardActionButton
+              tone="ghost"
+              aria-label="Decrease drawer height"
+              onPress={() => setHeightClamped(heightPx - 64, true)}
+            >
+              Shorter
+            </BoardActionButton>
             <BoardActionButton tone="ghost" onPress={onPromote}>
               Promote to main
             </BoardActionButton>

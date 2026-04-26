@@ -12,8 +12,8 @@ const BoardWorkspaceScreen = lazy(() =>
 export const Route = createFileRoute("/boards/$boardId")({
   validateSearch: (search) => ({
     card: typeof search.card === "string" ? search.card : undefined,
-    view: search.view === "list" ? "list" : "board",
-    groupBy: search.groupBy === "priority" ? "priority" : "column",
+    view: (search.view === "list" ? "list" : "board") as "board" | "list",
+    groupBy: (search.groupBy === "priority" ? "priority" : "column") as "column" | "priority",
     priority: typeof search.priority === "string" ? search.priority : undefined,
     drawer: typeof search.drawer === "string" ? search.drawer : undefined,
   }),

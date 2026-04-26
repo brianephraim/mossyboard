@@ -27,6 +27,7 @@ const boardFixture: LoadedBoard = {
       cards: [
         {
           id: "card-1",
+          columnId: "column-1",
           title: "Define goals",
           description: "",
           priority: "high",
@@ -35,6 +36,7 @@ const boardFixture: LoadedBoard = {
         },
         {
           id: "card-2",
+          columnId: "column-1",
           title: "Collect references",
           description: "",
           priority: "low",
@@ -52,6 +54,7 @@ const boardFixture: LoadedBoard = {
       cards: [
         {
           id: "card-3",
+          columnId: "column-2",
           title: "Design hero",
           description: "",
           priority: "high",
@@ -69,6 +72,7 @@ const boardFixture: LoadedBoard = {
       cards: [
         {
           id: "card-4",
+          columnId: "column-3",
           title: "Archive notes",
           description: "",
           priority: "none",
