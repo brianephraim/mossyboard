@@ -104,4 +104,48 @@ describe("BoardCanvas inline column rename", () => {
 
     expect(onRenameColumn).not.toHaveBeenCalled();
   });
+
+  it("submits the new title on Enter (and does not double-submit on blur)", async () => {
+    const onRenameColumn = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <TamaguiRootProvider>
+        <BoardCanvas
+          board={board}
+          search={search}
+          canReorder={false}
+          groupedBoardReorderEnabled={false}
+          onToggleGroupedBoardReorderEnabled={vi.fn()}
+          onDragEnd={vi.fn()}
+          onOpenCard={vi.fn()}
+          onOpenCreateCard={vi.fn()}
+          onRenameColumn={onRenameColumn}
+          renamePendingColumnId={null}
+          onOpenCreateColumnAfter={vi.fn()}
+          onMoveColumn={vi.fn()}
+          onMoveCard={vi.fn()}
+          onMovePriorityGroupCard={vi.fn()}
+        />
+      </TamaguiRootProvider>,
+    );
+
+    const field = screen.getByRole("textbox", { name: /column title/i });
+    field.focus();
+    fireEvent.change(field, { target: { value: "  To do-renamed  " } });
+    assert.equal((field as HTMLInputElement).value, "  To do-renamed  ");
+
+    fireEvent.keyDown(field, { key: "Enter", code: "Enter", charCode: 13 });
+
+    await vi.waitFor(() => {
+      expect(onRenameColumn).toHaveBeenCalledTimes(1);
+      expect(onRenameColumn).toHaveBeenCalledWith({
+        columnId: "column-1",
+        title: "To do-renamed",
+        expectedVersion: 3,
+      });
+    });
+
+    fireEvent.blur(field);
+    expect(onRenameColumn).toHaveBeenCalledTimes(1);
+  });
 });
