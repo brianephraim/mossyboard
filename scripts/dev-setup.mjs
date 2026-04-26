@@ -77,6 +77,34 @@ function cmdOk(command, args) {
   return result.status === 0;
 }
 
+function cmdOkWithOutput(command, args) {
+  const result = spawnSync(command, args, { encoding: "utf8" });
+  return {
+    ok: result.status === 0,
+    stdout: (result.stdout ?? "").toString(),
+    stderr: (result.stderr ?? "").toString(),
+  };
+}
+
+function resolvePgIsReady() {
+  // Prefer PATH.
+  const which = spawnSync("bash", ["-lc", "command -v pg_isready"], { encoding: "utf8" });
+  const fromPath = (which.stdout ?? "").toString().trim();
+  if (which.status === 0 && fromPath) return fromPath;
+
+  // Homebrew keg-only installs (common on macOS).
+  const candidates = [
+    "/opt/homebrew/opt/postgresql@16/bin/pg_isready",
+    "/usr/local/opt/postgresql@16/bin/pg_isready",
+    "/opt/homebrew/bin/pg_isready",
+    "/usr/local/bin/pg_isready",
+  ];
+  for (const candidate of candidates) {
+    if (cmdOk(candidate, ["--version"])) return candidate;
+  }
+  return null;
+}
+
 function getDockerStatus() {
   const installed = cmdOk("docker", ["--version"]);
   const running = installed && cmdOk("docker", ["info"]);
@@ -283,10 +311,11 @@ try {
 
   // Step 4: flavor selection + persistence.
   const dockerStatus = getDockerStatus();
+  const pgIsReady = resolvePgIsReady();
   const detected = new Set();
   if (cmdOk("supabase", ["--version"])) detected.add("supabase");
   if (dockerStatus.installed) detected.add("docker");
-  if (cmdOk("pg_isready", ["-h", "localhost"])) detected.add("host");
+  if (pgIsReady) detected.add("host");
 
   let flavor = env.map.get("KANBAN_LOCAL_DB_FLAVOR");
   while (true) {
@@ -323,9 +352,9 @@ try {
     console.error("Docker not available. Install Docker Desktop.");
     process.exit(1);
   }
-  if (flavor === "host" && !cmdOk("pg_isready", ["-h", "localhost"])) {
+  if (flavor === "host" && !pgIsReady) {
     console.error(
-      "Host Postgres not detected. Install Postgres (e.g. brew install postgresql@16).",
+      "Host Postgres tools not found (pg_isready missing). Install Postgres (e.g. brew install postgresql@16).",
     );
     process.exit(1);
   }
@@ -350,17 +379,39 @@ try {
   }
 
   if (flavor === "host") {
-    if (!cmdOk("pg_isready", ["-h", "localhost", "-p", String(port)])) {
+    if (!pgIsReady) {
+      console.error(
+        "Host Postgres tools not found (pg_isready missing). Install Postgres (e.g. brew install postgresql@16).",
+      );
+      process.exit(1);
+    }
+
+    const ready = cmdOk(pgIsReady, ["-h", "localhost", "-p", String(port)]);
+    if (!ready) {
       const ok = await promptYesNo(rl, "Start host Postgres service now?", true);
       if (!ok) process.exit(1);
-      if (os.platform() === "darwin") {
-        console.error("Run: brew services start postgresql@16");
+
+      if (os.platform() === "darwin" && cmdOk("brew", ["--version"])) {
+        const service = cmdOkWithOutput("brew", ["services", "start", "postgresql@16"]);
+        if (!service.ok) {
+          console.error(service.stderr.trim() || service.stdout.trim());
+          console.error(
+            "If brew services is unavailable, run Postgres manually or use Docker mode.",
+          );
+          process.exit(1);
+        }
       } else {
         console.error(
-          "Start Postgres using your OS service manager (e.g. systemctl start postgresql).",
+          "Start Postgres using your OS service manager (e.g. systemctl start postgresql), then re-run npm run dev.",
         );
+        process.exit(1);
       }
-      process.exit(1);
+
+      // Re-check after start attempt.
+      if (!cmdOk(pgIsReady, ["-h", "localhost", "-p", String(port)])) {
+        console.error("Postgres still not reachable on localhost:5432 after start attempt.");
+        process.exit(1);
+      }
     }
 
     await ensureRolesAndDatabases(port);
