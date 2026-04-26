@@ -3023,7 +3023,7 @@ feat(boards): wire CardTagsRow into CardInterior and propagate tag props
 - Create: `src/features/boards/useTagMutations.ts`
 - Modify: `src/features/boards/BoardDetailScreen.tsx`, `src/features/boards/BoardWorkspaceScreen.tsx`
 
-- [ ] **Step 1: Create `src/features/boards/useTagMutations.ts`**
+- [x] **Step 1: Create `src/features/boards/useTagMutations.ts`**
 
 ```ts
 import { useCallback } from "react";
@@ -3080,7 +3080,7 @@ export function useTagMutations({ boardId, onAnnounce }: UseTagMutationsInput) {
 }
 ```
 
-- [ ] **Step 2: Plumb into `src/features/boards/BoardWorkspaceScreen.tsx`**
+- [x] **Step 2: Plumb into `src/features/boards/BoardWorkspaceScreen.tsx`**
 
 Inside the screen component, add:
 
@@ -3104,11 +3104,11 @@ onDetachTag = { detachTag };
 
 If the screen also calls `buildBoardLanes` and `canReorderBoard` directly, ensure those calls now pass `tags: search.tags` (which is parsed in Task 6).
 
-- [ ] **Step 3: Plumb into `src/features/boards/BoardDetailScreen.tsx`**
+- [x] **Step 3: Plumb into `src/features/boards/BoardDetailScreen.tsx`**
 
 Apply the same three-block change (tag list query, mutations hook, prop pass-through) to `BoardDetailScreen.tsx`.
 
-- [ ] **Step 4: Format**
+- [x] **Step 4: Format**
 
 ```bash
 npx prettier --write \
@@ -3117,7 +3117,7 @@ npx prettier --write \
   src/features/boards/BoardDetailScreen.tsx
 ```
 
-- [ ] **Step 5: Typecheck and test**
+- [x] **Step 5: Typecheck and test**
 
 ```bash
 npm run typecheck && npm run test
@@ -3144,7 +3144,7 @@ If anything is visually wrong (token contrast, pill spacing), capture observatio
 
 Stop the dev server (Ctrl-C).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A

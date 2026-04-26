@@ -16,6 +16,7 @@ import {
   getPriorityGroupPlacement,
   parsePriorityGroupDroppableId,
 } from "./priorityGrouping";
+import type { CardTagsRowTag } from "./BoardCanvas/CardTagsRow";
 import type { BoardDetailSearch, CardPriority, LoadedBoard } from "./types";
 import { BoardActionButton, BoardInlineNotice, BoardStateCard, BoardSurface } from "./ui";
 import type { BoardMutations } from "./useBoardMutations";
@@ -36,6 +37,9 @@ type BoardPaneProps = {
     setConflictMessage: (m: string | null) => void;
   };
   mutations: BoardMutations;
+  availableTags: ReadonlyArray<CardTagsRowTag>;
+  onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
+  onDetachTag: (input: { cardId: string; tagId: string }) => Promise<void>;
   onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (boardId: string, columnId: string) => void;
   onOpenCreateColumn: (boardId: string, afterColumnId: string | null) => void;
@@ -55,6 +59,9 @@ export function BoardPane({
   boardQuery,
   state,
   mutations,
+  availableTags,
+  onAddTag,
+  onDetachTag,
   onOpenCard,
   onOpenCreateCard,
   onOpenCreateColumn,
@@ -472,9 +479,9 @@ export function BoardPane({
             dndScopeKey={boardKey}
             bottomScrollPadding={bottomScrollPadding}
             wrapDragDropContext={false}
-            availableTags={[]}
-            onAddTag={async () => undefined}
-            onDetachTag={async () => undefined}
+            availableTags={availableTags}
+            onAddTag={onAddTag}
+            onDetachTag={onDetachTag}
           />
         </YStack>
       ) : (

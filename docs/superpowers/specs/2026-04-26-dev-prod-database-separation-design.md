@@ -521,22 +521,107 @@ Specific gates:
    macOS-shaped. Linux equivalent is `systemctl start postgresql`. Decide whether to detect
    the platform and branch, or print platform-specific instructions and let the user run them.
 
-## Implementation order suggested
+## Implementation plan
 
-1. Land the safety guard first (`scripts/db-migrate.mjs` + wire `db:migrate` to it). Verify the
-   guard catches a Supabase URL. Commit.
-2. Land Vercel build wrapper (`scripts/vercel-build.mjs`). Test against a preview deploy,
-   confirm it skips migration. Commit.
-3. Move prod creds to Vercel env config (manual, with you walking through `vercel env add`).
-4. Add the auth emulator code paths (client + server) and `firebase.json` / `.firebaserc`. Run
-   the emulator manually to verify login works locally before automating it.
-5. Add the email-stub guard.
-6. Retarget tests at local Postgres (delete `_POOLER` fallbacks, point `DATABASE_URL_TEST` at
-   `kanban_test`). Run the test suite to verify.
-7. Build the wizard (`scripts/dev-setup.mjs`) — start with detection-only (no prompts), wire
-   prompts last. Run end-to-end on a fresh checkout in a worktree.
-8. Add seed script.
-9. Add top-level `README.md` and `.env.example`.
+Use this as the default execution order. Minor deviations are fine if a blocker appears and a
+small reordering unblocks the next step, but keep the same boundaries: focused commits, one
+concern at a time, and a verification pass before moving on.
 
-Each step is independently shippable. Keeping them as separate commits gives a clean rollback
-point per concern.
+### Phase 1 — Migration safety rail
+
+- [ ] Add `scripts/db-migrate.mjs` and wire `package.json` `db:migrate` through it.
+- [ ] Enforce the local-only default and require both `KANBAN_ALLOW_REMOTE_MIGRATE=1` and
+      `CONFIRM_PROD_MIGRATE=1` before allowing any remote migration.
+- [ ] Verify the guard rejects a Supabase/prod-shaped `DATABASE_URL` and still allows localhost.
+- [ ] Commit once this is green.
+      Suggested commit: `Guard database migrations from remote targets`
+
+### Phase 2 — Production build migration path
+
+- [ ] Add `scripts/vercel-build.mjs` and wire `package.json` `vercel-build` to it.
+- [ ] Ensure migrations run only when `VERCEL_ENV === "production"` and that build failure stops
+      the deploy.
+- [ ] Smoke-test the script locally with production vs non-production env values.
+- [ ] Commit once the production-only behavior is verified.
+      Suggested commit: `Run production migrations from vercel build`
+
+### Phase 3 — Move production secrets out of local dev
+
+- [ ] Move prod-only env values out of local `.env` and into Vercel env config.
+- [ ] Confirm the local `.env` shape is dev-only after the move.
+- [ ] Capture any exact `vercel env add` commands or dashboard steps in the implementation notes
+      for the engineer doing the rollout.
+- [ ] No code commit required for the Vercel dashboard changes themselves, but commit any repo
+      changes that support the new env layout in the nearest related phase.
+
+### Phase 4 — Local auth emulator foundation
+
+- [ ] Add `firebase.json` and `.firebaserc` for the local auth emulator.
+- [ ] Update client Firebase initialization to call `connectAuthEmulator(...)` outside
+      production.
+- [ ] Verify the server-side Firebase admin initialization works with
+      `FIREBASE_AUTH_EMULATOR_HOST` and a demo project id.
+- [ ] Manually run the emulator and confirm a local sign-in works before wiring automation.
+- [ ] Commit after client/server emulator behavior is working end-to-end.
+      Suggested commit: `Add Firebase auth emulator support for local development`
+
+### Phase 5 — Dev email safety stub
+
+- [ ] Add the `disabled-` Resend guard in the email sending path.
+- [ ] Verify dev email calls log or stub successfully without attempting a real send.
+- [ ] Commit once local email flows are safe by default.
+      Suggested commit: `Stub email delivery in development`
+
+### Phase 6 — Retarget tests to local Postgres
+
+- [ ] Update test DB code to use `DATABASE_URL_TEST` directly and remove `_POOLER` fallbacks.
+- [ ] Adjust SSL handling so localhost test URLs are not rewritten to require SSL.
+- [ ] Run the relevant test suite and confirm it works against local Postgres.
+- [ ] Commit after tests pass with the new local-only setup.
+      Suggested commit: `Point tests at local Postgres`
+
+### Phase 7 — Build the setup wizard
+
+- [ ] Create `scripts/dev-setup.mjs` and wire `predev` / `dev:setup` to it.
+- [ ] Implement detection and guard rails first: `.env` existence, prod-creds bleed check, local
+      DB flavor detection, required tooling checks.
+- [ ] Add service-start, database/role creation, emulator start, default user creation, and
+      migration execution in that order.
+- [ ] Add prompts last, keeping the wizard idempotent and fast on re-run.
+- [ ] Run the wizard from a fresh checkout or worktree and verify it can bring the app to a
+      usable local state.
+- [ ] Commit once the full wizard flow is stable.
+      Suggested commit: `Add interactive local development setup wizard`
+
+### Phase 8 — Seed and reset support
+
+- [ ] Add `scripts/db-seed.mjs` with idempotent starter data tied to `KANBAN_DEV_OWNER_ID`.
+- [ ] Add or stub `scripts/db-reset.mjs` only to the extent needed by this phase's scripts/docs.
+- [ ] Verify seed behavior on an empty local database and confirm it does not duplicate data on
+      re-run.
+- [ ] Commit once local bootstrap data is reliable.
+      Suggested commit: `Add local database seed workflow`
+
+### Phase 9 — Documentation and onboarding pass
+
+- [ ] Add top-level `README.md` with local setup, test, and deploy instructions.
+- [ ] Add `.env.example` matching the new dev-only env layout.
+- [ ] Verify `README.md`, `package.json` scripts, and deploy behavior remain aligned with Vercel
+      as the source of truth.
+- [ ] Commit once a fresh reader can follow the repo docs without tribal knowledge.
+      Suggested commit: `Document local setup and production deployment flow`
+
+### Final verification sweep
+
+- [ ] Re-run the acceptance criteria checklist in this design doc end-to-end.
+- [ ] Confirm `npm run dev` cannot migrate prod, `npm run test` stays local, and local auth uses
+      the emulator.
+- [ ] Confirm the wizard is fast on the happy-path re-run and that `.env` contains no prod-only
+      secrets.
+- [ ] If one small follow-up fix is needed after verification, it is fine to make a minor
+      deviation from the phase order and land a tidy cleanup commit.
+      Suggested commit: `Polish dev/prod database separation rollout`
+
+Each phase should stay independently reviewable and rollback-friendly. If two adjacent phases
+end up being tightly coupled in practice, batching them into one commit is acceptable, but only
+when splitting them would leave the repo in a broken or misleading intermediate state.

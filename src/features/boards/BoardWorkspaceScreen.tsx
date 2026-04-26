@@ -20,6 +20,7 @@ import type { BoardDetailSearch, LoadedBoard } from "./types";
 import { BoardActionButton, BoardLiveRegion } from "./ui";
 import { useBoardMutations } from "./useBoardMutations";
 import { useDualBoardDnd } from "./useDualBoardDnd";
+import { useTagMutations } from "./useTagMutations";
 
 type DeleteBoardModalProps = Readonly<{
   open: boolean;
@@ -198,6 +199,19 @@ export function BoardWorkspaceScreen({
     state: drawerState,
   });
 
+  const tagListQuery = trpc.tag.list.useQuery({});
+  const availableTags = useMemo(() => tagListQuery.data ?? [], [tagListQuery.data]);
+
+  const onAnnounceTag = (message: string) => setAnnouncement(message);
+  const mainTagMutations = useTagMutations({
+    boardId,
+    onAnnounce: onAnnounceTag,
+  });
+  const drawerTagMutations = useTagMutations({
+    boardId: drawerBoardId,
+    onAnnounce: onAnnounceTag,
+  });
+
   const sensorApi = useRef<SensorAPI | null>(null);
   const programmaticSensor: Sensor = useMemo(() => {
     return (api) => {
@@ -281,6 +295,9 @@ export function BoardWorkspaceScreen({
               boardQuery={mainQuery}
               state={mainState}
               mutations={mainMutations}
+              availableTags={availableTags}
+              onAddTag={mainTagMutations.addTag}
+              onDetachTag={mainTagMutations.detachTag}
               onOpenCard={(cardId) => updateRouteSearch({ card: cardId })}
               onOpenCreateCard={(targetBoardId, columnId) =>
                 setCreateCardTarget({ boardId: targetBoardId, columnId })
@@ -350,6 +367,9 @@ export function BoardWorkspaceScreen({
                   boardQuery={drawerQuery}
                   state={drawerState}
                   mutations={drawerMutations}
+                  availableTags={availableTags}
+                  onAddTag={drawerTagMutations.addTag}
+                  onDetachTag={drawerTagMutations.detachTag}
                   onOpenCard={(cardId) => updateRouteSearch({ card: cardId })}
                   onOpenCreateCard={(targetBoardId, columnId) =>
                     setCreateCardTarget({ boardId: targetBoardId, columnId })

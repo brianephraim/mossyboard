@@ -43,6 +43,7 @@ import {
   BoardSurface,
   PriorityPill,
 } from "./ui";
+import { useTagMutations } from "./useTagMutations";
 
 type CreateCardForm = {
   title: string;
@@ -108,6 +109,13 @@ export function BoardDetailScreen({
       retry: false,
     },
   );
+
+  const tagListQuery = trpc.tag.list.useQuery({});
+  const availableTags = useMemo(() => tagListQuery.data ?? [], [tagListQuery.data]);
+  const { addTag, detachTag } = useTagMutations({
+    boardId,
+    onAnnounce: setAnnouncement,
+  });
 
   const createCardForm = useForm<CreateCardForm>({
     defaultValues: { title: "" },
@@ -840,9 +848,9 @@ export function BoardDetailScreen({
               onMoveColumn={handleMoveColumn}
               onMoveCard={handleMoveCard}
               onMovePriorityGroupCard={handleMoveCardInPriorityGroup}
-              availableTags={[]}
-              onAddTag={async () => undefined}
-              onDetachTag={async () => undefined}
+              availableTags={availableTags}
+              onAddTag={addTag}
+              onDetachTag={detachTag}
             />
           </YStack>
         ) : (
