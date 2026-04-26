@@ -36,7 +36,7 @@ describe("BoardCanvas inline column rename", () => {
     cleanup();
   });
 
-  it("commits a new title on Enter after editing", async () => {
+  it("commits a new title on blur", async () => {
     const onRenameColumn = vi.fn().mockResolvedValue(undefined);
 
     render(
@@ -60,12 +60,10 @@ describe("BoardCanvas inline column rename", () => {
       </TamaguiRootProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^rename$/i }));
-
     const field = screen.getByRole("textbox", { name: /column title/i });
     fireEvent.change(field, { target: { value: "To do-renamed" } });
     assert.equal((field as HTMLInputElement).value, "To do-renamed");
-    fireEvent.keyDown(field, { key: "Enter" });
+    fireEvent.blur(field);
 
     await vi.waitFor(() => {
       expect(onRenameColumn).toHaveBeenCalledWith({
@@ -76,7 +74,7 @@ describe("BoardCanvas inline column rename", () => {
     });
   });
 
-  it("does not call onRenameColumn when the edit is cancelled with Escape", () => {
+  it("does not call onRenameColumn when the title is blank", () => {
     const onRenameColumn = vi.fn();
 
     render(
@@ -100,12 +98,10 @@ describe("BoardCanvas inline column rename", () => {
       </TamaguiRootProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^rename$/i }));
     const field = screen.getByRole("textbox", { name: /column title/i });
-    fireEvent.change(field, { target: { value: "Discarded" } });
-    fireEvent.keyDown(field, { key: "Escape" });
+    fireEvent.change(field, { target: { value: "   " } });
+    fireEvent.blur(field);
 
-    expect(screen.getByRole("button", { name: /^rename$/i })).toBeTruthy();
     expect(onRenameColumn).not.toHaveBeenCalled();
   });
 });

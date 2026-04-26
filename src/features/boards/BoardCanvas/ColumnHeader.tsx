@@ -1,10 +1,11 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
-import { useEffect, useRef, useState } from "react";
-import { Input } from "@tamagui/input";
+import { useEffect } from "react";
+import { useForm, FormProvider } from "react-hook-form";
 import { Stack, Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
-import { BoardActionButton, BoardPill } from "../ui";
+import { FormInlineTextField } from "../../../form";
+import { BoardPill } from "../ui";
 import type { BoardLane } from "../types";
 import { EdgeMoveButton } from "./EdgeMoveButton";
 import { COLUMN_HEADER_MOVE_EDGE_SIZE_PX } from "./layout";
@@ -34,57 +35,42 @@ export function ColumnHeaderWithInlineRename({
   renamePendingColumnId,
 }: Readonly<ColumnHeaderProps>) {
   const version = lane.columnVersion ?? 0;
-  const labelId = `column-title-${columnId}`;
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(lane.title);
-  const skipBlurSave = useRef(false);
+  const form = useForm<{ title: string }>({
+    defaultValues: { title: lane.title },
+  });
   const { visible, onHoverChange, onFocus, onBlur } = useEdgeHoverFocus();
 
   useEffect(() => {
-    setDraft(lane.title);
-  }, [lane.title]);
+    form.reset({ title: lane.title });
+  }, [form, lane.title]);
 
   const saving = renamePendingColumnId === columnId;
   const blockActions = Boolean(renamePendingColumnId);
-  const moveControlsVisible = canMoveColumn && !editing && visible;
-
-  const cancel = () => {
-    skipBlurSave.current = true;
-    setDraft(lane.title);
-    setEditing(false);
-    window.setTimeout(() => {
-      skipBlurSave.current = false;
-    }, 0);
-  };
-
-  const commit = async () => {
-    const next = draft.trim();
+  const moveControlsVisible = canMoveColumn && visible;
+  const submit = form.handleSubmit(async (values) => {
+    if (saving) {
+      return;
+    }
+    const next = values.title.trim();
     if (!next) {
+      form.reset({ title: lane.title });
       return;
     }
-
     if (next === lane.title) {
-      cancel();
       return;
     }
-
-    try {
-      await onRenameColumn({
-        columnId,
-        title: next,
-        expectedVersion: version,
-      });
-      setEditing(false);
-    } catch {
-      /* BoardDetailScreen surfaces conflicts via board refetch. */
-    }
-  };
+    await onRenameColumn({
+      columnId,
+      title: next,
+      expectedVersion: version,
+    });
+  });
 
   return (
     <YStack gap="$2">
       <div {...(dragHandleProps ?? {})} style={{ width: "100%" }}>
         <YStack gap="$2" position="relative" onFocus={onFocus} onBlur={onBlur}>
-          {canMoveColumn && !editing
+          {canMoveColumn
             ? (["left", "right"] as const).map((direction) => (
                 <EdgeMoveButton
                   key={direction}
@@ -107,85 +93,50 @@ export function ColumnHeaderWithInlineRename({
               borderRadius={9999}
               backgroundColor="$boardTextSubtle"
             />
-            {editing ? (
-              <YStack gap="$2" flex={1} minWidth={0}>
-                <YStack tag="label" gap="$2" htmlFor={`${labelId}-field`}>
-                  <Text id={labelId} fontWeight="600" color="$boardHeading">
-                    Column title
-                  </Text>
-                  <Input
-                    id={`${labelId}-field`}
-                    value={draft}
-                    onChange={(e) => {
-                      const event = e as unknown as {
-                        currentTarget?: { value?: string };
-                        nativeEvent?: { text?: string };
-                      };
-                      setDraft(event.currentTarget?.value ?? event.nativeEvent?.text ?? "");
-                    }}
-                    disabled={saving}
-                    autoFocus
-                    aria-labelledby={labelId}
-                    onBlur={() => {
-                      if (skipBlurSave.current || saving) {
-                        return;
-                      }
-
-                      void commit();
-                    }}
-                    onKeyDown={(e: { nativeEvent?: { key?: string }; key?: string }) => {
-                      const key = e.key ?? e.nativeEvent?.key ?? "";
-                      if (key === "Escape") {
-                        cancel();
-                      }
-
-                      if (key === "Enter") {
-                        void commit();
-                      }
-                    }}
-                    backgroundColor="$boardPanelSurfaceStrong"
-                    borderColor="$boardShellBorder"
-                  />
-                </YStack>
-                <XStack gap="$2" flexWrap="wrap">
-                  <BoardActionButton tone="accent" disabled={saving} onPress={() => void commit()}>
-                    {saving ? "Saving…" : "Save"}
-                  </BoardActionButton>
-                  <BoardActionButton tone="ghost" disabled={saving} onPress={cancel}>
-                    Cancel
-                  </BoardActionButton>
-                </XStack>
-              </YStack>
-            ) : (
+            <FormProvider {...form}>
               <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
-                <Text
-                  tag="h2"
-                  fontWeight="800"
+                <FormInlineTextField<{ title: string }, "title">
+                  name="title"
+                  aria-label="Column title"
+                  defaultValue={lane.title}
+                  disabled={blockActions}
+                  onBlur={() => {
+                    if (blockActions) return;
+                    void submit();
+                  }}
+                  onKeyDown={(event: { key?: string; nativeEvent?: { key?: string } }) => {
+                    const key = event.key ?? event.nativeEvent?.key ?? "";
+                    if (key === "Enter") {
+                      void submit();
+                    }
+                  }}
+                  width="auto"
+                  maxWidth="100%"
+                  flexGrow={1}
+                  flexShrink={1}
+                  minWidth={0}
                   color="$boardHeading"
                   fontSize="$6"
-                  numberOfLines={1}
-                >
-                  {lane.title}
-                </Text>
+                  fontWeight="800"
+                  borderWidth={1}
+                  borderRadius="$4"
+                  borderColor="transparent"
+                  backgroundColor="transparent"
+                  boxShadow="transparent 0px 0px 0px 0px"
+                  paddingHorizontal={0}
+                  paddingVertical={0}
+                  focusStyle={{ outlineWidth: 0 }}
+                  focusVisibleStyle={{
+                    outlineWidth: 0,
+                    backgroundColor: "$boardPanelSurfaceStrong",
+                    borderColor: "$boardAccent",
+                    boxShadow: "rgba(95, 121, 56, 0.16) 0px 0px 0px 3px",
+                  }}
+                />
                 <BoardPill>{lane.cards.length}</BoardPill>
               </XStack>
-            )}
+            </FormProvider>
           </XStack>
-
-          {!editing ? (
-            <XStack gap="$2" flexWrap="wrap">
-              <BoardActionButton
-                tone="ghost"
-                disabled={blockActions}
-                onPress={() => {
-                  setDraft(lane.title);
-                  setEditing(true);
-                }}
-              >
-                Rename
-              </BoardActionButton>
-            </XStack>
-          ) : null}
         </YStack>
       </div>
     </YStack>
