@@ -63,7 +63,10 @@ export function mergeDraggableStyle(
   const { style: dragStyle, ...rest } = draggableProps;
   return {
     rest: rest as Record<string, unknown>,
-    style: { ...base, ...(dragStyle as CSSProperties | undefined) },
+    // Prefer the base style so dynamic content changes (e.g. an auto-growing
+    // textarea) can influence layout. dnd's style can include a measured height
+    // which would otherwise freeze the wrapper size and cause visual overlap.
+    style: { ...(dragStyle as CSSProperties | undefined), ...base },
   };
 }
 
