@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@tamagui/button";
-import { Text } from "@tamagui/core";
+import { Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import { BoardActionButton, BoardSurface } from "./ui";
@@ -35,6 +35,7 @@ export function BoardDrawer({
   onHeightChange,
   children,
 }: Readonly<BoardDrawerProps>) {
+  const media = useMedia();
   const [heightPx, setHeightPx] = useState<number>(() => {
     const raw =
       typeof window === "undefined" ? null : window.localStorage.getItem(drawerHeightStorageKey);
@@ -88,11 +89,13 @@ export function BoardDrawer({
     window.addEventListener("pointerup", handleUp);
   };
 
+  const horizontalInset = media.maxSm ? "$4" : "$8";
+
   return (
     <YStack
       position="absolute"
-      left={0}
-      right={0}
+      left={horizontalInset}
+      right={horizontalInset}
       bottom={0}
       height={heightPx}
       zIndex={20}
@@ -171,7 +174,7 @@ export function BoardDrawer({
 
           <XStack gap="$2" alignItems="center">
             <BoardActionButton tone="ghost" onPress={onPromote}>
-              Promote to main
+              Display in main page
             </BoardActionButton>
             <BoardActionButton aria-label="Close drawer" tone="ghost" onPress={onClose}>
               Close

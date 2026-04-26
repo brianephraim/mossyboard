@@ -256,7 +256,7 @@ export function BoardWorkspaceScreen({
   }, [boardId, drawerBoardId]);
 
   return (
-    <>
+    <DragDropContext onDragEnd={onDragEnd} sensors={[programmaticSensor]}>
       <BoardLiveRegion message={announcement} />
       <BoardShell
         currentBoardId={boardId}
@@ -270,98 +270,97 @@ export function BoardWorkspaceScreen({
         }
         announcement={announcement}
         renderContent={() => (
-          <DragDropContext onDragEnd={onDragEnd} sensors={[programmaticSensor]}>
-            <YStack flex={1} minHeight={0}>
-              <BoardPane
-                role="main"
-                boardKey="main"
-                boardId={boardId}
-                search={search}
-                programmaticSensorApiRef={sensorApi}
-                boardQuery={mainQuery}
-                state={mainState}
-                mutations={mainMutations}
-                onOpenCard={(cardId) => updateRouteSearch({ card: cardId })}
-                onOpenCreateCard={(targetBoardId, columnId) =>
-                  setCreateCardTarget({ boardId: targetBoardId, columnId })
-                }
-                onOpenCreateColumn={(targetBoardId, afterColumnId) =>
-                  setCreateColumnTarget({ boardId: targetBoardId, afterColumnId })
-                }
-                bottomScrollPadding={drawerBoardId ? drawerHeightPx + 24 : undefined}
-                onSetView={(view) => updateRouteSearch({ view })}
-                onSetGroupBy={(groupBy) => {
-                  updateRouteSearch({ groupBy });
-                  setAnnouncement("Board grouping updated.");
-                }}
-                onTogglePriority={(priority) => {
-                  const nextPriority = togglePrioritySelection(search.priority, priority);
-                  updateRouteSearch({ priority: serializePriorityFilter(nextPriority) });
-                }}
-                onClearPriority={() => updateRouteSearch({ priority: undefined })}
-              />
-
-              {drawerBoardId ? (
-                <BoardDrawer
-                  boardId={drawerBoardId}
-                  boardName={drawerQuery.data?.board?.name ?? null}
-                  onClose={() => updateRouteSearch({ drawer: undefined })}
-                  onPromote={() => {
-                    void navigate({
-                      to: "/boards/$boardId",
-                      params: { boardId: drawerBoardId },
-                      search: {
-                        card: search.card,
-                        view: search.view,
-                        groupBy: search.groupBy,
-                        priority: serializePriorityFilter(search.priority),
-                        drawer: undefined,
-                      },
-                    });
-                  }}
-                  onHeightChange={(px) => {
-                    const { min, max } = getDrawerBoundsPx();
-                    const next = clamp(px, min, max);
-                    setDrawerHeightPx(next);
-                  }}
-                >
-                  {drawerQuery.isError && !drawerQuery.data ? (
-                    <YStack padding="$4" gap="$3">
-                      <Text color="$boardDangerText">Could not load drawer board.</Text>
-                      <BoardActionButton
-                        tone="ghost"
-                        onPress={() => updateRouteSearch({ drawer: undefined })}
-                      >
-                        Close
-                      </BoardActionButton>
-                      <BoardActionButton tone="ghost" onPress={() => void drawerQuery.refetch()}>
-                        Retry
-                      </BoardActionButton>
-                    </YStack>
-                  ) : (
-                    <BoardPane
-                      role="drawer"
-                      boardKey="drawer"
-                      boardId={drawerBoardId}
-                      search={search}
-                      programmaticSensorApiRef={sensorApi}
-                      boardQuery={drawerQuery}
-                      state={drawerState}
-                      mutations={drawerMutations}
-                      onOpenCard={(cardId) => updateRouteSearch({ card: cardId })}
-                      onOpenCreateCard={(targetBoardId, columnId) =>
-                        setCreateCardTarget({ boardId: targetBoardId, columnId })
-                      }
-                      onOpenCreateColumn={(targetBoardId, afterColumnId) =>
-                        setCreateColumnTarget({ boardId: targetBoardId, afterColumnId })
-                      }
-                    />
-                  )}
-                </BoardDrawer>
-              ) : null}
-            </YStack>
-          </DragDropContext>
+          <YStack flex={1} minHeight={0}>
+            <BoardPane
+              role="main"
+              boardKey="main"
+              boardId={boardId}
+              search={search}
+              programmaticSensorApiRef={sensorApi}
+              boardQuery={mainQuery}
+              state={mainState}
+              mutations={mainMutations}
+              onOpenCard={(cardId) => updateRouteSearch({ card: cardId })}
+              onOpenCreateCard={(targetBoardId, columnId) =>
+                setCreateCardTarget({ boardId: targetBoardId, columnId })
+              }
+              onOpenCreateColumn={(targetBoardId, afterColumnId) =>
+                setCreateColumnTarget({ boardId: targetBoardId, afterColumnId })
+              }
+              bottomScrollPadding={drawerBoardId ? drawerHeightPx + 24 : undefined}
+              onSetView={(view) => updateRouteSearch({ view })}
+              onSetGroupBy={(groupBy) => {
+                updateRouteSearch({ groupBy });
+                setAnnouncement("Board grouping updated.");
+              }}
+              onTogglePriority={(priority) => {
+                const nextPriority = togglePrioritySelection(search.priority, priority);
+                updateRouteSearch({ priority: serializePriorityFilter(nextPriority) });
+              }}
+              onClearPriority={() => updateRouteSearch({ priority: undefined })}
+            />
+          </YStack>
         )}
+        overlay={
+          drawerBoardId ? (
+            <BoardDrawer
+              boardId={drawerBoardId}
+              boardName={drawerQuery.data?.board?.name ?? null}
+              onClose={() => updateRouteSearch({ drawer: undefined })}
+              onPromote={() => {
+                void navigate({
+                  to: "/boards/$boardId",
+                  params: { boardId: drawerBoardId },
+                  search: {
+                    card: search.card,
+                    view: search.view,
+                    groupBy: search.groupBy,
+                    priority: serializePriorityFilter(search.priority),
+                    drawer: undefined,
+                  },
+                });
+              }}
+              onHeightChange={(px) => {
+                const { min, max } = getDrawerBoundsPx();
+                const next = clamp(px, min, max);
+                setDrawerHeightPx(next);
+              }}
+            >
+              {drawerQuery.isError && !drawerQuery.data ? (
+                <YStack padding="$4" gap="$3">
+                  <Text color="$boardDangerText">Could not load drawer board.</Text>
+                  <BoardActionButton
+                    tone="ghost"
+                    onPress={() => updateRouteSearch({ drawer: undefined })}
+                  >
+                    Close
+                  </BoardActionButton>
+                  <BoardActionButton tone="ghost" onPress={() => void drawerQuery.refetch()}>
+                    Retry
+                  </BoardActionButton>
+                </YStack>
+              ) : (
+                <BoardPane
+                  role="drawer"
+                  boardKey="drawer"
+                  boardId={drawerBoardId}
+                  search={search}
+                  programmaticSensorApiRef={sensorApi}
+                  boardQuery={drawerQuery}
+                  state={drawerState}
+                  mutations={drawerMutations}
+                  onOpenCard={(cardId) => updateRouteSearch({ card: cardId })}
+                  onOpenCreateCard={(targetBoardId, columnId) =>
+                    setCreateCardTarget({ boardId: targetBoardId, columnId })
+                  }
+                  onOpenCreateColumn={(targetBoardId, afterColumnId) =>
+                    setCreateColumnTarget({ boardId: targetBoardId, afterColumnId })
+                  }
+                />
+              )}
+            </BoardDrawer>
+          ) : null
+        }
       />
 
       <CardDetailSurface
@@ -450,7 +449,7 @@ export function BoardWorkspaceScreen({
           setCreateColumnTarget(null);
         }}
       />
-    </>
+    </DragDropContext>
   );
 }
 

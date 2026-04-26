@@ -32,6 +32,7 @@ type BoardShellProps = {
   announcement?: string | null;
   headerActions?: ReactNode;
   renderContent: (controls: { openCreateBoard: () => void }) => ReactNode;
+  overlay?: ReactNode;
   onOpenInDrawer?: (boardId: string) => void;
 };
 
@@ -149,6 +150,7 @@ export function BoardShell({
   announcement,
   headerActions,
   renderContent,
+  overlay,
   onOpenInDrawer,
 }: Readonly<BoardShellProps>) {
   const media = useMedia();
@@ -336,6 +338,8 @@ export function BoardShell({
           </BoardSurface>
         }
       />
+
+      {overlay}
 
       <PrettyModalWrap
         open={createBoardOpen}
