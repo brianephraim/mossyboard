@@ -63,6 +63,7 @@ function BoardRailBoardRow({
       groupBy: "column",
       card: undefined,
       priority: undefined,
+      tags: undefined,
       drawer: undefined,
     },
   });
@@ -184,6 +185,7 @@ export function BoardShell({
           groupBy: "column",
           card: undefined,
           priority: undefined,
+          tags: undefined,
           drawer: undefined,
         },
       });

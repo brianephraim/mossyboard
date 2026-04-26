@@ -15,7 +15,13 @@ import { BoardPane } from "./BoardPane";
 import { BoardShell } from "./BoardShell";
 import { CardDetailSurface } from "./CardDetailSurface";
 import { EditableBoardTitle } from "./EditableBoardTitle";
-import { parseBoardDetailSearch, serializePriorityFilter, togglePrioritySelection } from "./model";
+import {
+  parseBoardDetailSearch,
+  serializePriorityFilter,
+  serializeTagFilter,
+  togglePrioritySelection,
+  toggleTagSelection,
+} from "./model";
 import type { BoardDetailSearch, LoadedBoard } from "./types";
 import { BoardActionButton, BoardLiveRegion } from "./ui";
 import { useBoardMutations } from "./useBoardMutations";
@@ -35,6 +41,7 @@ type RawBoardDetailSearch = {
   view?: BoardDetailSearch["view"];
   groupBy?: BoardDetailSearch["groupBy"];
   priority?: string;
+  tags?: string;
   drawer?: string;
 };
 
@@ -334,6 +341,7 @@ export function BoardWorkspaceScreen({
                     view: search.view,
                     groupBy: search.groupBy,
                     priority: serializePriorityFilter(search.priority),
+                    tags: serializeTagFilter(search.tags),
                     drawer: undefined,
                   },
                 });
@@ -343,6 +351,13 @@ export function BoardWorkspaceScreen({
                 const next = clamp(px, min, max);
                 setDrawerHeightPx(next);
               }}
+              selectedTags={search.tags}
+              availableTags={availableTags}
+              onToggleTag={(normalizedName) => {
+                const next = toggleTagSelection(search.tags, normalizedName);
+                updateRouteSearch({ tags: serializeTagFilter(next) });
+              }}
+              onClearTags={() => updateRouteSearch({ tags: undefined })}
             >
               {drawerQuery.isError && !drawerQuery.data ? (
                 <YStack padding="$4" gap="$3">

@@ -3250,7 +3250,7 @@ EOF
 
 - Modify: `src/features/boards/BoardDrawer.tsx`
 
-- [ ] **Step 1: Inspect the existing Priority section as the template**
+- [x] **Step 1: Inspect the existing Priority section as the template** — note: the priority filter actually lives in `BoardPane.tsx` (`BoardControls`), not in `BoardDrawer.tsx`. Tags filter is implemented as a new section inside `BoardDrawer.tsx` per the spec's "drawer-only" intent.
 
 ```bash
 rg -n "Priority|priority" src/features/boards/BoardDrawer.tsx
@@ -3258,7 +3258,7 @@ rg -n "Priority|priority" src/features/boards/BoardDrawer.tsx
 
 Note its structure: a heading, a chip group, click handlers calling something like `togglePrioritySelection` and updating the URL search params.
 
-- [ ] **Step 2: Add a Tags section to `BoardDrawer.tsx`**
+- [x] **Step 2: Add a Tags section to `BoardDrawer.tsx`**
 
 Inside the drawer, below the priority section, add (importing as needed):
 
@@ -3321,7 +3321,7 @@ const selectedTags = search.tags;
 
 The exact `navigate` API call (`router.navigate`, `useNavigate`, `setSearch`, etc.) depends on what the existing priority section uses — copy that pattern verbatim.
 
-- [ ] **Step 3: Update the toolbar "Filtered" indicator (if any) to fold in tags**
+- [x] **Step 3: Update the toolbar "Filtered" indicator (if any) to fold in tags** — no toolbar "Filtered" indicator exists; `canReorderBoard` already includes `tags.length === 0` (Task 6).
 
 ```bash
 rg -n "priority\.length" src/features/boards | rg -v test
@@ -3329,13 +3329,13 @@ rg -n "priority\.length" src/features/boards | rg -v test
 
 For each match in non-test code that drives the "Filtered" badge condition, change `priority.length > 0` to `priority.length > 0 || tags.length > 0`.
 
-- [ ] **Step 4: Format**
+- [x] **Step 4: Format**
 
 ```bash
 npx prettier --write src/features/boards/BoardDrawer.tsx
 ```
 
-- [ ] **Step 5: Typecheck and test**
+- [x] **Step 5: Typecheck and test**
 
 ```bash
 npm run typecheck && npm run test
@@ -3354,7 +3354,7 @@ Open the drawer, confirm:
 - Clear removes the filter.
 - With the filter active, drag-to-reorder is disabled (the existing priority-filter behavior gates this; verify by trying to drag a card and confirming it doesn't move).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A

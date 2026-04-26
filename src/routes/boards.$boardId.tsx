@@ -15,6 +15,7 @@ export const Route = createFileRoute("/boards/$boardId")({
     view: (search.view === "list" ? "list" : "board") as "board" | "list",
     groupBy: (search.groupBy === "priority" ? "priority" : "column") as "column" | "priority",
     priority: typeof search.priority === "string" ? search.priority : undefined,
+    tags: typeof search.tags === "string" ? search.tags : undefined,
     drawer: typeof search.drawer === "string" ? search.drawer : undefined,
   }),
   component: BoardDetailRoute,

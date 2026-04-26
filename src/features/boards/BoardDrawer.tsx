@@ -4,7 +4,14 @@ import { Button } from "@tamagui/button";
 import { Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
+import { getTagSwatch } from "./tagPalette";
 import { BoardActionButton, BoardSurface } from "./ui";
+
+type DrawerTagOption = {
+  id: string;
+  name: string;
+  normalizedName: string;
+};
 
 const drawerHeightStorageKey = "boardDrawerHeightPx";
 
@@ -25,6 +32,10 @@ export type BoardDrawerProps = {
   onClose: () => void;
   onPromote: () => void;
   onHeightChange: (px: number) => void;
+  selectedTags: ReadonlyArray<string>;
+  availableTags: ReadonlyArray<DrawerTagOption>;
+  onToggleTag: (normalizedName: string) => void;
+  onClearTags: () => void;
   children: ReactNode;
 };
 
@@ -33,6 +44,10 @@ export function BoardDrawer({
   onClose,
   onPromote,
   onHeightChange,
+  selectedTags,
+  availableTags,
+  onToggleTag,
+  onClearTags,
   children,
 }: Readonly<BoardDrawerProps>) {
   const media = useMedia();
@@ -181,6 +196,38 @@ export function BoardDrawer({
             </BoardActionButton>
           </XStack>
         </XStack>
+
+        <YStack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$2" gap="$2">
+          <Text fontWeight="700" color="$boardHeading">
+            Tags
+          </Text>
+          {availableTags.length === 0 ? (
+            <Text color="$boardTextMuted">No tags yet. Add one to a card to get started.</Text>
+          ) : (
+            <XStack gap="$2" flexWrap="wrap" alignItems="center">
+              {availableTags.map((tag) => {
+                const isActive = selectedTags.includes(tag.normalizedName);
+                const swatch = getTagSwatch(tag.normalizedName);
+                return (
+                  <BoardActionButton
+                    key={tag.id}
+                    tone={isActive ? "accent" : "ghost"}
+                    backgroundColor={isActive ? (swatch.backgroundColor as any) : undefined}
+                    aria-pressed={isActive}
+                    onPress={() => onToggleTag(tag.normalizedName)}
+                  >
+                    {tag.name}
+                  </BoardActionButton>
+                );
+              })}
+              {selectedTags.length > 0 ? (
+                <BoardActionButton tone="ghost" onPress={onClearTags}>
+                  Clear
+                </BoardActionButton>
+              ) : null}
+            </XStack>
+          )}
+        </YStack>
 
         <YStack flex={1} minHeight={0}>
           {children}
