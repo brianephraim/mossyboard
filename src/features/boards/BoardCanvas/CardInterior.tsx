@@ -2,7 +2,11 @@ import type { DraggableProvided } from "@hello-pangea/dnd";
 import { Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
-import { FormInlineRenameField } from "../../../form";
+import {
+  FormInlineAutoGrowTextAreaField,
+  FormInlineRenameField,
+  FormInlineSubmitField,
+} from "../../../form";
 import { BoardActionButton, BoardPill, BoardSurface, PriorityPill } from "../ui";
 import type { BoardLane } from "../types";
 import { EdgeMoveButton } from "./EdgeMoveButton";
@@ -100,13 +104,48 @@ export function CardInterior({
           />
           <PriorityPill priority={card.priority} />
         </XStack>
-        {card.description ? (
-          <Text color="$boardTextMuted" numberOfLines={3}>
-            {card.description}
-          </Text>
-        ) : (
-          <Text color="$boardTextSubtle">No description yet.</Text>
-        )}
+        <FormInlineSubmitField<string>
+          defaultValue={card.description}
+          normalize={(value) => value.trimEnd()}
+          isNoop={(next, current) => next === current}
+          onSubmitValue={async (nextDescription) => {
+            await onRenameTitle({
+              cardId: card.id,
+              title: card.title,
+              description: nextDescription,
+              priority: card.priority,
+              expectedVersion: card.version,
+            });
+          }}
+          render={({ onBlur, onKeyDown }) => (
+            <FormInlineAutoGrowTextAreaField<{ value: string }, "value">
+              name="value"
+              aria-label="Card description"
+              defaultValue={card.description}
+              focusOnMouseUp
+              onBlur={onBlur}
+              onKeyDown={onKeyDown}
+              color="$boardTextMuted"
+              fontSize="$3"
+              borderWidth={1}
+              borderRadius="$4"
+              borderColor="transparent"
+              backgroundColor="transparent"
+              boxShadow="transparent 0px 0px 0px 0px"
+              paddingHorizontal={0}
+              paddingVertical={0}
+              minHeightPx={24}
+              maxHeightPx={180}
+              focusStyle={{ outlineWidth: 0 }}
+              focusVisibleStyle={{
+                outlineWidth: 0,
+                backgroundColor: "$boardPanelSurfaceStrong",
+                borderColor: "$boardAccent",
+                boxShadow: "rgba(95, 121, 56, 0.16) 0px 0px 0px 3px",
+              }}
+            />
+          )}
+        />
 
         <XStack gap="$2" flexWrap="wrap" alignItems="center">
           <BoardActionButton tone="ghost" onPress={onOpen}>
