@@ -1,4 +1,5 @@
-import type * as React from "react";
+import type { ComponentProps } from "react";
+import { Input } from "@tamagui/input";
 import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -11,6 +12,20 @@ type InlineKeyDownEvent = {
   stopPropagation?: () => void;
 };
 
+type InlineRenameInputProps = Omit<
+  ComponentProps<typeof Input>,
+  "aria-describedby" | "aria-invalid" | "id" | "name" | "ref" | "value" | "onBlur" | "onKeyDown"
+> & {
+  // Tamagui style props (web/native unions) aren't always reflected on the
+  // `Input` component props type, but they are supported at runtime.
+  fontSize?: unknown;
+  fontWeight?: unknown;
+  color?: unknown;
+  boxShadow?: unknown;
+  focusStyle?: unknown;
+  focusVisibleStyle?: unknown;
+};
+
 export type FormInlineRenameFieldProps = {
   ariaLabel: string;
   defaultValue: string;
@@ -18,17 +33,7 @@ export type FormInlineRenameFieldProps = {
   focusOnMouseUp?: boolean;
   maxLength?: number;
   onSubmitTitle: (nextTitle: string) => Promise<void> | void;
-  inputProps?: Omit<
-    React.ComponentProps<typeof FormInlineTextField<{ title: string }, "title">>,
-    | "name"
-    | "defaultValue"
-    | "disabled"
-    | "aria-label"
-    | "focusOnMouseUp"
-    | "maxLength"
-    | "onBlur"
-    | "onKeyDown"
-  >;
+  inputProps?: InlineRenameInputProps;
 };
 
 export function FormInlineRenameField({

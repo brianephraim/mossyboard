@@ -14,7 +14,7 @@ type TamaguiTextInputChangeEvent =
       currentTarget?: {
         value?: string | null;
       };
-      nativeEvent?: Event | { text?: string | null };
+      nativeEvent?: unknown;
     };
 
 function isNativeTextEvent(
