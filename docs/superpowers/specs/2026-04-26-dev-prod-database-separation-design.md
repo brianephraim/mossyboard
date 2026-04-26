@@ -529,86 +529,86 @@ concern at a time, and a verification pass before moving on.
 
 ### Phase 1 — Migration safety rail
 
-- [ ] Add `scripts/db-migrate.mjs` and wire `package.json` `db:migrate` through it.
-- [ ] Enforce the local-only default and require both `KANBAN_ALLOW_REMOTE_MIGRATE=1` and
+- [x] Add `scripts/db-migrate.mjs` and wire `package.json` `db:migrate` through it.
+- [x] Enforce the local-only default and require both `KANBAN_ALLOW_REMOTE_MIGRATE=1` and
       `CONFIRM_PROD_MIGRATE=1` before allowing any remote migration.
-- [ ] Verify the guard rejects a Supabase/prod-shaped `DATABASE_URL` and still allows localhost.
-- [ ] Commit once this is green.
+- [x] Verify the guard rejects a Supabase/prod-shaped `DATABASE_URL` and still allows localhost.
+- [x] Commit once this is green.
       Suggested commit: `Guard database migrations from remote targets`
 
 ### Phase 2 — Production build migration path
 
-- [ ] Add `scripts/vercel-build.mjs` and wire `package.json` `vercel-build` to it.
-- [ ] Ensure migrations run only when `VERCEL_ENV === "production"` and that build failure stops
+- [x] Add `scripts/vercel-build.mjs` and wire `package.json` `vercel-build` to it.
+- [x] Ensure migrations run only when `VERCEL_ENV === "production"` and that build failure stops
       the deploy.
-- [ ] Smoke-test the script locally with production vs non-production env values.
-- [ ] Commit once the production-only behavior is verified.
+- [x] Smoke-test the script locally with production vs non-production env values.
+- [x] Commit once the production-only behavior is verified.
       Suggested commit: `Run production migrations from vercel build`
 
 ### Phase 3 — Move production secrets out of local dev
 
-- [ ] Move prod-only env values out of local `.env` and into Vercel env config.
-- [ ] Confirm the local `.env` shape is dev-only after the move.
-- [ ] Capture any exact `vercel env add` commands or dashboard steps in the implementation notes
+- [~] Move prod-only env values out of local `.env` and into Vercel env config.
+- [x] Confirm the local `.env` shape is dev-only after the move.
+- [x] Capture any exact `vercel env add` commands or dashboard steps in the implementation notes
       for the engineer doing the rollout.
-- [ ] No code commit required for the Vercel dashboard changes themselves, but commit any repo
+- [x] No code commit required for the Vercel dashboard changes themselves, but commit any repo
       changes that support the new env layout in the nearest related phase.
 
 ### Phase 4 — Local auth emulator foundation
 
-- [ ] Add `firebase.json` and `.firebaserc` for the local auth emulator.
-- [ ] Update client Firebase initialization to call `connectAuthEmulator(...)` outside
+- [x] Add `firebase.json` and `.firebaserc` for the local auth emulator.
+- [x] Update client Firebase initialization to call `connectAuthEmulator(...)` outside
       production.
-- [ ] Verify the server-side Firebase admin initialization works with
+- [x] Verify the server-side Firebase admin initialization works with
       `FIREBASE_AUTH_EMULATOR_HOST` and a demo project id.
-- [ ] Manually run the emulator and confirm a local sign-in works before wiring automation.
-- [ ] Commit after client/server emulator behavior is working end-to-end.
+- [x] Manually run the emulator and confirm a local sign-in works before wiring automation.
+- [x] Commit after client/server emulator behavior is working end-to-end.
       Suggested commit: `Add Firebase auth emulator support for local development`
 
 ### Phase 5 — Dev email safety stub
 
-- [ ] Add the `disabled-` Resend guard in the email sending path.
-- [ ] Verify dev email calls log or stub successfully without attempting a real send.
-- [ ] Commit once local email flows are safe by default.
+- [x] Add the `disabled-` Resend guard in the email sending path.
+- [x] Verify dev email calls log or stub successfully without attempting a real send.
+- [x] Commit once local email flows are safe by default.
       Suggested commit: `Stub email delivery in development`
 
 ### Phase 6 — Retarget tests to local Postgres
 
-- [ ] Update test DB code to use `DATABASE_URL_TEST` directly and remove `_POOLER` fallbacks.
-- [ ] Adjust SSL handling so localhost test URLs are not rewritten to require SSL.
-- [ ] Run the relevant test suite and confirm it works against local Postgres.
-- [ ] Commit after tests pass with the new local-only setup.
+- [x] Update test DB code to use `DATABASE_URL_TEST` directly and remove `_POOLER` fallbacks.
+- [x] Adjust SSL handling so localhost test URLs are not rewritten to require SSL.
+- [x] Run the relevant test suite and confirm it works against local Postgres.
+- [x] Commit after tests pass with the new local-only setup.
       Suggested commit: `Point tests at local Postgres`
 
 ### Phase 7 — Build the setup wizard
 
-- [ ] Create `scripts/dev-setup.mjs` and wire `predev` / `dev:setup` to it.
-- [ ] Implement detection and guard rails first: `.env` existence, prod-creds bleed check, local
+- [x] Create `scripts/dev-setup.mjs` and wire `predev` / `dev:setup` to it.
+- [x] Implement detection and guard rails first: `.env` existence, prod-creds bleed check, local
       DB flavor detection, required tooling checks.
-- [ ] Add service-start, database/role creation, emulator start, default user creation, and
+- [x] Add service-start, database/role creation, emulator start, default user creation, and
       migration execution in that order.
-- [ ] Add prompts last, keeping the wizard idempotent and fast on re-run.
-- [ ] Run the wizard from a fresh checkout or worktree and verify it can bring the app to a
+- [x] Add prompts last, keeping the wizard idempotent and fast on re-run.
+- [x] Run the wizard from a fresh checkout or worktree and verify it can bring the app to a
       usable local state.
-- [ ] Commit once the full wizard flow is stable.
+- [x] Commit once the full wizard flow is stable.
       Suggested commit: `Add interactive local development setup wizard`
 
 ### Phase 8 — Seed and reset support
 
-- [ ] Add `scripts/db-seed.mjs` with idempotent starter data tied to `KANBAN_DEV_OWNER_ID`.
-- [ ] Add or stub `scripts/db-reset.mjs` only to the extent needed by this phase's scripts/docs.
-- [ ] Verify seed behavior on an empty local database and confirm it does not duplicate data on
+- [x] Add `scripts/db-seed.mjs` with idempotent starter data tied to `KANBAN_DEV_OWNER_ID`.
+- [x] Add or stub `scripts/db-reset.mjs` only to the extent needed by this phase's scripts/docs.
+- [x] Verify seed behavior on an empty local database and confirm it does not duplicate data on
       re-run.
-- [ ] Commit once local bootstrap data is reliable.
+- [x] Commit once local bootstrap data is reliable.
       Suggested commit: `Add local database seed workflow`
 
 ### Phase 9 — Documentation and onboarding pass
 
-- [ ] Add top-level `README.md` with local setup, test, and deploy instructions.
-- [ ] Add `.env.example` matching the new dev-only env layout.
-- [ ] Verify `README.md`, `package.json` scripts, and deploy behavior remain aligned with Vercel
+- [x] Add top-level `README.md` with local setup, test, and deploy instructions.
+- [x] Add `.env.example` matching the new dev-only env layout.
+- [x] Verify `README.md`, `package.json` scripts, and deploy behavior remain aligned with Vercel
       as the source of truth.
-- [ ] Commit once a fresh reader can follow the repo docs without tribal knowledge.
+- [x] Commit once a fresh reader can follow the repo docs without tribal knowledge.
       Suggested commit: `Document local setup and production deployment flow`
 
 ### Final verification sweep
