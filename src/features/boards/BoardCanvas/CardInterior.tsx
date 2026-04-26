@@ -1,20 +1,23 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
-import { useState } from "react";
-import { Text } from "@tamagui/core";
+import { useEffect, useRef, useState } from "react";
+import { Text, Theme } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
+import { Popover } from "@tamagui/popover";
 
 import {
   FormInlineAutoGrowTextAreaField,
   FormInlineRenameField,
   FormInlineSubmitField,
 } from "../../../form";
-import { BoardActionButton, BoardPill, BoardSurface, PriorityPill } from "../ui";
+import { boardPriorityMeta, boardPriorityValues } from "../model";
+import { BoardActionButton, BoardPill, BoardSurface } from "../ui";
 import type { BoardLane } from "../types";
 import { EdgeMoveButton } from "./EdgeMoveButton";
 import { CARD_MOVE_EDGE_SIZE_PX } from "./layout";
 import { useEdgeHoverFocus } from "./useEdgeHoverFocus";
 
 type Direction = "up" | "down" | "left" | "right";
+const PRIORITY_POPOVER_DRAG_THRESHOLD_PX = 5;
 
 type CardInteriorProps = {
   card: BoardLane["cards"][number];
@@ -49,6 +52,23 @@ export function CardInterior({
   });
   const moveControlsVisible = canMove && visible;
   const [descriptionFocused, setDescriptionFocused] = useState(false);
+  const [priorityPickerOpen, setPriorityPickerOpen] = useState(false);
+  const priorityGestureRef = useRef<{ movedBeyondThreshold: boolean } | null>(null);
+
+  // Local optimistic priority — decoupled from the upstream board state pipeline so
+  // the displayed pill reflects the user's choice the moment they click, even if the
+  // global optimistic board update takes a turn of the event loop to propagate down.
+  // Cleared automatically once the prop catches up to the chosen value.
+  const [pendingPriority, setPendingPriority] = useState<
+    BoardLane["cards"][number]["priority"] | null
+  >(null);
+  useEffect(() => {
+    if (pendingPriority !== null && card.priority === pendingPriority) {
+      setPendingPriority(null);
+    }
+  }, [card.priority, pendingPriority]);
+
+  const displayedPriority = pendingPriority ?? card.priority;
 
   return (
     <div {...(dragHandleProps ?? {})} style={{ cursor: dragHandleProps ? "grab" : undefined }}>
@@ -106,7 +126,122 @@ export function CardInterior({
               },
             }}
           />
-          <PriorityPill priority={card.priority} />
+          <Theme name="light">
+            <Popover
+              open={priorityPickerOpen}
+              onOpenChange={setPriorityPickerOpen}
+              placement="bottom-end"
+            >
+              <Popover.Anchor asChild>
+                <BoardActionButton
+                  aria-label="Edit priority"
+                  tone="ghost"
+                  paddingHorizontal="$3"
+                  paddingVertical="$2"
+                  minHeight={0}
+                  height="auto"
+                  backgroundColor={
+                    (boardPriorityMeta[displayedPriority]?.backgroundColor as any) ??
+                    "$boardAccentSoft"
+                  }
+                  color={(boardPriorityMeta[displayedPriority]?.textColor as any) ?? "$boardAccent"}
+                  hoverStyle={{ opacity: 0.92 }}
+                  pressStyle={{ opacity: 0.86 }}
+                  onMouseDown={(event) => {
+                    if (typeof window === "undefined") {
+                      setPriorityPickerOpen(true);
+                      return;
+                    }
+
+                    const startX = event.clientX;
+                    const startY = event.clientY;
+                    const state = { movedBeyondThreshold: false };
+                    priorityGestureRef.current = state;
+
+                    const onWindowMove = (windowEvent: globalThis.MouseEvent) => {
+                      if (state.movedBeyondThreshold) return;
+                      const dx = windowEvent.clientX - startX;
+                      const dy = windowEvent.clientY - startY;
+                      const dist = Math.hypot(dx, dy);
+                      if (dist >= PRIORITY_POPOVER_DRAG_THRESHOLD_PX) {
+                        state.movedBeyondThreshold = true;
+                      }
+                    };
+
+                    const onWindowUp = () => {
+                      window.removeEventListener("mousemove", onWindowMove);
+                      window.removeEventListener("mouseup", onWindowUp);
+                      if (!state.movedBeyondThreshold) {
+                        setPriorityPickerOpen(true);
+                      }
+                      priorityGestureRef.current = null;
+                    };
+
+                    window.addEventListener("mousemove", onWindowMove);
+                    window.addEventListener("mouseup", onWindowUp);
+                  }}
+                  onPress={() => setPriorityPickerOpen(true)}
+                >
+                  {(boardPriorityMeta[displayedPriority]?.shortLabel as string | undefined) ??
+                    "Priority"}
+                </BoardActionButton>
+              </Popover.Anchor>
+
+              <Popover.Content
+                elevate
+                padding="$3"
+                borderRadius="$6"
+                borderWidth={1}
+                borderColor="$boardShellBorder"
+                backgroundColor="$boardShellSurface"
+                gap="$2"
+                width={220}
+                zIndex={1000}
+              >
+                <Popover.Arrow borderWidth={1} borderColor="$boardShellBorder" />
+                <YStack gap="$2">
+                  <Text fontSize="$3" fontWeight="700" color="$boardHeading">
+                    Priority
+                  </Text>
+                  <YStack gap="$2">
+                    {boardPriorityValues.map((priority) => {
+                      const meta = boardPriorityMeta[priority];
+                      const selected = priority === displayedPriority;
+                      return (
+                        <BoardActionButton
+                          key={priority}
+                          tone={selected ? "accent" : "default"}
+                          onPress={async () => {
+                            // Stamp the local optimistic priority FIRST so the pill repaints
+                            // before any await crosses the event loop or the popover closes.
+                            setPendingPriority(priority);
+                            setPriorityPickerOpen(false);
+                            if (priority === card.priority) {
+                              setPendingPriority(null);
+                              return;
+                            }
+                            try {
+                              await onRenameTitle({
+                                cardId: card.id,
+                                title: card.title,
+                                description: card.description,
+                                priority,
+                                expectedVersion: card.version,
+                              });
+                            } catch {
+                              setPendingPriority(null);
+                            }
+                          }}
+                        >
+                          {meta.label}
+                        </BoardActionButton>
+                      );
+                    })}
+                  </YStack>
+                </YStack>
+              </Popover.Content>
+            </Popover>
+          </Theme>
         </XStack>
         <FormInlineSubmitField<string>
           defaultValue={card.description}

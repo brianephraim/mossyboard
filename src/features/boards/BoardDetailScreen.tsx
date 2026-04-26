@@ -797,6 +797,27 @@ export function BoardDetailScreen({
                 setCreateCardColumnId(columnId);
               }}
               onRenameCardTitle={async (input) => {
+                if (board) {
+                  const nextBoard: LoadedBoard = {
+                    ...board,
+                    columns: board.columns.map((column) => ({
+                      ...column,
+                      cards: column.cards.map((card) =>
+                        card.id === input.cardId
+                          ? {
+                              ...card,
+                              title: input.title,
+                              description: input.description,
+                              priority: input.priority,
+                            }
+                          : card,
+                      ),
+                    })),
+                  };
+                  setOptimisticBoard(nextBoard);
+                  setConflictMessage(null);
+                }
+
                 await updateCard.mutateAsync({
                   cardId: input.cardId,
                   title: input.title,
