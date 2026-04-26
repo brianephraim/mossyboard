@@ -20,6 +20,7 @@ const mockAuth = {
 
 vi.mock("firebase/auth", () => ({
   browserLocalPersistence: {},
+  connectAuthEmulator: vi.fn(),
   createUserWithEmailAndPassword: (...args: any[]) => mockCreateUser(...args),
   getAuth: () => mockAuth,
   onIdTokenChanged: (...args: any[]) => mockOnIdTokenChanged(...args),

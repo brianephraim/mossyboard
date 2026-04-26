@@ -19,7 +19,7 @@ export async function migrateTestDb() {
 }
 
 export function getTestDatabaseUrl() {
-  const testUrl = process.env.DATABASE_URL_TEST_POOLER ?? process.env.DATABASE_URL_TEST;
+  const testUrl = process.env.DATABASE_URL_TEST;
   assert.ok(testUrl, "DATABASE_URL_TEST must be set");
   return testUrl;
 }
@@ -27,6 +27,9 @@ export function getTestDatabaseUrl() {
 export function requireSsl(url: string) {
   try {
     const parsed = new URL(url);
+    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+      return parsed.toString();
+    }
     if (!parsed.searchParams.has("sslmode")) parsed.searchParams.set("sslmode", "require");
     return parsed.toString();
   } catch {

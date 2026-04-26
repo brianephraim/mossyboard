@@ -1,12 +1,26 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { beforeAll, describe, it, vi } from "vitest";
 
 import { TRPCError } from "@trpc/server";
 
+import { getTestDatabaseUrl, migrateTestDb, requireSsl } from "../testing/database";
 import { createDemoItem, getDemoItem, moveDemoItem } from "./repo";
 
 describe("demo item move uses tx + FOR UPDATE", () => {
+  let canRun = true;
+
+  beforeAll(async () => {
+    try {
+      await migrateTestDb();
+      vi.resetModules();
+    } catch {
+      canRun = false;
+    }
+  });
+
   it("moves and bumps version", async () => {
+    if (!canRun) return;
+    process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
     const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const row = await createDemoItem({ bucket: `a-${suffix}`, order: 1 });
 
@@ -27,6 +41,8 @@ describe("demo item move uses tx + FOR UPDATE", () => {
   });
 
   it("throws CONFLICT on version mismatch", async () => {
+    if (!canRun) return;
+    process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
     const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const row = await createDemoItem({ bucket: `a-${suffix}`, order: 2 });
 

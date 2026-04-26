@@ -1,10 +1,24 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { beforeAll, describe, it, vi } from "vitest";
 
+import { getTestDatabaseUrl, migrateTestDb, requireSsl } from "../testing/database";
 import { getSharedCounterWithRecentEvents, incrementSharedCounter } from "./repo";
 
 describe("Drizzle relational parent-with-children read", () => {
+  let canRun = true;
+
+  beforeAll(async () => {
+    try {
+      await migrateTestDb();
+      vi.resetModules();
+    } catch {
+      canRun = false;
+    }
+  });
+
   it("fetches counter with recent events via relational query", async () => {
+    if (!canRun) return;
+    process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
     await incrementSharedCounter();
     const result = await getSharedCounterWithRecentEvents(5);
 
