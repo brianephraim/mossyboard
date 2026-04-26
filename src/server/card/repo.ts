@@ -2,10 +2,19 @@ import { randomUUID } from "node:crypto";
 
 import { and, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 
-import { boards, cards, cardTags, type CardPriority, columns, tags } from "../db/schema";
+import {
+  cardPriorityValues,
+  boards,
+  cards,
+  cardTags,
+  columns,
+  tags,
+  type CardPriority,
+} from "../db/schema";
 import { db } from "../db/client";
 import { trpcErrors } from "../trpc/init";
 import { resolveOrderedPosition } from "../board/ordered-position";
+import { keyBetween } from "../../lib/ordering/key-between";
 import {
   getOwnedBoard,
   getOwnedCard,
@@ -15,6 +24,11 @@ import {
   lockOwnedCard,
   touchBoard,
 } from "../board/repo-shared";
+
+const POSITION_ALPHABET = "0123456789";
+const POSITION_BASE = BigInt(POSITION_ALPHABET.length);
+const POSITION_KEY_WIDTH = 16;
+const MAX_POSITION_VALUE = POSITION_BASE ** BigInt(POSITION_KEY_WIDTH) - 1n;
 
 export type CardTagSummary = {
   id: string;
@@ -47,6 +61,179 @@ export type CardListItemRow = {
   updatedAt: Date;
   tags: CardTagSummary[];
 };
+
+function randomIntInclusive(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomChoice<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)] as T;
+}
+
+function generateRandomTitle() {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const targetLength = randomIntInclusive(5, 50);
+
+  for (let attempt = 0; attempt < 20; attempt++) {
+    let out = "";
+    for (let i = 0; i < targetLength; i++) {
+      const roll = Math.random();
+      if (roll < 0.15) {
+        out += " ";
+        continue;
+      }
+      out += chars[Math.floor(Math.random() * chars.length)];
+    }
+    const trimmed = out.trim();
+    if (trimmed.length >= 5 && trimmed.length <= 50) {
+      return trimmed;
+    }
+  }
+
+  // Fallback: guaranteed non-empty + within bounds.
+  return "Sample card";
+}
+
+function encodePositionKey(input: bigint): string {
+  if (input <= 0n || input >= MAX_POSITION_VALUE) {
+    throw new Error("Position key is out of range");
+  }
+
+  let remaining = input;
+  const digits = Array.from({ length: POSITION_KEY_WIDTH }, () => POSITION_ALPHABET[0]);
+
+  for (let index = POSITION_KEY_WIDTH - 1; index >= 0; index -= 1) {
+    const digit = Number(remaining % POSITION_BASE);
+    digits[index] = POSITION_ALPHABET[digit] ?? POSITION_ALPHABET[0];
+    remaining /= POSITION_BASE;
+  }
+
+  return digits.join("");
+}
+
+async function rebalancePositionsForColumn(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  input: { columnId: string },
+) {
+  const ordered = await tx
+    .select({ id: cards.id })
+    .from(cards)
+    .where(and(eq(cards.columnId, input.columnId), isNull(cards.deletedAt)))
+    .orderBy(cards.position, cards.id);
+
+  if (ordered.length === 0) {
+    return null;
+  }
+
+  const n = BigInt(ordered.length);
+  const step = MAX_POSITION_VALUE / (n + 1n);
+  if (step <= 1n) {
+    throw trpcErrors.conflict("Unable to rebalance card positions");
+  }
+
+  const updates = ordered.map((row, idx) => {
+    const value = step * BigInt(idx + 1);
+    return { id: row.id, position: encodePositionKey(value) };
+  });
+
+  await tx.execute(sql`
+    UPDATE ${cards}
+    SET position = CASE id
+      ${sql.join(
+        updates.map((u) => sql`WHEN ${u.id} THEN ${u.position}`),
+        sql.raw(" "),
+      )}
+      ELSE position
+    END
+    WHERE ${cards.columnId} = ${input.columnId} AND ${cards.deletedAt} IS NULL
+  `);
+
+  const last = updates[updates.length - 1];
+  return last?.position ?? null;
+}
+
+export async function addSampleCardsToBoard(input: {
+  ownerId: string;
+  boardId: string;
+  count: number;
+}): Promise<{ createdCount: number }> {
+  if (!Number.isInteger(input.count) || input.count < 1 || input.count > 2000) {
+    throw trpcErrors.badRequest("Invalid count");
+  }
+
+  return db.transaction(async (tx) => {
+    const board = await getOwnedBoard(tx, {
+      ownerId: input.ownerId,
+      boardId: input.boardId,
+    });
+    if (!board) {
+      throw trpcErrors.notFound("Board not found");
+    }
+
+    const activeColumns = await tx
+      .select({
+        id: columns.id,
+      })
+      .from(columns)
+      .where(and(eq(columns.boardId, board.id), isNull(columns.deletedAt)));
+
+    if (activeColumns.length === 0) {
+      throw trpcErrors.badRequest("Board has no columns");
+    }
+
+    const byColumn = new Map<string, number>();
+    for (const col of activeColumns) {
+      byColumn.set(col.id, 0);
+    }
+    for (let i = 0; i < input.count; i++) {
+      const col = randomChoice(activeColumns);
+      byColumn.set(col.id, (byColumn.get(col.id) ?? 0) + 1);
+    }
+
+    const now = new Date();
+    let createdCount = 0;
+
+    for (const [columnId, countForColumn] of byColumn.entries()) {
+      if (countForColumn <= 0) {
+        continue;
+      }
+
+      const ordered = await listActiveCardsForColumn(tx, { columnId });
+      let lastPosition: string | null =
+        ordered.length > 0 ? ordered[ordered.length - 1]!.position : null;
+
+      const values: Array<typeof cards.$inferInsert> = [];
+      for (let i = 0; i < countForColumn; i++) {
+        try {
+          lastPosition = keyBetween(lastPosition, null);
+        } catch {
+          // Fractional ordering space can be exhausted near MAX when repeatedly appending.
+          // Rebalance this column's existing keys to regain space, then retry.
+          lastPosition = await rebalancePositionsForColumn(tx, { columnId });
+          lastPosition = keyBetween(lastPosition, null);
+        }
+        values.push({
+          id: randomUUID(),
+          columnId,
+          title: generateRandomTitle(),
+          description: "",
+          priority: randomChoice(cardPriorityValues),
+          position: lastPosition,
+          version: 0,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      await tx.insert(cards).values(values);
+      createdCount += values.length;
+    }
+
+    await touchBoard(tx, { boardId: board.id, now });
+
+    return { createdCount };
+  });
+}
 
 export async function createCard(input: {
   ownerId: string;

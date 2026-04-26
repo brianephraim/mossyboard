@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  addSampleDataToBoardForUser,
   createBoardForUser,
   getBoardWithColumnsAndCardsForUser,
   listBoardsForUser,
@@ -40,4 +41,14 @@ export const boardRouter = t.router({
   softDelete: protectedProcedure.input(boardIdInput).mutation(({ ctx, input }) => {
     return softDeleteBoardForUser(ctx.userId, input);
   }),
+  addSampleData: protectedProcedure
+    .input(
+      z.object({
+        boardId: z.string().uuid(),
+        count: z.number().int().min(1).max(2000),
+      }),
+    )
+    .mutation(({ ctx, input }) => {
+      return addSampleDataToBoardForUser(ctx.userId, input);
+    }),
 });

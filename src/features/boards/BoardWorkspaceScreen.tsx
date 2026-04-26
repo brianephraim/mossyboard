@@ -5,7 +5,7 @@ import type { Sensor, SensorAPI } from "@hello-pangea/dnd";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { useNavigate } from "@tanstack/react-router";
 import { Text, useMedia } from "@tamagui/core";
-import { YStack } from "@tamagui/stacks";
+import { XStack, YStack } from "@tamagui/stacks";
 
 import { FormRoot, FormTextField } from "../../form";
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
@@ -34,6 +34,14 @@ type DeleteBoardModalProps = Readonly<{
   isDeleting: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void | Promise<void>;
+}>;
+
+type AddSampleDataModalProps = Readonly<{
+  open: boolean;
+  isAdding: boolean;
+  errorMessage: string | null;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (count: number) => void | Promise<void>;
 }>;
 
 type RawBoardDetailSearch = {
@@ -147,6 +155,7 @@ export function BoardWorkspaceScreen({
     afterColumnId: string | null;
   } | null>(null);
   const [deleteBoardOpen, setDeleteBoardOpen] = useState(false);
+  const [addSampleDataOpen, setAddSampleDataOpen] = useState(false);
   const [drawerHeightPx, setDrawerHeightPx] = useState<number>(() => {
     const fromStorage = readDrawerHeightPx();
     const { min, max } = getDrawerBoundsPx();
@@ -253,6 +262,23 @@ export function BoardWorkspaceScreen({
 
   const selectedCardId = search.card;
 
+  const addSampleData = trpc.board.addSampleData.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        mainQuery.refetch(),
+        drawerBoardId ? drawerQuery.refetch() : Promise.resolve(),
+        utils.card.listByBoard.invalidate({ boardId }),
+      ]);
+      setAddSampleDataOpen(false);
+      setAnnouncement("Sample cards added.");
+    },
+    onError: async (error) => {
+      mainState.setOptimisticBoard(null);
+      mainState.setConflictMessage(error.message);
+      await mainQuery.refetch();
+    },
+  });
+
   const title: ReactNode = mainBoard ? (
     <EditableBoardTitle
       title={mainBoard.name}
@@ -286,9 +312,14 @@ export function BoardWorkspaceScreen({
         subtitle="Plan, filter, regroup, and move work without leaving the board route."
         contentBottomInsetPx={drawerBoardId ? drawerHeightPx : 0}
         headerActions={
-          <BoardActionButton tone="danger" onPress={() => setDeleteBoardOpen(true)}>
-            Delete board
-          </BoardActionButton>
+          <XStack gap="$3" flexWrap="wrap">
+            <BoardActionButton tone="ghost" onPress={() => setAddSampleDataOpen(true)}>
+              Add sample data
+            </BoardActionButton>
+            <BoardActionButton tone="danger" onPress={() => setDeleteBoardOpen(true)}>
+              Delete board
+            </BoardActionButton>
+          </XStack>
         }
         announcement={announcement}
         renderContent={() => (
@@ -437,6 +468,20 @@ export function BoardWorkspaceScreen({
         }}
       />
 
+      <AddSampleDataModal
+        open={addSampleDataOpen}
+        isAdding={addSampleData.isPending}
+        errorMessage={addSampleData.error?.message ?? null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddSampleDataOpen(false);
+          }
+        }}
+        onSubmit={async (count) => {
+          await addSampleData.mutateAsync({ boardId, count });
+        }}
+      />
+
       <CreateCardModal
         openTarget={createCardTarget}
         onOpenTargetChange={setCreateCardTarget}
@@ -490,6 +535,82 @@ export function BoardWorkspaceScreen({
 }
 
 type CreateCardForm = { title: string };
+
+type AddSampleDataForm = { count: string };
+
+function AddSampleDataModal({
+  open,
+  isAdding,
+  errorMessage,
+  onOpenChange,
+  onSubmit,
+}: AddSampleDataModalProps) {
+  const formId = useMemo(() => `add-sample-data-${Math.random().toString(36).slice(2)}`, []);
+  const form = useForm<AddSampleDataForm>({ defaultValues: { count: "200" } });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({ count: "200" });
+    }
+  }, [form, open]);
+
+  return (
+    <PrettyModalWrap
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Add sample data"
+      description="Create randomized cards and spread them across existing columns."
+      footer={
+        <>
+          <BoardActionButton tone="ghost" disabled={isAdding} onPress={() => onOpenChange(false)}>
+            Cancel
+          </BoardActionButton>
+          <BoardActionButton tone="accent" disabled={isAdding} type="submit" form={formId}>
+            {isAdding ? "Adding…" : "Add cards"}
+          </BoardActionButton>
+        </>
+      }
+    >
+      <YStack gap="$3">
+        <FormRoot
+          id={formId}
+          form={form}
+          gap="$3"
+          onSubmit={async (values) => {
+            await onSubmit(Number(values.count));
+          }}
+        >
+          <FormTextField<AddSampleDataForm, "count">
+            name="count"
+            label="How many cards?"
+            rules={{
+              required: "Card count is required.",
+              validate: (value) => {
+                const n = Number(value);
+                if (!Number.isFinite(n) || !Number.isInteger(n)) {
+                  return "Enter a whole number.";
+                }
+                if (n < 1 || n > 2000) {
+                  return "Enter a number from 1 to 2000.";
+                }
+                return true;
+              },
+            }}
+            fieldProps={{ gap: "$2" }}
+            labelProps={{ fontWeight: "700", color: "$boardHeading" }}
+            autoFocus
+            inputMode="numeric"
+            backgroundColor="$boardPanelSurfaceStrong"
+            defaultBorderColor="$boardShellBorder"
+            placeholder="200"
+            disabled={isAdding}
+          />
+        </FormRoot>
+        {errorMessage ? <Text color="$boardDangerText">{errorMessage}</Text> : null}
+      </YStack>
+    </PrettyModalWrap>
+  );
+}
 
 function CreateCardModal({
   openTarget,

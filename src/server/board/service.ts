@@ -8,6 +8,7 @@ import {
   type BoardSummaryRow,
   type LoadedBoardRow,
 } from "./repo";
+import { addSampleCardsToBoard } from "../card/repo";
 
 export async function listBoardsForUser(ownerId: string): Promise<{
   boards: Array<{
@@ -71,6 +72,17 @@ export async function softDeleteBoardForUser(ownerId: string, input: { boardId: 
     boardId: deleted.id,
     deletedAt: deleted.deletedAt.toISOString(),
   };
+}
+
+export async function addSampleDataToBoardForUser(
+  ownerId: string,
+  input: { boardId: string; count: number },
+): Promise<{ createdCount: number }> {
+  return addSampleCardsToBoard({
+    ownerId,
+    boardId: input.boardId,
+    count: input.count,
+  });
 }
 
 function serializeBoardSummary(row: BoardSummaryRow) {

@@ -57,6 +57,10 @@ type RenameBoardForm = {
   name: string;
 };
 
+type AddSampleDataForm = {
+  count: string;
+};
+
 type RawBoardDetailSearch = {
   card?: string;
   view?: BoardDetailSearch["view"];
@@ -86,9 +90,11 @@ export function BoardDetailScreen({
   );
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
   const [confirmBoardDelete, setConfirmBoardDelete] = useState(false);
+  const [addSampleDataOpen, setAddSampleDataOpen] = useState(false);
   const createCardFormId = useId();
   const createColumnFormId = useId();
   const renameBoardFormId = useId();
+  const addSampleDataFormId = useId();
 
   const boardQuery = trpc.board.getWithColumnsAndCards.useQuery(
     { boardId },
@@ -125,6 +131,9 @@ export function BoardDetailScreen({
   });
   const renameBoardForm = useForm<RenameBoardForm>({
     defaultValues: { name: "" },
+  });
+  const addSampleDataForm = useForm<AddSampleDataForm>({
+    defaultValues: { count: "200" },
   });
 
   const board = optimisticBoard ?? boardQuery.data?.board;
@@ -163,6 +172,12 @@ export function BoardDetailScreen({
       setConfirmBoardDelete(false);
     }
   }, [board, boardSettingsOpen, renameBoardForm]);
+
+  useEffect(() => {
+    if (addSampleDataOpen) {
+      addSampleDataForm.reset({ count: "200" });
+    }
+  }, [addSampleDataForm, addSampleDataOpen]);
 
   const refreshBoard = async () => {
     const result = await boardQuery.refetch();
@@ -238,6 +253,17 @@ export function BoardDetailScreen({
         to: "/boards",
         search: { status: "deleted" },
       });
+    },
+    onError: async (error) => {
+      await handleMutationError(error.message);
+    },
+  });
+
+  const addSampleData = trpc.board.addSampleData.useMutation({
+    onSuccess: async () => {
+      await Promise.all([refreshBoard(), utils.card.listByBoard.invalidate({ boardId })]);
+      setAddSampleDataOpen(false);
+      setAnnouncement("Sample cards added.");
     },
     onError: async (error) => {
       await handleMutationError(error.message);
@@ -1065,6 +1091,79 @@ export function BoardDetailScreen({
       </PrettyModalWrap>
 
       <PrettyModalWrap
+        open={addSampleDataOpen}
+        onOpenChange={setAddSampleDataOpen}
+        title="Add sample data"
+        description="Create randomized cards and spread them across existing columns."
+        footer={
+          <>
+            <BoardActionButton
+              tone="ghost"
+              disabled={addSampleData.isPending}
+              onPress={() => setAddSampleDataOpen(false)}
+            >
+              Cancel
+            </BoardActionButton>
+            <BoardActionButton
+              tone="accent"
+              type="submit"
+              form={addSampleDataFormId}
+              disabled={addSampleData.isPending}
+            >
+              {addSampleData.isPending ? "Adding…" : "Add cards"}
+            </BoardActionButton>
+          </>
+        }
+      >
+        <YStack gap="$3">
+          <FormRoot
+            id={addSampleDataFormId}
+            form={addSampleDataForm}
+            gap="$3"
+            onSubmit={async (values) => {
+              const parsed = Number(values.count);
+              await addSampleData.mutateAsync({
+                boardId,
+                count: parsed,
+              });
+            }}
+          >
+            <FormTextField<AddSampleDataForm, "count">
+              name="count"
+              label="How many cards?"
+              rules={{
+                required: "Card count is required.",
+                validate: (value) => {
+                  const n = Number(value);
+                  if (!Number.isFinite(n) || !Number.isInteger(n)) {
+                    return "Enter a whole number.";
+                  }
+                  if (n < 1) {
+                    return "Enter a number from 1 to 2000.";
+                  }
+                  if (n > 2000) {
+                    return "Enter a number from 1 to 2000.";
+                  }
+                  return true;
+                },
+              }}
+              fieldProps={{ gap: "$2" }}
+              labelProps={{ fontWeight: "700", color: "$boardHeading" }}
+              autoFocus
+              inputMode="numeric"
+              backgroundColor="$boardPanelSurfaceStrong"
+              defaultBorderColor="$boardShellBorder"
+              placeholder="200"
+              disabled={addSampleData.isPending}
+            />
+          </FormRoot>
+          {addSampleData.error ? (
+            <Text color="$boardDangerText">{addSampleData.error.message}</Text>
+          ) : null}
+        </YStack>
+      </PrettyModalWrap>
+
+      <PrettyModalWrap
         open={boardSettingsOpen}
         onOpenChange={setBoardSettingsOpen}
         title="Board settings"
@@ -1128,24 +1227,34 @@ export function BoardDetailScreen({
                   message="Delete is armed. Press the button again to confirm."
                 />
               ) : null}
-              <BoardActionButton
-                tone={confirmBoardDelete ? "danger" : "ghost"}
-                disabled={deleteBoard.isPending}
-                onPress={() => {
-                  if (!confirmBoardDelete) {
-                    setConfirmBoardDelete(true);
-                    return;
-                  }
+              <XStack gap="$3" flexWrap="wrap">
+                <BoardActionButton
+                  tone="ghost"
+                  onPress={() => {
+                    setAddSampleDataOpen(true);
+                  }}
+                >
+                  Add sample data
+                </BoardActionButton>
+                <BoardActionButton
+                  tone={confirmBoardDelete ? "danger" : "ghost"}
+                  disabled={deleteBoard.isPending}
+                  onPress={() => {
+                    if (!confirmBoardDelete) {
+                      setConfirmBoardDelete(true);
+                      return;
+                    }
 
-                  void deleteBoard.mutateAsync({ boardId });
-                }}
-              >
-                {deleteBoard.isPending
-                  ? "Deleting…"
-                  : confirmBoardDelete
-                    ? "Confirm delete board"
-                    : "Delete board"}
-              </BoardActionButton>
+                    void deleteBoard.mutateAsync({ boardId });
+                  }}
+                >
+                  {deleteBoard.isPending
+                    ? "Deleting…"
+                    : confirmBoardDelete
+                      ? "Confirm delete board"
+                      : "Delete board"}
+                </BoardActionButton>
+              </XStack>
             </YStack>
           </BoardSurface>
         </FormRoot>
