@@ -1,10 +1,8 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
-import { useEffect } from "react";
-import { useForm, FormProvider } from "react-hook-form";
-import { Stack, Text } from "@tamagui/core";
+import { Stack } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
-import { FormInlineTextField } from "../../../form";
+import { FormInlineRenameField } from "../../../form";
 import { BoardPill } from "../ui";
 import type { BoardLane } from "../types";
 import { EdgeMoveButton } from "./EdgeMoveButton";
@@ -35,36 +33,10 @@ export function ColumnHeaderWithInlineRename({
   renamePendingColumnId,
 }: Readonly<ColumnHeaderProps>) {
   const version = lane.columnVersion ?? 0;
-  const form = useForm<{ title: string }>({
-    defaultValues: { title: lane.title },
-  });
   const { visible, onHoverChange, onFocus, onBlur } = useEdgeHoverFocus();
 
-  useEffect(() => {
-    form.reset({ title: lane.title });
-  }, [form, lane.title]);
-
-  const saving = renamePendingColumnId === columnId;
   const blockActions = Boolean(renamePendingColumnId);
   const moveControlsVisible = canMoveColumn && visible;
-  const submit = form.handleSubmit(async (values) => {
-    if (saving) {
-      return;
-    }
-    const next = values.title.trim();
-    if (!next) {
-      form.reset({ title: lane.title });
-      return;
-    }
-    if (next === lane.title) {
-      return;
-    }
-    await onRenameColumn({
-      columnId,
-      title: next,
-      expectedVersion: version,
-    });
-  });
 
   return (
     <YStack gap="$2">
@@ -93,50 +65,46 @@ export function ColumnHeaderWithInlineRename({
               borderRadius={9999}
               backgroundColor="$boardTextSubtle"
             />
-            <FormProvider {...form}>
-              <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
-                <FormInlineTextField<{ title: string }, "title">
-                  name="title"
-                  aria-label="Column title"
-                  defaultValue={lane.title}
-                  disabled={blockActions}
-                  focusOnMouseUp
-                  onBlur={() => {
-                    if (blockActions) return;
-                    void submit();
-                  }}
-                  onKeyDown={(event: { key?: string; nativeEvent?: { key?: string } }) => {
-                    const key = event.key ?? event.nativeEvent?.key ?? "";
-                    if (key === "Enter") {
-                      void submit();
-                    }
-                  }}
-                  width="auto"
-                  maxWidth="100%"
-                  flexGrow={1}
-                  flexShrink={1}
-                  minWidth={0}
-                  color="$boardHeading"
-                  fontSize="$6"
-                  fontWeight="800"
-                  borderWidth={1}
-                  borderRadius="$4"
-                  borderColor="transparent"
-                  backgroundColor="transparent"
-                  boxShadow="transparent 0px 0px 0px 0px"
-                  paddingHorizontal={0}
-                  paddingVertical={0}
-                  focusStyle={{ outlineWidth: 0 }}
-                  focusVisibleStyle={{
+            <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
+              <FormInlineRenameField
+                ariaLabel="Column title"
+                defaultValue={lane.title}
+                disabled={blockActions}
+                focusOnMouseUp
+                onSubmitTitle={async (nextTitle) => {
+                  await onRenameColumn({
+                    columnId,
+                    title: nextTitle,
+                    expectedVersion: version,
+                  });
+                }}
+                inputProps={{
+                  width: "auto",
+                  maxWidth: "100%",
+                  flexGrow: 1,
+                  flexShrink: 1,
+                  minWidth: 0,
+                  color: "$boardHeading",
+                  fontSize: "$6",
+                  fontWeight: "800",
+                  borderWidth: 1,
+                  borderRadius: "$4",
+                  borderColor: "transparent",
+                  backgroundColor: "transparent",
+                  boxShadow: "transparent 0px 0px 0px 0px",
+                  paddingHorizontal: 0,
+                  paddingVertical: 0,
+                  focusStyle: { outlineWidth: 0 },
+                  focusVisibleStyle: {
                     outlineWidth: 0,
                     backgroundColor: "$boardPanelSurfaceStrong",
                     borderColor: "$boardAccent",
                     boxShadow: "rgba(95, 121, 56, 0.16) 0px 0px 0px 3px",
-                  }}
-                />
-                <BoardPill>{lane.cards.length}</BoardPill>
-              </XStack>
-            </FormProvider>
+                  },
+                }}
+              />
+              <BoardPill>{lane.cards.length}</BoardPill>
+            </XStack>
           </XStack>
         </YStack>
       </div>
