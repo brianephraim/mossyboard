@@ -101,42 +101,43 @@ function BoardRailBoardRow({
         <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
           {name}
         </Text>
-        <Text color="$boardTextMuted" fontSize="$2">
-          {columnCount} columns • {cardCount} cards
-        </Text>
+        <XStack alignItems="center" justifyContent="space-between" gap="$3">
+          <Text color="$boardTextMuted" fontSize="$2" numberOfLines={1}>
+            {cardCount} cards
+          </Text>
+          {showDrawerButton ? (
+            <Stack position="relative" zIndex={2} pointerEvents="auto" flexShrink={0}>
+              <Button
+                chromeless
+                unstyled
+                tag="button"
+                padding={0}
+                height="auto"
+                backgroundColor="transparent"
+                borderWidth={0}
+                cursor="pointer"
+                hoverStyle={{ backgroundColor: "transparent", opacity: 0.85 }}
+                pressStyle={{ backgroundColor: "transparent" }}
+                focusStyle={{
+                  outlineWidth: 2,
+                  outlineStyle: "solid",
+                  outlineColor: "$boardAccent",
+                }}
+                onPress={() => onOpenInDrawer?.(boardId)}
+              >
+                <Text
+                  color="$boardTextMuted"
+                  fontSize="$2"
+                  fontWeight="500"
+                  textDecorationLine="underline"
+                >
+                  Open in drawer
+                </Text>
+              </Button>
+            </Stack>
+          ) : null}
+        </XStack>
       </YStack>
-      {showDrawerButton ? (
-        <Stack position="relative" zIndex={2}>
-          <Button
-            chromeless
-            unstyled
-            tag="button"
-            paddingHorizontal="$2"
-            paddingVertical="$1"
-            height="auto"
-            backgroundColor="transparent"
-            borderWidth={0}
-            cursor="pointer"
-            hoverStyle={{ backgroundColor: "transparent", opacity: 0.85 }}
-            pressStyle={{ backgroundColor: "transparent" }}
-            focusStyle={{
-              outlineWidth: 2,
-              outlineStyle: "solid",
-              outlineColor: "$boardAccent",
-            }}
-            onPress={() => onOpenInDrawer?.(boardId)}
-          >
-            <Text
-              color="$boardTextMuted"
-              fontSize="$2"
-              fontWeight="500"
-              textDecorationLine="underline"
-            >
-              Open in drawer
-            </Text>
-          </Button>
-        </Stack>
-      ) : null}
     </XStack>
   );
 }

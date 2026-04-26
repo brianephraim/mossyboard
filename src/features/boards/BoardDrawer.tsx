@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@tamagui/button";
 import { Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
@@ -51,8 +51,6 @@ export function BoardDrawer({
     onHeightChange(heightPx);
   }, [heightPx, onHeightChange]);
 
-  const bounds = useMemo(() => getBoundsPx(), []);
-
   const setHeightClamped = (next: number, persist?: boolean) => {
     const { min, max } = getBoundsPx();
     const clamped = clamp(next, min, max);
@@ -69,6 +67,7 @@ export function BoardDrawer({
     if (!target) {
       return;
     }
+    native?.preventDefault?.();
     (target as HTMLElement).setPointerCapture?.(native.pointerId);
 
     const handleMove = (moveEvent: PointerEvent) => {
@@ -101,6 +100,7 @@ export function BoardDrawer({
       borderTopLeftRadius="$8"
       borderTopRightRadius="$8"
       overflow="hidden"
+      boxShadow="rgba(27, 37, 21, 0.18) 0px -24px 60px"
     >
       <BoardSurface
         padding="$0"
@@ -108,33 +108,54 @@ export function BoardDrawer({
         minHeight={0}
         borderBottomLeftRadius={0}
         borderBottomRightRadius={0}
+        position="relative"
+        backgroundColor="$boardPanelSurfaceStrong"
+        boxShadow="none"
       >
+        <Button
+          chromeless
+          unstyled
+          aria-label="Resize drawer"
+          onPointerDown={onPointerDown}
+          cursor="ns-resize"
+          position="absolute"
+          top="$2"
+          left="50%"
+          transform={[{ translateX: "-50%" }]}
+          padding={0}
+          height={24}
+          width={72}
+          borderRadius="$10"
+          hoverStyle={{ backgroundColor: "transparent", opacity: 0.9 }}
+          pressStyle={{ backgroundColor: "transparent", opacity: 0.85 }}
+          focusStyle={{ outlineWidth: 0 }}
+          focusVisibleStyle={{
+            outlineColor: "$boardAccent",
+            outlineWidth: 2,
+            outlineStyle: "solid",
+          }}
+          zIndex={2}
+        >
+          <YStack
+            width={44}
+            height={5}
+            borderRadius={9999}
+            backgroundColor="$boardTextSubtle"
+            opacity={0.55}
+          />
+        </Button>
+
         <XStack
           ref={chromeRef}
           alignItems="center"
           justifyContent="space-between"
           paddingHorizontal="$4"
           height={44}
-          borderBottomWidth={1}
+          paddingTop="$2"
           borderColor="$boardShellBorder"
           gap="$3"
         >
           <XStack alignItems="center" gap="$3" minWidth={0} flex={1}>
-            <Button
-              chromeless
-              onPointerDown={onPointerDown}
-              cursor="ns-resize"
-              paddingHorizontal="$3"
-              paddingVertical="$2"
-              borderRadius="$6"
-              hoverStyle={{ backgroundColor: "$boardAccentWash" }}
-              focusStyle={{ outlineColor: "$boardAccent", outlineWidth: 2, outlineStyle: "solid" }}
-            >
-              <Text color="$boardTextSubtle" fontWeight="800" aria-hidden>
-                ⋯
-              </Text>
-            </Button>
-
             <Button
               chromeless
               onPress={onPromote}
@@ -149,20 +170,6 @@ export function BoardDrawer({
           </XStack>
 
           <XStack gap="$2" alignItems="center">
-            <BoardActionButton
-              tone="ghost"
-              aria-label="Increase drawer height"
-              onPress={() => setHeightClamped(heightPx + 64, true)}
-            >
-              Taller
-            </BoardActionButton>
-            <BoardActionButton
-              tone="ghost"
-              aria-label="Decrease drawer height"
-              onPress={() => setHeightClamped(heightPx - 64, true)}
-            >
-              Shorter
-            </BoardActionButton>
             <BoardActionButton tone="ghost" onPress={onPromote}>
               Promote to main
             </BoardActionButton>
