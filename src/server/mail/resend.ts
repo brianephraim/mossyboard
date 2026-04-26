@@ -29,6 +29,22 @@ function getEmailDebugParts(email: string) {
 
 export async function sendEmail(input: SendEmailInput): Promise<{ id: string }> {
   const env = getMailEnv();
+
+  if (env.RESEND_API_KEY.startsWith("disabled-")) {
+    const stubId = `stub-${Date.now()}`;
+    logger.info(
+      {
+        to: getEmailDebugParts(input.to),
+        subjectLen: input.subject.length,
+        htmlLen: input.html.length,
+        textLen: input.text?.length ?? 0,
+        stubId,
+      },
+      "mail.send.stubbed",
+    );
+    return { id: stubId };
+  }
+
   const resend = new Resend(env.RESEND_API_KEY);
 
   logger.debug(
