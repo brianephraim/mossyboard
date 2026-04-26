@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { Stack } from "@tamagui/core";
+import { Text } from "@tamagui/core";
 
 type AuthAnnounceContextValue = {
   announce: (message: string | null) => void;
@@ -20,7 +20,7 @@ export function AuthAnnounceProvider({ children }: Readonly<{ children: ReactNod
   return (
     <AuthAnnounceContext.Provider value={value}>
       {children}
-      <Stack
+      <Text
         aria-live="polite"
         aria-relevant="additions text"
         position="absolute"
@@ -33,7 +33,7 @@ export function AuthAnnounceProvider({ children }: Readonly<{ children: ReactNod
         pointerEvents="none"
       >
         {message ?? ""}
-      </Stack>
+      </Text>
     </AuthAnnounceContext.Provider>
   );
 }
