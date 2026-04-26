@@ -69,6 +69,7 @@ const priorityGroupedSearch: BoardDetailSearch = {
   view: "board",
   groupBy: "priority",
   priority: [],
+  tags: [],
 };
 
 const filteredColumnSearch: BoardDetailSearch = {
@@ -76,6 +77,7 @@ const filteredColumnSearch: BoardDetailSearch = {
   view: "board",
   groupBy: "column",
   priority: ["high", "low"],
+  tags: [],
 };
 
 describe("BoardCanvas priority grouping", () => {

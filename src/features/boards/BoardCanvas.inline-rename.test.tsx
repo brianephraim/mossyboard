@@ -29,6 +29,7 @@ const search: BoardDetailSearch = {
   view: "board",
   groupBy: "column",
   priority: [],
+  tags: [],
 };
 
 describe("BoardCanvas inline column rename", () => {

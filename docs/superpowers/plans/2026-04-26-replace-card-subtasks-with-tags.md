@@ -1715,7 +1715,7 @@ EOF
 
 - Modify: `src/features/boards/types.ts`, `src/features/boards/model.ts`, `src/features/boards/model.test.ts`
 
-- [ ] **Step 1: Extend `BoardDetailSearch` in `src/features/boards/types.ts`**
+- [x] **Step 1: Extend `BoardDetailSearch` in `src/features/boards/types.ts`**
 
 ```ts
 export type BoardDetailSearch = {
@@ -1730,7 +1730,7 @@ export type BoardDetailSearch = {
 
 (`SubtaskSummary` was already deleted in Task 1.) The card-derived types (`CardSummary`, `CardDetail`, `CardListItem`) automatically pick up the new server-side `tags` field via `inferRouterOutputs`.
 
-- [ ] **Step 2: Add tag helpers to `src/features/boards/model.ts`**
+- [x] **Step 2: Add tag helpers to `src/features/boards/model.ts`**
 
 Inside the file, after the existing priority parser (`parsePriorityFilter` etc.):
 
@@ -1765,7 +1765,7 @@ export function toggleTagSelection(selected: string[], tag: string): string[] {
 }
 ```
 
-- [ ] **Step 3: Extend `parseBoardDetailSearch` in `src/features/boards/model.ts`**
+- [x] **Step 3: Extend `parseBoardDetailSearch` in `src/features/boards/model.ts`**
 
 ```ts
 export function parseBoardDetailSearch(search: RawSearch): BoardDetailSearch {
@@ -1787,7 +1787,7 @@ export function parseBoardDetailSearch(search: RawSearch): BoardDetailSearch {
 }
 ```
 
-- [ ] **Step 4: Extend `buildBoardLanes` in `src/features/boards/model.ts`**
+- [x] **Step 4: Extend `buildBoardLanes` in `src/features/boards/model.ts`**
 
 ```ts
 export function buildBoardLanes(
@@ -1830,7 +1830,7 @@ export function buildBoardLanes(
 }
 ```
 
-- [ ] **Step 5: Extend `canReorderBoard` in `src/features/boards/model.ts`**
+- [x] **Step 5: Extend `canReorderBoard` in `src/features/boards/model.ts`**
 
 ```ts
 export function canReorderBoard(input: {
@@ -1848,7 +1848,7 @@ export function canReorderBoard(input: {
 }
 ```
 
-- [ ] **Step 6: Update every call site of `canReorderBoard` and `buildBoardLanes` to pass `tags`**
+- [x] **Step 6: Update every call site of `canReorderBoard` and `buildBoardLanes` to pass `tags`**
 
 ```bash
 rg -n "canReorderBoard\(|buildBoardLanes\(" src/
@@ -1856,7 +1856,7 @@ rg -n "canReorderBoard\(|buildBoardLanes\(" src/
 
 For each match, ensure the input object now includes a `tags` field sourced from the parsed `BoardDetailSearch`. Most call sites are likely in `BoardDetailScreen.tsx`, `BoardWorkspaceScreen.tsx`, and a handful of test files. If a test currently passes the literal object `{ view, groupBy, priority }`, add `tags: []`.
 
-- [ ] **Step 6a: Format the type/model code touched so far**
+- [x] **Step 6a: Format the type/model code touched so far**
 
 ```bash
 npx prettier --write \
@@ -1864,7 +1864,7 @@ npx prettier --write \
   src/features/boards/model.ts
 ```
 
-- [ ] **Step 6b: Typecheck**
+- [x] **Step 6b: Typecheck**
 
 ```bash
 npm run typecheck
@@ -1872,7 +1872,7 @@ npm run typecheck
 
 Expected: clean. Existing tests still see the old call signatures momentarily — the test additions in Step 7 follow.
 
-- [ ] **Step 6c: Commit type/model code (save-point)**
+- [x] **Step 6c: Commit type/model code (save-point)**
 
 ```bash
 git add -A

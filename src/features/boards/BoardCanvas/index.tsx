@@ -74,6 +74,7 @@ export function BoardCanvas({
   const lanes = buildBoardLanes(board, {
     groupBy: search.groupBy,
     priority: search.priority,
+    tags: search.tags,
   });
   const hasActivePriorityFilters = search.priority.length > 0;
   const isPriorityGroupedBoard = search.view === "board" && search.groupBy === "priority";

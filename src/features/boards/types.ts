@@ -43,5 +43,6 @@ export type BoardDetailSearch = {
   view: BoardViewMode;
   groupBy: BoardGroupBy;
   priority: CardPriority[];
+  tags: string[];
   drawer?: string;
 };

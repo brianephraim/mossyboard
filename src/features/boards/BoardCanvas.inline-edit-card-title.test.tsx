@@ -39,6 +39,7 @@ const search: BoardDetailSearch = {
   view: "board",
   groupBy: "column",
   priority: [],
+  tags: [],
 };
 
 describe("BoardCanvas inline card title edit", () => {

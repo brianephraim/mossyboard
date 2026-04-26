@@ -103,6 +103,7 @@ export function parseBoardDetailSearch(search: RawSearch): BoardDetailSearch {
   const view = normalizeSearchString(search.view);
   const groupBy = normalizeSearchString(search.groupBy);
   const priority = normalizeSearchString(search.priority);
+  const tagsParam = normalizeSearchString(search.tags);
   const drawer = normalizeSearchString(search.drawer);
 
   return {
@@ -110,6 +111,7 @@ export function parseBoardDetailSearch(search: RawSearch): BoardDetailSearch {
     view: isBoardViewMode(view) ? view : "board",
     groupBy: isBoardGroupBy(groupBy) ? groupBy : "column",
     priority: parsePriorityFilter(priority),
+    tags: parseTagFilter(tagsParam),
     drawer,
   };
 }
@@ -128,6 +130,35 @@ function parsePriorityFilter(value: string | undefined): CardPriority[] {
   }
 
   return priorityValues.filter((priorityOption) => uniqueValues.has(priorityOption));
+}
+
+function parseTagFilter(value: string | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  const out = new Set<string>();
+  for (const entry of value.split(",")) {
+    const norm = entry.trim().toLowerCase();
+    if (norm.length > 0) {
+      out.add(norm);
+    }
+  }
+  return [...out];
+}
+
+export function serializeTagFilter(tagFilter: string[]) {
+  return tagFilter.length > 0 ? tagFilter.join(",") : undefined;
+}
+
+export function toggleTagSelection(selected: string[], tag: string): string[] {
+  const set = new Set(selected);
+  if (set.has(tag)) {
+    set.delete(tag);
+  } else {
+    set.add(tag);
+  }
+  return [...set];
 }
 
 export function serializePriorityFilter(priority: CardPriority[]) {
@@ -154,9 +185,11 @@ export function buildBoardLanes(
   input: {
     groupBy: BoardGroupBy;
     priority: CardPriority[];
+    tags: string[];
   },
 ): BoardLane[] {
   const activePriorityFilters = new Set(input.priority);
+  const activeTagFilters = new Set(input.tags);
 
   return board.columns.map((column) => ({
     id: column.id,
@@ -165,9 +198,19 @@ export function buildBoardLanes(
     originalColumnId: column.id,
     columnVersion: column.version,
     cards: column.cards
-      .filter(
-        (card) => activePriorityFilters.size === 0 || activePriorityFilters.has(card.priority),
-      )
+      .filter((card) => {
+        if (activePriorityFilters.size > 0 && !activePriorityFilters.has(card.priority)) {
+          return false;
+        }
+        if (activeTagFilters.size > 0) {
+          const cardTagSet = new Set(card.tags.map((t) => t.normalizedName));
+          const hasMatch = [...activeTagFilters].some((t) => cardTagSet.has(t));
+          if (!hasMatch) {
+            return false;
+          }
+        }
+        return true;
+      })
       .map((card) => ({
         ...card,
         originalColumnId: column.id,
@@ -254,8 +297,14 @@ export function canReorderBoard(input: {
   view: BoardViewMode;
   groupBy: BoardGroupBy;
   priority: CardPriority[];
+  tags: string[];
 }) {
-  return input.view === "board" && input.groupBy === "column" && input.priority.length === 0;
+  return (
+    input.view === "board" &&
+    input.groupBy === "column" &&
+    input.priority.length === 0 &&
+    input.tags.length === 0
+  );
 }
 
 export function getCardPosition(board: LoadedBoard, cardId: string) {

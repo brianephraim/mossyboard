@@ -102,6 +102,7 @@ describe("board model helpers", () => {
       view: "list",
       groupBy: "priority",
       priority: ["medium", "high"],
+      tags: [],
     });
   });
 
@@ -109,6 +110,7 @@ describe("board model helpers", () => {
     const lanes = buildBoardLanes(boardFixture, {
       groupBy: "priority",
       priority: [],
+      tags: [],
     });
 
     assert.deepEqual(
@@ -126,6 +128,7 @@ describe("board model helpers", () => {
     const [todoLane] = buildBoardLanes(boardFixture, {
       groupBy: "priority",
       priority: [],
+      tags: [],
     });
 
     assert.ok(todoLane);
@@ -204,6 +207,7 @@ describe("board model helpers", () => {
         view: "board",
         groupBy: "column",
         priority: [],
+        tags: [],
       }),
       true,
     );
@@ -213,6 +217,7 @@ describe("board model helpers", () => {
         view: "board",
         groupBy: "priority",
         priority: [],
+        tags: [],
       }),
       false,
     );
