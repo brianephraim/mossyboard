@@ -69,4 +69,20 @@ export default defineConfig([
       "@typescript-eslint/no-unused-vars": "error",
     },
   },
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+        setTimeout: "readonly",
+        URL: "readonly",
+      },
+    },
+    rules: {
+      // scripts are intended for node usage
+      "no-undef": "off",
+    },
+  },
 ]);

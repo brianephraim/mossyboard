@@ -49,7 +49,7 @@ type BoardRailBoardRowProps = {
 function BoardRailBoardRow({
   boardId,
   name,
-  columnCount,
+  columnCount: _columnCount,
   cardCount,
   isCurrent,
   onOpenInDrawer,

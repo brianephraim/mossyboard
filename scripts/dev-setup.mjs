@@ -77,12 +77,6 @@ function cmdOk(command, args) {
   return result.status === 0;
 }
 
-function cmdText(command, args) {
-  const result = spawnSync(command, args, { encoding: "utf8" });
-  if (result.status !== 0) return null;
-  return (result.stdout ?? "").toString();
-}
-
 async function promptYesNo(rl, message, defaultYes = true) {
   const suffix = defaultYes ? " [Y/n] " : " [y/N] ";
   const answer = (await rl.question(`${message}${suffix}`)).trim().toLowerCase();
@@ -106,7 +100,7 @@ async function pickDbFlavor(rl, detected) {
   const answer = (
     await rl.question(
       `Pick a local Postgres flavor:\n` +
-        menu.map(([k, _id, label]) => `  (${k}) ${label}`).join("\n") +
+        menu.map(([k, , label]) => `  (${k}) ${label}`).join("\n") +
         `\n> `,
     )
   )

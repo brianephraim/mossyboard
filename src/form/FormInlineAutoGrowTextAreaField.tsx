@@ -45,10 +45,6 @@ type FormInlineAutoGrowTextAreaFieldProps<
 
 const DEFAULT_DRAG_THRESHOLD_PX = 5;
 
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(n, max));
-}
-
 function resizeTextArea(
   node: HTMLTextAreaElement,
   { minHeightPx, maxHeightPx }: { minHeightPx?: number; maxHeightPx?: number },
