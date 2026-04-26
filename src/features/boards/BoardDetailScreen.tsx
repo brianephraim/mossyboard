@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { DropResult } from "@hello-pangea/dnd";
 import { useNavigate } from "@tanstack/react-router";
-import { Text } from "@tamagui/core";
+import { Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import { FormRoot, FormTextField } from "../../form";
@@ -1276,11 +1276,16 @@ function BoardControls({
   onTogglePriority: (priority: CardPriority) => void;
   onClearPriority: () => void;
 }>) {
+  const media = useMedia();
+  const sectionFontSize = media.maxMd ? "$3" : "$4";
+  const surfacePadding = media.maxMd ? "$3" : "$4";
+  const rowGap = media.maxMd ? "$2" : "$3";
+
   return (
-    <BoardSurface padding="$4">
-      <YStack gap="$3">
-        <XStack gap="$3" flexWrap="wrap" alignItems="center">
-          <Text fontWeight="700" color="$boardHeading">
+    <BoardSurface padding={surfacePadding}>
+      <YStack gap={rowGap}>
+        <XStack gap={rowGap} flexWrap="wrap" alignItems="center">
+          <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
             View
           </Text>
           <BoardActionButton
@@ -1298,7 +1303,7 @@ function BoardControls({
 
           {search.view === "board" ? (
             <>
-              <Text fontWeight="700" color="$boardHeading">
+              <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
                 Group by
               </Text>
               <BoardActionButton
@@ -1317,9 +1322,9 @@ function BoardControls({
           ) : null}
         </XStack>
 
-        <YStack gap="$2">
-          <XStack gap="$2" flexWrap="wrap" alignItems="center">
-            <Text fontWeight="700" color="$boardHeading">
+        <YStack gap={media.maxMd ? "$1.5" : "$2"}>
+          <XStack gap={media.maxMd ? "$1.5" : "$2"} flexWrap="wrap" alignItems="center">
+            <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
               Priority filter
             </Text>
             {(["none", "low", "medium", "high"] as const).map((priority) => {

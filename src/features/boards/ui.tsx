@@ -197,6 +197,7 @@ export function BoardActionButton({
     type?: "button" | "reset" | "submit";
   } & ComponentProps<typeof Button>
 >) {
+  const media = useMedia();
   const styles = (
     tone === "accent"
       ? {
@@ -229,11 +230,12 @@ export function BoardActionButton({
 
   return (
     <Button
-      size="$3"
+      size={media.maxMd ? "$2" : "$3"}
       borderRadius="$10"
       borderWidth={1}
-      paddingHorizontal="$4"
+      paddingHorizontal={media.maxMd ? "$3" : "$4"}
       fontWeight="600"
+      fontSize={media.maxMd ? "$3" : "$4"}
       {...styles}
       {...({ form, type } as unknown as ComponentProps<typeof Button>)}
       {...props}
