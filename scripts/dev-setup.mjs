@@ -239,13 +239,17 @@ function isMissingPostgresRoleError(err) {
   return message.includes('role "postgres" does not exist');
 }
 
-function ensureDockerPostgresRunning() {
+function ensureDockerPostgresRunning(hostPort) {
   if (!cmdOk("docker", ["info"])) {
     throw new Error("Docker is not available. Install/start Docker Desktop first.");
   }
   // Bring up the dev compose file.
   const up = spawnSync("docker", ["compose", "-f", "docker-compose.dev.yml", "up", "-d"], {
     stdio: "inherit",
+    env: {
+      ...process.env,
+      KANBAN_DOCKER_PG_PORT: String(hostPort),
+    },
   });
   if (up.status !== 0) throw new Error("docker compose up failed");
 }
@@ -399,21 +403,31 @@ try {
 
   // Step 6-9: ensure DB service, roles, dbs, and write DATABASE_URLs.
   const port = 5432;
-  let derivedUrls = databaseUrlsForFlavor(flavor, port);
+  const dockerHostPort =
+    flavor === "docker" && cmdOk("pg_isready", ["-h", "localhost", "-p", String(port)])
+      ? 5433
+      : port;
+
+  let derivedUrls =
+    flavor === "docker"
+      ? databaseUrlsForFlavor("docker", dockerHostPort)
+      : databaseUrlsForFlavor(flavor, port);
   let derivedAdminUrl =
     flavor === "host"
       ? `postgres://localhost:${port}/postgres`
-      : `postgres://postgres:postgres@localhost:${port}/postgres`;
+      : flavor === "docker"
+        ? `postgres://postgres:postgres@localhost:${dockerHostPort}/postgres`
+        : `postgres://postgres:postgres@localhost:${port}/postgres`;
 
   if (flavor === "docker") {
-    if (!cmdOk("pg_isready", ["-h", "localhost", "-p", String(port)])) {
+    if (!cmdOk("pg_isready", ["-h", "localhost", "-p", String(dockerHostPort)])) {
       const ok = await promptYesNo(rl, "Start Docker Postgres via docker-compose.dev.yml?", true);
       if (!ok) process.exit(1);
-      ensureDockerPostgresRunning();
+      ensureDockerPostgresRunning(dockerHostPort);
 
       // Wait briefly for readiness.
       for (let i = 0; i < 20; i++) {
-        if (cmdOk("pg_isready", ["-h", "localhost", "-p", String(port)])) break;
+        if (cmdOk("pg_isready", ["-h", "localhost", "-p", String(dockerHostPort)])) break;
         await new Promise((r) => setTimeout(r, 250));
       }
     }
@@ -446,11 +460,11 @@ try {
         );
         if (down.status !== 0) process.exit(down.status ?? 1);
 
-        ensureDockerPostgresRunning();
+        ensureDockerPostgresRunning(dockerHostPort);
 
         // Wait briefly for readiness.
         for (let i = 0; i < 20; i++) {
-          if (cmdOk("pg_isready", ["-h", "localhost", "-p", String(port)])) break;
+          if (cmdOk("pg_isready", ["-h", "localhost", "-p", String(dockerHostPort)])) break;
           await new Promise((r) => setTimeout(r, 250));
         }
 

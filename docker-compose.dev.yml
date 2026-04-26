@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "${KANBAN_DOCKER_PG_PORT:-5432}:5432"
     volumes:
       - kanban_dev_pg_data:/var/lib/postgresql/data
 
