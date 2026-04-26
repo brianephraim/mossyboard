@@ -1,4 +1,5 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
+import { useState } from "react";
 import { Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
@@ -47,6 +48,7 @@ export function CardInterior({
     includeFocusWithin: false,
   });
   const moveControlsVisible = canMove && visible;
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
 
   return (
     <div {...(dragHandleProps ?? {})} style={{ cursor: dragHandleProps ? "grab" : undefined }}>
@@ -120,14 +122,17 @@ export function CardInterior({
               expectedVersion: card.version,
             });
           }}
-          render={({ onBlur, onKeyDown }) => (
+          render={({ onBlur: onSubmitBlur, onKeyDown }) => (
             <FormInlineAutoGrowTextAreaField<{ value: string }, "value">
               name="value"
               aria-label="Card description"
               defaultValue={card.description}
               placeholder="Add a description…"
               focusOnMouseUp
-              onBlur={onBlur}
+              onBlur={() => {
+                setDescriptionFocused(false);
+                onSubmitBlur();
+              }}
               onKeyDown={onKeyDown}
               color="$boardTextMuted"
               fontSize="$3"
@@ -139,7 +144,10 @@ export function CardInterior({
               paddingHorizontal={0}
               paddingVertical={0}
               minHeightPx={24}
-              maxHeightPx={180}
+              maxHeightPx={descriptionFocused ? undefined : 180}
+              onFocus={() => {
+                setDescriptionFocused(true);
+              }}
               focusStyle={{ outlineWidth: 0 }}
               focusVisibleStyle={{
                 outlineWidth: 0,
