@@ -563,7 +563,7 @@ try {
   if (migrate.status !== 0) process.exit(migrate.status ?? 1);
 
   // Step 16: seed if boards empty.
-  const devSql = postgres(urls.DATABASE_URL, { prepare: false, max: 1 });
+  const devSql = postgres(derivedUrls.DATABASE_URL, { prepare: false, max: 1 });
   const countRows = await devSql /* sql */ `
     select count(*)::int as count
     from boards
