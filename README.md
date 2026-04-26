@@ -12,8 +12,11 @@ Prerequisites:
   - Supabase CLI
   - Docker Desktop
   - Host-installed Postgres 14+
-- Firebase CLI: `npm install -g firebase-tools`
 - Java runtime (required by the Firebase Auth Emulator)
+
+`firebase-tools` is a project devDependency; `npm install` brings it in and the
+wizard invokes it from `node_modules/.bin/firebase`. No global Firebase CLI
+install is needed.
 
 First-time setup:
 

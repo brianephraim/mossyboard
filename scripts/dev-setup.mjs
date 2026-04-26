@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
+import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import readline from "node:readline/promises";
@@ -86,6 +87,29 @@ function cmdOkWithOutput(command, args) {
   };
 }
 
+async function tcpPortInUse(host, port, timeoutMs = 400) {
+  return await new Promise((resolve) => {
+    const socket = new net.Socket();
+    let settled = false;
+    const finish = (used) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      resolve(used);
+    };
+    socket.setTimeout(timeoutMs);
+    socket.once("connect", () => finish(true));
+    socket.once("timeout", () => finish(false));
+    socket.once("error", () => finish(false));
+    socket.connect(port, host);
+  });
+}
+
+function pgIsReadyOk(pgIsReadyPath, host, port) {
+  if (!pgIsReadyPath) return false;
+  return cmdOk(pgIsReadyPath, ["-h", host, "-p", String(port)]);
+}
+
 function resolvePgIsReady() {
   // Prefer PATH.
   const which = spawnSync("bash", ["-lc", "command -v pg_isready"], { encoding: "utf8" });
@@ -111,6 +135,105 @@ function getDockerStatus() {
   return { installed, running };
 }
 
+function identifyDockerPostgresContainers() {
+  if (!cmdOk("docker", ["info"])) return [];
+  const result = spawnSync("docker", ["ps", "--format", "{{.Names}}\t{{.Ports}}\t{{.Image}}"], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) return [];
+  const out = [];
+  for (const line of (result.stdout ?? "").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const parts = trimmed.split("\t");
+    if (parts.length < 3) continue;
+    const [name, ports, image] = parts;
+    if (!/postgres/i.test(image)) continue;
+    const matches = ports.matchAll(/(?:0\.0\.0\.0|127\.0\.0\.1|\[::\]):(\d+)->(\d+)\/tcp/g);
+    for (const m of matches) {
+      const containerPort = Number(m[2]);
+      if (containerPort !== 5432) continue;
+      out.push({ name, hostPort: Number(m[1]), image });
+    }
+  }
+  return out;
+}
+
+function identifySupabaseDbUrl() {
+  if (!cmdOk("supabase", ["--version"])) return null;
+  const result = spawnSync("supabase", ["status", "--output", "json"], { encoding: "utf8" });
+  if (result.status !== 0) return null;
+  try {
+    const parsed = JSON.parse((result.stdout ?? "").toString());
+    if (typeof parsed.DB_URL === "string" && parsed.DB_URL.length > 0) {
+      return parsed.DB_URL;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+async function discoverPostgresListeners() {
+  const dockerPg = identifyDockerPostgresContainers();
+  const supabaseDbUrl = identifySupabaseDbUrl();
+  let supabasePort = null;
+  if (supabaseDbUrl) {
+    try {
+      supabasePort = Number(new URL(supabaseDbUrl).port) || 5432;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const candidatePorts = new Set([5432, 5433, 54322]);
+  for (const c of dockerPg) candidatePorts.add(c.hostPort);
+  if (supabasePort) candidatePorts.add(supabasePort);
+
+  const listeners = [];
+  for (const port of candidatePorts) {
+    if (!(await tcpPortInUse("127.0.0.1", port))) continue;
+
+    const docker = dockerPg.find((d) => d.hostPort === port);
+    if (docker) {
+      const isOurContainer = docker.name === "kanban_dev_pg";
+      listeners.push({
+        host: "127.0.0.1",
+        port,
+        source: "docker",
+        label: isOurContainer
+          ? `Docker container "${docker.name}" (this repo's dev DB)`
+          : `Docker container "${docker.name}"`,
+        priority: isOurContainer ? 0 : 1,
+      });
+      continue;
+    }
+
+    if (supabasePort === port) {
+      listeners.push({
+        host: "127.0.0.1",
+        port,
+        source: "supabase",
+        label: "Supabase CLI",
+        supabaseDbUrl,
+        priority: 2,
+      });
+      continue;
+    }
+
+    listeners.push({
+      host: "127.0.0.1",
+      port,
+      source: "host",
+      label: "Host Postgres",
+      priority: 3,
+    });
+  }
+
+  listeners.sort((a, b) => a.priority - b.priority || a.port - b.port);
+  return listeners;
+}
+
 async function promptYesNo(rl, message, defaultYes = true) {
   const suffix = defaultYes ? " [Y/n] " : " [y/N] ";
   const answer = (await rl.question(`${message}${suffix}`)).trim().toLowerCase();
@@ -121,10 +244,6 @@ async function promptYesNo(rl, message, defaultYes = true) {
 }
 
 async function pickDbFlavor(rl, detected, dockerStatus) {
-  const order = ["supabase", "docker", "host"];
-  const available = order.filter((f) => detected.has(f));
-  if (available.length === 1) return available[0];
-
   const menu = [
     [
       "1",
@@ -139,8 +258,11 @@ async function pickDbFlavor(rl, detected, dockerStatus) {
       "Runs only Postgres via `docker compose` (no Supabase services). Requires Docker running.",
     ],
     ["3", "host", "Host Postgres", "Uses a Postgres already running on your machine (no Docker)."],
+    ["4", "custom", "Custom URL", "Advanced — provide your own DATABASE_URL/DATABASE_URL_TEST."],
   ];
 
+  const order = ["supabase", "docker", "host"];
+  const available = order.filter((f) => detected.has(f));
   const detectedLabels =
     available.length > 0 ? available.join(", ") : "none (you can still pick one and install it)";
 
@@ -161,6 +283,84 @@ async function pickDbFlavor(rl, detected, dockerStatus) {
 
   const byKey = new Map(menu.map(([k, id]) => [k, id]));
   return byKey.get(answer) ?? "docker";
+}
+
+function deriveTestUrlFromDev(devUrl) {
+  try {
+    const u = new URL(devUrl);
+    const dbname = u.pathname.replace(/^\//, "") || "kanban_dev";
+    u.pathname = `/${dbname}_test`;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+function adminUrlFromUserUrl(devUrl) {
+  try {
+    const u = new URL(devUrl);
+    u.pathname = "/postgres";
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+async function promptCustomDatabaseUrls(rl) {
+  console.log("");
+  console.log("Custom DATABASE_URL mode. URLs must target localhost (dev-only safeguard).");
+  console.log(
+    "Include credentials inline if needed (e.g. postgres://user:pass@localhost:5432/db).",
+  );
+  console.log("");
+
+  while (true) {
+    const devUrl = (await rl.question("DATABASE_URL: ")).trim();
+    if (!devUrl) {
+      console.log("DATABASE_URL is required.");
+      continue;
+    }
+
+    let parsed;
+    try {
+      parsed = new URL(devUrl);
+    } catch {
+      console.log("Could not parse that as a URL. Try again.");
+      continue;
+    }
+    if (!isLocalHost(parsed.hostname)) {
+      console.log(`Refusing non-local host (${parsed.hostname}). Dev URLs must be localhost.`);
+      continue;
+    }
+
+    const defaultTest = deriveTestUrlFromDev(devUrl);
+    const testInput = (
+      await rl.question(`DATABASE_URL_TEST [${defaultTest ?? "required"}]: `)
+    ).trim();
+    const testUrl = testInput || defaultTest;
+    if (!testUrl) {
+      console.log("DATABASE_URL_TEST is required.");
+      continue;
+    }
+
+    let parsedTest;
+    try {
+      parsedTest = new URL(testUrl);
+    } catch {
+      console.log("Could not parse DATABASE_URL_TEST.");
+      continue;
+    }
+    if (!isLocalHost(parsedTest.hostname)) {
+      console.log(`Refusing non-local host (${parsedTest.hostname}). Test URLs must be localhost.`);
+      continue;
+    }
+
+    return {
+      devUrl,
+      testUrl,
+      adminUrl: adminUrlFromUserUrl(devUrl),
+    };
+  }
 }
 
 function databaseUrlsForFlavor(flavor, port) {
@@ -268,12 +468,28 @@ async function checkPort(url) {
 }
 
 async function listEmulatorAccounts() {
+  // Auth-emulator admin route. Requires `Bearer owner` to bypass auth in the
+  // emulator; production identitytoolkit semantics do not apply here.
   const res = await fetch(
-    "http://localhost:9099/identitytoolkit.googleapis.com/v1/projects/demo-kanban/accounts",
+    "http://localhost:9099/identitytoolkit.googleapis.com/v1/projects/demo-kanban/accounts:query",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        Authorization: "Bearer owner",
+      },
+      body: JSON.stringify({}),
+    },
   );
   if (!res.ok) return [];
   const body = await res.json();
-  return Array.isArray(body.users) ? body.users : [];
+  return Array.isArray(body.userInfo) ? body.userInfo : [];
+}
+
+async function lookupEmulatorUserByEmail(email) {
+  const users = await listEmulatorAccounts();
+  const match = users.find((u) => u.email === email);
+  return match?.localId ?? null;
 }
 
 async function createEmulatorUser() {
@@ -289,13 +505,22 @@ async function createEmulatorUser() {
       }),
     },
   );
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Failed to create emulator user: ${text}`);
+
+  if (res.ok) {
+    const body = await res.json();
+    if (!body.localId) throw new Error("Emulator user creation did not return localId");
+    return body.localId;
   }
-  const body = await res.json();
-  if (!body.localId) throw new Error("Emulator user creation did not return localId");
-  return body.localId;
+
+  // The user may already exist (e.g. created in a previous wizard run but with
+  // KANBAN_DEV_OWNER_ID missing from .env). Treat EMAIL_EXISTS as recoverable
+  // by looking up the existing user instead of failing.
+  const text = await res.text();
+  if (text.includes("EMAIL_EXISTS")) {
+    const existingId = await lookupEmulatorUserByEmail("dev@example.com");
+    if (existingId) return existingId;
+  }
+  throw new Error(`Failed to create emulator user: ${text}`);
 }
 
 function parseArgs(argv) {
@@ -364,6 +589,47 @@ try {
   if (pgIsReady) detected.add("host");
 
   let flavor = env.map.get("KANBAN_LOCAL_DB_FLAVOR");
+
+  // When state is fresh, offer to reuse any Postgres already running on this
+  // machine (host install, our own Docker container, Supabase CLI, etc.) before
+  // dropping into the flavor menu. This is the typical scenario after `--reset`
+  // or a first-time setup with an unrelated Postgres already on disk.
+  let chosenDockerHostPort = null;
+  if (!flavor) {
+    const listeners = await discoverPostgresListeners();
+    if (listeners.length > 0) {
+      console.log("");
+      console.log("Detected Postgres processes already running:");
+      listeners.forEach((l, i) => {
+        console.log(`  ${i + 1}) localhost:${l.port} — ${l.label}`);
+      });
+      const freshIdx = listeners.length + 1;
+      const customIdx = listeners.length + 2;
+      console.log(`  ${freshIdx}) None of these — start a fresh local Postgres`);
+      console.log(`  ${customIdx}) Provide my own DATABASE_URL (advanced)`);
+      console.log("");
+
+      while (true) {
+        const answer = (await rl.question("Reuse one of these? > ")).trim();
+        const idx = Number(answer) - 1;
+        if (Number.isInteger(idx) && idx >= 0 && idx < listeners.length) {
+          const chosen = listeners[idx];
+          flavor = chosen.source;
+          if (chosen.source === "docker") chosenDockerHostPort = chosen.port;
+          break;
+        }
+        if (Number(answer) === freshIdx) {
+          break;
+        }
+        if (Number(answer) === customIdx) {
+          flavor = "custom";
+          break;
+        }
+        console.log("Please enter a number from the list.");
+      }
+    }
+  }
+
   while (true) {
     if (!flavor) {
       flavor = await pickDbFlavor(rl, detected, dockerStatus);
@@ -407,37 +673,68 @@ try {
 
   // Step 6-9: ensure DB service, roles, dbs, and write DATABASE_URLs.
   const port = 5432;
-  const dockerHostPort =
-    flavor === "docker" && cmdOk("pg_isready", ["-h", "localhost", "-p", String(port)])
-      ? 5433
-      : port;
 
-  if (flavor === "docker" && dockerHostPort !== port) {
+  // For Docker mode, detect whether localhost:5432 is already taken by ANY listener
+  // (commonly the host's Postgres). Docker's userland proxy can still bind the same
+  // port without erroring, but connections to localhost:5432 then route to the host
+  // Postgres, producing confusing "role \"postgres\" does not exist" failures.
+  // A TCP probe is more reliable than `pg_isready`, which may not be on PATH at all
+  // (e.g. keg-only Homebrew installs).
+  const hostPortBusy = flavor === "docker" ? await tcpPortInUse("127.0.0.1", port) : false;
+  const dockerHostPort =
+    flavor === "docker" ? (chosenDockerHostPort ?? (hostPortBusy ? 5433 : port)) : port;
+
+  if (flavor === "docker" && chosenDockerHostPort !== null) {
+    console.log(`Reusing Docker Postgres on localhost:${dockerHostPort}.`);
+  } else if (flavor === "docker" && dockerHostPort !== port) {
     console.log(
-      `Docker Postgres will use localhost:${dockerHostPort} (localhost:${port} is already in use).`,
+      `Docker Postgres will use localhost:${dockerHostPort} (localhost:${port} is already in use, likely by host Postgres).`,
     );
   }
 
-  let derivedUrls =
-    flavor === "docker"
-      ? databaseUrlsForFlavor("docker", dockerHostPort)
-      : databaseUrlsForFlavor(flavor, port);
-  let derivedAdminUrl =
-    flavor === "host"
-      ? `postgres://localhost:${port}/postgres`
-      : flavor === "docker"
-        ? `postgres://postgres:postgres@localhost:${dockerHostPort}/postgres`
-        : `postgres://postgres:postgres@localhost:${port}/postgres`;
+  let derivedUrls;
+  let derivedAdminUrl;
+  if (flavor === "custom") {
+    // If we already have URLs persisted from a prior run, reuse them; otherwise prompt.
+    if (env.map.has("DATABASE_URL") && env.map.has("DATABASE_URL_TEST")) {
+      derivedUrls = {
+        DATABASE_URL: env.map.get("DATABASE_URL"),
+        DATABASE_URL_TEST: env.map.get("DATABASE_URL_TEST"),
+      };
+      derivedAdminUrl = adminUrlFromUserUrl(derivedUrls.DATABASE_URL);
+    } else {
+      const custom = await promptCustomDatabaseUrls(rl);
+      derivedUrls = { DATABASE_URL: custom.devUrl, DATABASE_URL_TEST: custom.testUrl };
+      derivedAdminUrl = custom.adminUrl;
+    }
+  } else {
+    derivedUrls =
+      flavor === "docker"
+        ? databaseUrlsForFlavor("docker", dockerHostPort)
+        : databaseUrlsForFlavor(flavor, port);
+    derivedAdminUrl =
+      flavor === "host"
+        ? `postgres://localhost:${port}/postgres`
+        : flavor === "docker"
+          ? `postgres://postgres:postgres@localhost:${dockerHostPort}/postgres`
+          : `postgres://postgres:postgres@localhost:${port}/postgres`;
+  }
 
   if (flavor === "docker") {
-    if (!cmdOk("pg_isready", ["-h", "localhost", "-p", String(dockerHostPort)])) {
+    const dockerReady = async () => {
+      if (pgIsReady && pgIsReadyOk(pgIsReady, "localhost", dockerHostPort)) return true;
+      // Fall back to a TCP probe if pg_isready is unavailable on PATH.
+      return await tcpPortInUse("127.0.0.1", dockerHostPort);
+    };
+
+    if (!(await dockerReady())) {
       const ok = await promptYesNo(rl, "Start Docker Postgres via docker-compose.dev.yml?", true);
       if (!ok) process.exit(1);
       ensureDockerPostgresRunning(dockerHostPort);
 
       // Wait briefly for readiness.
-      for (let i = 0; i < 20; i++) {
-        if (cmdOk("pg_isready", ["-h", "localhost", "-p", String(dockerHostPort)])) break;
+      for (let i = 0; i < 40; i++) {
+        if (await dockerReady()) break;
         await new Promise((r) => setTimeout(r, 250));
       }
     }
@@ -473,8 +770,13 @@ try {
         ensureDockerPostgresRunning(dockerHostPort);
 
         // Wait briefly for readiness.
-        for (let i = 0; i < 20; i++) {
-          if (cmdOk("pg_isready", ["-h", "localhost", "-p", String(dockerHostPort)])) break;
+        for (let i = 0; i < 40; i++) {
+          if (
+            (pgIsReady && pgIsReadyOk(pgIsReady, "localhost", dockerHostPort)) ||
+            (await tcpPortInUse("127.0.0.1", dockerHostPort))
+          ) {
+            break;
+          }
           await new Promise((r) => setTimeout(r, 250));
         }
 
@@ -560,16 +862,56 @@ try {
     }
   }
 
-  if (!env.map.has("DATABASE_URL")) setEnvKey(env, "DATABASE_URL", derivedUrls.DATABASE_URL);
-  if (!env.map.has("DATABASE_URL_TEST"))
+  if (flavor === "custom") {
+    if (!derivedAdminUrl) {
+      console.warn(
+        "Skipping role/database bootstrap: could not derive an admin URL from your DATABASE_URL.",
+      );
+      console.warn(
+        "Make sure your DATABASE_URL points to an existing database; migrations will run against it as-is.",
+      );
+    } else {
+      try {
+        await ensureRolesAndDatabases(derivedAdminUrl);
+      } catch (err) {
+        console.warn("");
+        console.warn(
+          "Skipping role/database bootstrap (admin connection failed). Make sure your DATABASE_URL points to an existing database with the required roles ('anon', 'authenticated') already configured.",
+        );
+        console.warn(`  ${String(err)}`);
+        console.warn("");
+      }
+    }
+  }
+
+  // Force-overwrite when Docker mode picks a non-default host port (so a stale
+  // .env value from a prior run does not collide with host Postgres on the same
+  // port) or when the user supplied custom URLs (we want their answers persisted
+  // even if a stale value happened to be in .env).
+  const forceWriteUrls = flavor === "custom" || (flavor === "docker" && dockerHostPort !== port);
+  if (forceWriteUrls || !env.map.has("DATABASE_URL")) {
+    setEnvKey(env, "DATABASE_URL", derivedUrls.DATABASE_URL);
+  }
+  if (forceWriteUrls || !env.map.has("DATABASE_URL_TEST")) {
     setEnvKey(env, "DATABASE_URL_TEST", derivedUrls.DATABASE_URL_TEST);
+  }
 
   // Persist env changes early, before migrations.
   writeEnvFile(envPath, env.lines);
 
-  // Step 10: Firebase CLI installed.
-  if (!cmdOk("firebase", ["--version"])) {
-    console.error("Firebase CLI not found. Install: npm install -g firebase-tools");
+  // Step 10: Firebase CLI available. We ship `firebase-tools` as a project
+  // devDependency, so the local node_modules/.bin/firebase is the canonical
+  // path. Fall back to a global install if it happens to exist.
+  const localFirebaseBin = path.join(repoRoot, "node_modules", ".bin", "firebase");
+  const firebaseBin = fs.existsSync(localFirebaseBin)
+    ? localFirebaseBin
+    : cmdOk("firebase", ["--version"])
+      ? "firebase"
+      : null;
+  if (!firebaseBin) {
+    console.error(
+      "firebase-tools not found. Run `npm install` to pull in the project devDependency.",
+    );
     process.exit(1);
   }
 
@@ -588,17 +930,11 @@ try {
     const ok = await promptYesNo(rl, "Start Firebase Auth Emulator now?", true);
     if (!ok) process.exit(1);
 
-    emulatorProc = spawn("firebase", ["emulators:start", "--only", "auth"], {
-      stdio: "inherit",
+    // Detach the emulator's stdin so it does not race the wizard's readline
+    // (and later Vite) for keystrokes.
+    emulatorProc = spawn(firebaseBin, ["emulators:start", "--only", "auth"], {
+      stdio: ["ignore", "inherit", "inherit"],
     });
-
-    const cleanup = () => {
-      if (emulatorProc && !emulatorProc.killed) {
-        emulatorProc.kill("SIGINT");
-      }
-    };
-    process.on("SIGINT", cleanup);
-    process.on("SIGTERM", cleanup);
 
     // Wait for readiness.
     const deadline = Date.now() + 15000;
@@ -661,20 +997,73 @@ try {
     console.log(`Dev setup complete in ${elapsed}ms.`);
   }
 
+  // Close readline before handing off to Vite. Otherwise the wizard's readline
+  // and Vite both read from the same stdin and race for keypresses (including
+  // Ctrl+C), which is the root cause of needing to mash Ctrl+C several times.
+  rl.close();
+
   // Step 17: hand off to vite, keeping emulator process attached.
   const viteProc = spawn("npx", ["vite"], {
     stdio: "inherit",
     env: { ...process.env, ...Object.fromEntries(env.map) },
   });
 
+  let shuttingDown = false;
+  const killChild = (child, signal) => {
+    if (!child) return;
+    if (child.exitCode !== null) return;
+    try {
+      child.kill(signal);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const shutdown = (signal) => {
+    if (shuttingDown) {
+      // Second Ctrl+C: escalate immediately.
+      killChild(viteProc, "SIGKILL");
+      killChild(emulatorProc, "SIGKILL");
+      process.exit(130);
+      return;
+    }
+    shuttingDown = true;
+    console.log("\nShutting down (press Ctrl+C again to force)...");
+    killChild(viteProc, signal);
+    killChild(emulatorProc, signal);
+    // Hard cap so a misbehaving child cannot hang the wizard.
+    setTimeout(() => {
+      killChild(viteProc, "SIGKILL");
+      killChild(emulatorProc, "SIGKILL");
+      process.exit(130);
+    }, 5000).unref();
+  };
+
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+
   const exitCode = await new Promise((resolve) => {
-    viteProc.on("exit", (code) => resolve(code ?? 1));
+    viteProc.once("exit", (code) => resolve(code ?? 0));
   });
 
-  if (emulatorProc && !emulatorProc.killed) {
-    emulatorProc.kill("SIGINT");
+  // Vite exited (likely because user hit Ctrl+C); make sure the emulator
+  // follows it down within a short grace period before we exit ourselves.
+  if (emulatorProc && emulatorProc.exitCode === null) {
+    killChild(emulatorProc, "SIGINT");
+    await new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        killChild(emulatorProc, "SIGKILL");
+        resolve();
+      }, 3000);
+      emulatorProc.once("exit", () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
   }
+
   process.exit(exitCode);
 } finally {
+  // No-op if already closed before the Vite handoff.
   rl.close();
 }
