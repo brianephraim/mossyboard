@@ -10,7 +10,7 @@ Make **card titles** inline editable in the board canvas, matching the existing 
 
 - always-visible input (no “edit mode” toggle)
 - submit/save on **blur** and **Enter**
-- cancel/revert on **Escape**
+- (defer) cancel/revert on **Escape**
 - supports coexistence with `@hello-pangea/dnd` dragging:
   - click focuses the input on **mouseup** (so press-drag gestures still reorder cards)
   - while the input is already focused, it behaves like a normal input (cursor positioning + drag-to-select)
@@ -63,7 +63,7 @@ Update `CardInterior` to render an inline RHF form for the title in place of the
 
 - **Blur**: submit if trimmed value differs; otherwise no-op (and keep canonical value).
 - **Enter**: submit.
-- **Escape**: reset input to current `card.title` and blur (matching column-title behavior).
+- **Escape**: defer (column titles do not currently implement Escape; keep behavior aligned).
 - **Open button**: remains a normal button; no global click handler that would focus the title.
 
 ### Data flow
@@ -91,11 +91,30 @@ Because `@hello-pangea/dnd` listens at **window capture** for mouse down and may
 - use `focusOnMouseUp` to focus after the drag threshold is evaluated
 - install the window-capture `stopImmediatePropagation()` guard (already implemented in `FormInlineTextField`) so that while the input is focused, native cursor placement and drag-to-select behavior is preserved
 
+### Reusability / component shape
+
+We should keep `FormInlineTextField` as the reusable primitive for “label-less inline inputs bound by RHF name”.
+
+In addition, we should introduce a small reusable wrapper component for this repeated pattern (board title, column title, card title):
+
+- owns `useForm({ defaultValues })`
+- resets when upstream title changes
+- defines a `submit = form.handleSubmit(...)` that trims, no-ops on unchanged, and resets on empty
+- renders `FormProvider` + `FormInlineTextField`
+- exposes only the necessary variation points via props:
+  - `ariaLabel`
+  - `defaultValue`
+  - `disabled`
+  - `focusOnMouseUp` (optional)
+  - `onSubmitTitle(nextTitle: string)` (async)
+  - `inputProps` / style props pass-through for typography differences
+
+This keeps feature components small, avoids copy/paste drift, and preserves the “RHF owns the value” constraint while still allowing styling and dnd-specific behavior differences.
+
 ## Testing plan
 
 - Add/extend a board canvas test to cover:
   - **blur saves**: editing title then blurring triggers `card.update`
-  - **escape cancels**: editing then pressing Escape restores original
   - **open still works**: clicking “Open” calls `onOpen` and does not focus the title input
 - Keep existing `FormInlineTextField` gesture tests intact (already cover capture-phase stop while focused).
 
