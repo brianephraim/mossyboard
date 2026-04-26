@@ -3164,7 +3164,7 @@ EOF
 
 - Modify: `src/features/boards/CardDetailSurface.tsx`
 
-- [ ] **Step 1: Add the imports**
+- [x] **Step 1: Add the imports**
 
 At the top of `CardDetailSurface.tsx`:
 
@@ -3173,7 +3173,7 @@ import { CardTagsRow } from "./BoardCanvas/CardTagsRow";
 import { useTagMutations } from "./useTagMutations";
 ```
 
-- [ ] **Step 2: Add the local `tag.list` query and the mutation hook**
+- [x] **Step 2: Add the local `tag.list` query and the mutation hook**
 
 Inside the component body, after the existing `cardQuery = trpc.card.get.useQuery(...)`:
 
@@ -3187,7 +3187,7 @@ const { addTag, detachTag } = useTagMutations({
 });
 ```
 
-- [ ] **Step 3: Add a `BoardSurface` panel with the row**
+- [x] **Step 3: Add a `BoardSurface` panel with the row**
 
 After the form `<BoardSurface>` (the one currently containing `FormRoot`), insert a new sibling `BoardSurface`:
 
@@ -3207,13 +3207,13 @@ After the form `<BoardSurface>` (the one currently containing `FormRoot`), inser
 </BoardSurface>
 ```
 
-- [ ] **Step 4: Format**
+- [x] **Step 4: Format**
 
 ```bash
 npx prettier --write src/features/boards/CardDetailSurface.tsx
 ```
 
-- [ ] **Step 5: Typecheck and test**
+- [x] **Step 5: Typecheck and test**
 
 ```bash
 npm run typecheck && npm run test
