@@ -1884,7 +1884,7 @@ EOF
 )"
 ```
 
-- [ ] **Step 7: Add tag-related tests to `src/features/boards/model.test.ts`**
+- [x] **Step 7: Add tag-related tests to `src/features/boards/model.test.ts`**
 
 Append:
 
@@ -2015,7 +2015,7 @@ describe("canReorderBoard with tags", () => {
 
 If the existing `model.test.ts` already has helpers for fixture cards/boards, replace the inlined `card(...)` / `board` fixture above with those helpers.
 
-- [ ] **Step 8: Format**
+- [x] **Step 8: Format**
 
 ```bash
 npx prettier --write \
@@ -2024,7 +2024,7 @@ npx prettier --write \
   src/features/boards/model.test.ts
 ```
 
-- [ ] **Step 9: Typecheck + tests**
+- [x] **Step 9: Typecheck + tests**
 
 ```bash
 npm run typecheck && npm run test
@@ -2032,7 +2032,7 @@ npm run typecheck && npm run test
 
 Expected: clean + green. The TS errors will likely include callers of `buildBoardLanes`/`canReorderBoard` in board screens that haven't been updated yet — this is expected for now if Step 6 missed any, but they should be caught at typecheck. If so, fix them before commit.
 
-- [ ] **Step 10: Commit test coverage**
+- [x] **Step 10: Commit test coverage**
 
 ```bash
 git add -A

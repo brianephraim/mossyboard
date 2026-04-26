@@ -7,7 +7,9 @@ import {
   groupListItemsByPriority,
   parseBoardDetailSearch,
   reorderBoardCards,
+  serializeTagFilter,
   togglePrioritySelection,
+  toggleTagSelection,
 } from "./model";
 import type { LoadedBoard } from "./types";
 
@@ -220,6 +222,135 @@ describe("board model helpers", () => {
         tags: [],
       }),
       false,
+    );
+  });
+});
+
+describe("parseTagFilter (via parseBoardDetailSearch)", () => {
+  it("lowercases, trims, dedupes, preserves inner spaces", () => {
+    const parsed = parseBoardDetailSearch({ tags: "Bug, NEEDS REVIEW, bug" });
+    assert.deepEqual(parsed.tags, ["bug", "needs review"]);
+  });
+
+  it("returns [] for missing or empty input", () => {
+    const a = parseBoardDetailSearch({});
+    const b = parseBoardDetailSearch({ tags: "" });
+    assert.deepEqual(a.tags, []);
+    assert.deepEqual(b.tags, []);
+  });
+});
+
+describe("serializeTagFilter", () => {
+  it("joins with commas, returns undefined for empty arrays", () => {
+    assert.equal(serializeTagFilter([]), undefined);
+    assert.equal(serializeTagFilter(["bug", "x"]), "bug,x");
+  });
+});
+
+describe("toggleTagSelection", () => {
+  it("adds when missing, removes when present", () => {
+    assert.deepEqual(toggleTagSelection([], "bug"), ["bug"]);
+    assert.deepEqual(toggleTagSelection(["bug"], "bug"), []);
+    assert.deepEqual(toggleTagSelection(["a"], "b").sort(), ["a", "b"].sort());
+  });
+});
+
+describe("buildBoardLanes with tag filter", () => {
+  const tagBoardFixture: LoadedBoard = {
+    id: "tag-board",
+    name: "Tag Board",
+    updatedAt: "2026-04-24T12:00:00.000Z",
+    columnCount: 1,
+    cardCount: 3,
+    columns: [
+      {
+        id: "col",
+        title: "Todo",
+        position: "1000",
+        version: 0,
+        cardCount: 3,
+        cards: [
+          {
+            id: "c1",
+            columnId: "col",
+            title: "C1",
+            description: "",
+            priority: "high",
+            position: "1000",
+            version: 0,
+            tags: [{ id: "t-bug", name: "Bug", normalizedName: "bug" }],
+          },
+          {
+            id: "c2",
+            columnId: "col",
+            title: "C2",
+            description: "",
+            priority: "medium",
+            position: "2000",
+            version: 0,
+            tags: [{ id: "t-fe", name: "Frontend", normalizedName: "frontend" }],
+          },
+          {
+            id: "c3",
+            columnId: "col",
+            title: "C3",
+            description: "",
+            priority: "low",
+            position: "3000",
+            version: 0,
+            tags: [],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("filters by tags (OR within array)", () => {
+    const lanes = buildBoardLanes(tagBoardFixture, {
+      groupBy: "column",
+      priority: [],
+      tags: ["bug"],
+    });
+    assert.deepEqual(
+      lanes[0]?.cards.map((c) => c.id),
+      ["c1"],
+    );
+  });
+
+  it("multiple tags use OR", () => {
+    const lanes = buildBoardLanes(tagBoardFixture, {
+      groupBy: "column",
+      priority: [],
+      tags: ["bug", "frontend"],
+    });
+    assert.deepEqual(lanes[0]?.cards.map((c) => c.id).sort(), ["c1", "c2"].sort());
+  });
+
+  it("AND across priority and tag dimensions", () => {
+    const lanes = buildBoardLanes(tagBoardFixture, {
+      groupBy: "column",
+      priority: ["high"],
+      tags: ["bug"],
+    });
+    assert.deepEqual(
+      lanes[0]?.cards.map((c) => c.id),
+      ["c1"],
+    );
+  });
+});
+
+describe("canReorderBoard with tags", () => {
+  it("returns false when tags filter is non-empty", () => {
+    assert.equal(
+      canReorderBoard({ view: "board", groupBy: "column", priority: [], tags: ["x"] }),
+      false,
+    );
+  });
+
+  it("returns true when all filters empty and grouping is column", () => {
+    assert.equal(
+      canReorderBoard({ view: "board", groupBy: "column", priority: [], tags: [] }),
+      true,
     );
   });
 });
