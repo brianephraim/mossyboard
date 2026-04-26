@@ -68,6 +68,21 @@
 
 ---
 
+## Progress tracking — read this before starting
+
+**This plan IS the worklog.** The agent updates it as it goes:
+
+- After completing each step, edit this file and change `- [ ]` to `- [x]` for that step.
+- The plan file gets staged with every commit. The `git add -A` invocations shown in the commit steps already pick it up — do not re-stage manually. The result: every task's commit captures both the code changes and the just-ticked checkboxes in one snapshot.
+- Never tick a box for a step you haven't actually finished. Never untick a box.
+- If you need to abort mid-task, leave already-finished steps ticked and stop. The next runner picks up at the first unticked box.
+
+**Commit cadence:** every task ends with at least one commit. Tasks 5, 6, and 11 have multiple intermediate commits at safe save-points so progress lands in git frequently. Each commit must leave the working tree on a clean green build (typecheck clean, tests passing). No broken intermediate commits — if a save-point can't keep the build green, fold it into the next commit instead.
+
+**Save-point rule:** a commit step can run only after the most recent typecheck and test step both finished green. If you got here without running them, run them first; do not commit a build you haven't verified.
+
+---
+
 ## Task 1: Demolition — remove every trace of subtasks (DB schema + server code + frontend code, single commit)
 
 Subtasks must come out atomically: the schema entry, the server module, the route, all UI references, and the typed shape on `CardDetailRow` are mutually dependent. Splitting into smaller commits leaves the codebase failing typecheck mid-way. This task does the entire demolition in one commit, leaving a green build with no subtasks anywhere and tags not yet introduced.
@@ -1231,6 +1246,40 @@ import { tagRouter } from "./routers/tag";
 
 And inside `t.router({...})` add the line `tag: tagRouter,` (alongside `card: cardRouter,` etc).
 
+- [ ] **Step 2a: Format the router files**
+
+```bash
+npx prettier --write src/server/trpc/routers/tag.ts src/server/trpc/router.ts
+```
+
+- [ ] **Step 2b: Typecheck**
+
+```bash
+npm run typecheck
+```
+
+Expected: clean.
+
+- [ ] **Step 2c: Run tests — expect green**
+
+```bash
+npm run test
+```
+
+Expected: pass. The new router has no consumer yet — this commit is just the wire-up surface.
+
+- [ ] **Step 2d: Commit router wire-up (save-point)**
+
+```bash
+git add -A
+git commit -m "$(cat <<'EOF'
+feat(server): wire tagRouter into appRouter
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+EOF
+)"
+```
+
 - [ ] **Step 3: Update `src/server/trpc/routers/card.ts` to accept `tags` filter on `listByBoard`**
 
 Find the `listByBoard` procedure's `.input(...)` zod schema. Add a `tags` field:
@@ -1411,6 +1460,37 @@ await tx
 (Adjust the variable name `lockedBoard` to match what the existing code uses — could be `boardId`.)
 
 Add `cardTags` to the schema import.
+
+- [ ] **Step 5a: Format card + board repos and the card-router input change**
+
+```bash
+npx prettier --write \
+  src/server/trpc/routers/card.ts \
+  src/server/card/repo.ts \
+  src/server/board/repo.ts
+```
+
+- [ ] **Step 5b: Typecheck**
+
+```bash
+npm run typecheck
+```
+
+Expected: clean. If existing tests in `card/repo.test.ts` or `board/repo.test.ts` no longer compile because they reference removed shapes, that's expected — Steps 6 and 7 update them. Defer the test-run until then.
+
+- [ ] **Step 5c: Commit card hydration + cascades (save-point)**
+
+Run `npm run test` first; it should pass even before Steps 6–7 because the existing test files don't yet reference the new shapes negatively. If a test fails because it asserts on the old subtask cascade (the test was supposed to be removed in Task 1 — verify by `rg "subtask" src/server/board/repo.test.ts`), drop it now.
+
+```bash
+git add -A
+git commit -m "$(cat <<'EOF'
+feat(server): hydrate tags on card reads and cascade soft-deletes
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+EOF
+)"
+```
 
 - [ ] **Step 6: Update `src/server/card/repo.test.ts` — assertion swap + new filter test**
 
@@ -1615,12 +1695,12 @@ npm run typecheck && npm run test
 
 Expected: clean + green.
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 11: Commit test coverage**
 
 ```bash
 git add -A
 git commit -m "$(cat <<'EOF'
-feat(server): wire tagRouter and hydrate tags on card reads
+test(server): cover tag hydration, listByBoard filter, and cascades
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 EOF
@@ -1776,6 +1856,34 @@ rg -n "canReorderBoard\(|buildBoardLanes\(" src/
 
 For each match, ensure the input object now includes a `tags` field sourced from the parsed `BoardDetailSearch`. Most call sites are likely in `BoardDetailScreen.tsx`, `BoardWorkspaceScreen.tsx`, and a handful of test files. If a test currently passes the literal object `{ view, groupBy, priority }`, add `tags: []`.
 
+- [ ] **Step 6a: Format the type/model code touched so far**
+
+```bash
+npx prettier --write \
+  src/features/boards/types.ts \
+  src/features/boards/model.ts
+```
+
+- [ ] **Step 6b: Typecheck**
+
+```bash
+npm run typecheck
+```
+
+Expected: clean. Existing tests still see the old call signatures momentarily — the test additions in Step 7 follow.
+
+- [ ] **Step 6c: Commit type/model code (save-point)**
+
+```bash
+git add -A
+git commit -m "$(cat <<'EOF'
+feat(boards): add tags to BoardDetailSearch, lane filter, reorder gate
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+EOF
+)"
+```
+
 - [ ] **Step 7: Add tag-related tests to `src/features/boards/model.test.ts`**
 
 Append:
@@ -1924,12 +2032,12 @@ npm run typecheck && npm run test
 
 Expected: clean + green. The TS errors will likely include callers of `buildBoardLanes`/`canReorderBoard` in board screens that haven't been updated yet — this is expected for now if Step 6 missed any, but they should be caught at typecheck. If so, fix them before commit.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 10: Commit test coverage**
 
 ```bash
 git add -A
 git commit -m "$(cat <<'EOF'
-feat(boards): add tags to BoardDetailSearch and lane filter
+test(boards): cover tag filter parsers, lane filter, reorder gate
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 EOF
@@ -2798,6 +2906,56 @@ type BoardLaneViewProps = {
 
 Pass them down identically through each layer. **Do not** transform or memoize the callbacks at intermediate layers — the originals from the screen come in already memoized.
 
+- [ ] **Step 3a: Format the canvas folder**
+
+```bash
+npx prettier --write src/features/boards/BoardCanvas
+```
+
+- [ ] **Step 3b: Typecheck**
+
+```bash
+npm run typecheck
+```
+
+Expected: errors will surface on board-screen consumers (`BoardWorkspaceScreen.tsx` / `BoardDetailScreen.tsx`) for the new required props on the top-level fan-out component. Those parents are wired in Task 12. To keep this commit's build green, temporarily pass empty/no-op stubs from the parents — find each `<BoardCanvas ... />` (or whichever component the screen renders) and add:
+
+```tsx
+availableTags={[]}
+onAddTag={async () => undefined}
+onDetachTag={async () => undefined}
+```
+
+Task 12 replaces these stubs with the real `useTagMutations` wiring. Re-run `npm run typecheck`.
+
+Expected after stubs: clean.
+
+- [ ] **Step 3c: Run tests**
+
+```bash
+npm run test
+```
+
+Expected: existing canvas tests may fail because their `<CardInterior />` render harnesses don't pass the new props yet — Step 4 fixes those. If only the harness-related tests fail, defer to Step 4. If anything else fails, stop and investigate before committing.
+
+If only harness-related tests fail, proceed to Step 3d.
+
+- [ ] **Step 3d: Commit fan-out plumbing (save-point)**
+
+Even though `npm run test` may have lingering failures from the harnesses (Step 4), `npm run typecheck` is clean. Commit anyway? **No** — the convention says no broken tree commits. Instead, fold Steps 3 → 4 into a single commit by skipping this 3d save-point and going straight to Step 4. If the harnesses already pass (no failures introduced), commit here:
+
+```bash
+git add -A
+git commit -m "$(cat <<'EOF'
+feat(boards): thread tag props through CardInterior and lane fan-out
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+EOF
+)"
+```
+
+If you skipped the commit because tests are red, mark this step done anyway — the harness updates in Step 4 will land everything in the Step 8 commit.
+
 - [ ] **Step 4: Update existing canvas tests to pass default empty arrays for the new props**
 
 Tests that render `<CardInterior />` directly (e.g. `BoardCanvas.inline-edit-card-title.test.tsx`, `BoardCanvas.inline-rename.test.tsx`, `BoardCanvas.priority-grouping.test.tsx`, `BoardCanvas.inline-edit-card-description.test.tsx`) need stubs:
@@ -2838,16 +2996,22 @@ npm run test
 
 Expected: green. Existing inline-edit / drag / priority tests should still pass with the harness-stubbed props.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 8: Commit (test harness updates, plus fan-out if Step 3d was skipped)**
 
 ```bash
 git add -A
 git commit -m "$(cat <<'EOF'
-feat(boards): wire CardTagsRow into CardInterior and propagate tag props
+test(boards): update CardInterior harnesses for new tag props
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 EOF
 )"
+```
+
+If Step 3d's save-point commit was skipped (tests were red after Step 3), this commit absorbs both the fan-out plumbing AND the harness updates. In that case, change the commit subject to:
+
+```
+feat(boards): wire CardTagsRow into CardInterior and propagate tag props
 ```
 
 ---
