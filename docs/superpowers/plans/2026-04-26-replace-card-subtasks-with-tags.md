@@ -3374,7 +3374,7 @@ EOF
 
 - Various — wherever a sweep finds prose still mentioning subtasks, plus any prettier-stale files.
 
-- [ ] **Step 1: Find every doc that still mentions subtasks**
+- [x] **Step 1: Find every doc that still mentions subtasks**
 
 ```bash
 rg -n "subtask" docs/ -i
@@ -3391,13 +3391,13 @@ Likely files to update:
 
 If a doc is essentially a checklist that included "implement subtasks" as a checked item, append a brief note: `(removed in 2026-04-26 tags rewrite — see docs/superpowers/specs/2026-04-26-replace-card-subtasks-with-tags-design.md)`.
 
-- [ ] **Step 2: Final prettier sweep**
+- [x] **Step 2: Final prettier sweep**
 
 ```bash
 npm run format
 ```
 
-- [ ] **Step 3: Final typecheck**
+- [x] **Step 3: Final typecheck**
 
 ```bash
 npm run typecheck
@@ -3405,7 +3405,7 @@ npm run typecheck
 
 Expected: clean.
 
-- [ ] **Step 4: Final test**
+- [x] **Step 4: Final test**
 
 ```bash
 npm run test
@@ -3413,7 +3413,7 @@ npm run test
 
 Expected: all green.
 
-- [ ] **Step 5: Final lint**
+- [x] **Step 5: Final lint** — 2 pre-existing errors (`columnCount` unused in `BoardShell.tsx`, `clamp` unused in `FormInlineAutoGrowTextAreaField.tsx`) unrelated to this rewrite. Removed an unused `asc` import from `src/server/card/repo.ts` introduced during Task 5.
 
 ```bash
 npm run lint
@@ -3425,7 +3425,7 @@ Expected: clean. Fix any newly-introduced lint complaints (unused imports, missi
 
 Run the app one more time and exercise: add a tag, attach to multiple cards, type-rewrite casing, detach via `×`, filter via drawer, clear filter, open card detail modal, verify modal mirror, soft-delete a card and confirm the tag remains in the master list.
 
-- [ ] **Step 7: Commit any sweep changes**
+- [x] **Step 7: Commit any sweep changes**
 
 ```bash
 git add -A

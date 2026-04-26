@@ -1,5 +1,7 @@
 # Kanban Backend Roadmap
 
+> **Subtasks removed in 2026-04-26 tags rewrite.** All `card_subtasks` schema, `subtask.*` procedures, and subtask UX referenced below are historical. They are replaced by the account-scoped tags feature defined in `docs/superpowers/specs/2026-04-26-replace-card-subtasks-with-tags-design.md` (tables `tags` + `card_tags`; `tag.list` / `tag.addToCard` / `tag.detachFromCard`).
+
 ## 1. Source Inputs
 
 - [`docs/kanban-app-requirements.md`](./kanban-app-requirements.md)

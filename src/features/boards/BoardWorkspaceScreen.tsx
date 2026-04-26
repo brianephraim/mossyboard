@@ -672,8 +672,8 @@ function DeleteBoardConfirmModal({
       <YStack gap="$3">
         <Text color="$boardTextMuted">
           {boardName
-            ? `“${boardName}” will be removed from your active boards. Cards, columns, and subtasks come with it.`
-            : "This board will be removed from your active boards. Cards, columns, and subtasks come with it."}
+            ? `“${boardName}” will be removed from your active boards. Cards and columns come with it.`
+            : "This board will be removed from your active boards. Cards and columns come with it."}
         </Text>
       </YStack>
     </PrettyModalWrap>

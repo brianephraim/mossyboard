@@ -39,6 +39,8 @@ This checklist turns the current frontend briefs into an implementation-ordered 
 
 ## 5. Subtasks
 
+> Removed in 2026-04-26 tags rewrite — see `docs/superpowers/specs/2026-04-26-replace-card-subtasks-with-tags-design.md`. The `CardTagsRow` component (popover-based add + per-pill detach) inside `CardInterior` and `CardDetailSurface`, plus the `BoardDrawer` Tags filter section, replace this section.
+
 - [x] Build subtask empty state
 - [x] Build subtask composer
 - [x] Build subtask row read state

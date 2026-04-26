@@ -32,6 +32,8 @@ This checklist turns the current backend briefs into an implementation-ordered e
 
 ## 4. Subtasks
 
+> Removed in 2026-04-26 tags rewrite — see `docs/superpowers/specs/2026-04-26-replace-card-subtasks-with-tags-design.md`. The `tag` router (`list` / `addToCard` / `detachFromCard`) and `tags` + `card_tags` schema replace this section.
+
 - [x] Implement subtask repo operations:
   - [x] `subtask.create`
   - [x] `subtask.update`
