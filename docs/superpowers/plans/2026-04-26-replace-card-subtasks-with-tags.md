@@ -294,7 +294,7 @@ npm run test
 
 Expected: pass. Subtask tests are gone (their files were deleted). The test DB will still have a `card_subtasks` table (we haven't run a migration that drops it), but the test code no longer references it, so this is fine until Task 2.
 
-- [ ] **Step 15: Commit demolition**
+- [x] **Step 15: Commit demolition**
 
 ```bash
 git add -A
