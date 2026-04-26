@@ -1,4 +1,5 @@
 export { FormFieldFrame } from "./FormFieldFrame";
+export { FormInlineTextField } from "./FormInlineTextField";
 export { FormOptionButtonsField } from "./FormOptionButtonsField";
 export { FormRoot } from "./FormRoot";
 export { FormTextAreaField } from "./FormTextAreaField";

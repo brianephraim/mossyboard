@@ -831,6 +831,7 @@ export function BoardDetailScreen({
         title={
           board ? (
             <EditableBoardTitle
+              name="title"
               title={board.name}
               disabled={renameBoard.isPending}
               onSave={async (name) => {

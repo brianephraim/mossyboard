@@ -227,6 +227,7 @@ export function BoardWorkspaceScreen({
 
   const title: ReactNode = mainBoard ? (
     <EditableBoardTitle
+      name="title"
       title={mainBoard.name}
       disabled={mainMutations.renameBoard.isPending}
       onSave={async (name) => {
