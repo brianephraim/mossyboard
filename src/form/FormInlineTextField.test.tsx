@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { TamaguiRootProvider } from "../tamagui/TamaguiRootProvider";
@@ -70,5 +70,30 @@ describe("FormInlineTextField focusOnMouseUp", () => {
 
     field.focus();
     expect(document.activeElement).toBe(field);
+  });
+
+  it("stops mousedown at window capture phase only while focused", () => {
+    render(<InlineHarness focusOnMouseUp />);
+    const field = screen.getByRole("textbox", { name: /title/i }) as HTMLInputElement;
+
+    const dispatch = (target: HTMLElement) => {
+      const event = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+      const stopImmediate = vi.fn();
+      Object.defineProperty(event, "stopImmediatePropagation", {
+        value: stopImmediate,
+        configurable: true,
+      });
+      target.dispatchEvent(event);
+      return stopImmediate;
+    };
+
+    expect(document.activeElement).not.toBe(field);
+    const stopWhenUnfocused = dispatch(field);
+    expect(stopWhenUnfocused).not.toHaveBeenCalled();
+
+    field.focus();
+    expect(document.activeElement).toBe(field);
+    const stopWhenFocused = dispatch(field);
+    expect(stopWhenFocused).toHaveBeenCalled();
   });
 });

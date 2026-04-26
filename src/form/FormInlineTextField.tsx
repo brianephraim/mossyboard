@@ -1,4 +1,4 @@
-import { useId, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import type { ComponentProps, MouseEvent as ReactMouseEvent } from "react";
 import { Input } from "@tamagui/input";
 import {
@@ -95,6 +95,39 @@ export function FormInlineTextField<
   const registration = register(name, rules);
   const localInputRef = useRef<HTMLInputElement | null>(null);
 
+  // While the input is focused, prevent dnd from acquiring a drag lock on
+  // mousedown so the browser's native cursor-positioning and drag-to-select
+  // text behavior keeps working.
+  //
+  // dnd's mouse sensor listens at window-level capture phase. We attach our
+  // own window-level capture listener here. Because React effects fire
+  // child-first and `FormInlineTextField` lives inside `DragDropContext`,
+  // our listener is registered before dnd's and runs first; calling
+  // `stopImmediatePropagation` skips dnd's handler entirely. We do *not*
+  // call `preventDefault` — that would also kill the browser's text-select
+  // behavior we're trying to preserve.
+  useEffect(() => {
+    if (!focusOnMouseUp || typeof window === "undefined") {
+      return;
+    }
+    const onWindowCaptureMouseDown = (event: globalThis.MouseEvent) => {
+      const node = localInputRef.current;
+      if (!node) return;
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (!node.contains(target)) return;
+      if (document.activeElement !== node) return;
+      event.stopImmediatePropagation();
+      debugFocus("window-capture mousedown stopped (input focused)", {
+        target: describeNode(target as Element),
+      });
+    };
+    window.addEventListener("mousedown", onWindowCaptureMouseDown, true);
+    return () => {
+      window.removeEventListener("mousedown", onWindowCaptureMouseDown, true);
+    };
+  }, [focusOnMouseUp]);
+
   const handleMouseDown = (event: ReactMouseEvent<HTMLInputElement>) => {
     onMouseDownProp?.(event);
     const gestureId = nextDebugId();
@@ -127,10 +160,11 @@ export function FormInlineTextField<
     const alreadyFocused =
       typeof document !== "undefined" && node !== null && document.activeElement === node;
     if (alreadyFocused) {
-      debugFocus("mouseDown while already focused; stopping propagation", { gestureId });
-      // While focused, suppress propagation so the surrounding
-      // dnd drag handle doesn't initiate a drag during text selection.
-      event.stopPropagation();
+      // The window-capture mousedown effect already shielded us from dnd
+      // for this gesture; nothing to do here. We must not register
+      // mouseup-focus tracking — the input is already focused, and the
+      // user is doing normal cursor positioning / drag-select.
+      debugFocus("mouseDown while already focused; deferring to native", { gestureId });
       return;
     }
     if (typeof window === "undefined") {

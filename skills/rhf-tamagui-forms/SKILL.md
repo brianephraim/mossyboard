@@ -65,15 +65,20 @@ If you overwrite `onBlur`/`onChange` with RHF handlers, feature-level behavior l
 
 ## Inline edit inside a `@hello-pangea/dnd` drag handle
 
-When an inline-edit input lives inside a draggable region (e.g. a column header that is also a drag handle), three things fight each other: dnd by default refuses drags from interactive elements (`<input>`, `<button>`, ...), the browser focuses an input on `mousedown` (which "wins" over an intent-to-drag), and dnd swallows clicks once a drag has started.
+When an inline-edit input lives inside a draggable region (e.g. a column header that is also a drag handle), several things fight each other: dnd by default refuses drags from interactive elements (`<input>`, `<button>`, ...), the browser focuses an input on `mousedown` (which "wins" over an intent-to-drag), dnd's mouse sensor calls `event.preventDefault()` on mousedown once it acquires a lock (which suppresses the browser's native cursor-positioning and text-select drag inside the input), and dnd swallows clicks once a drag has started.
 
 The supported pattern in this repo:
 
 1. On the parent `<Draggable>`, set `disableInteractiveElementBlocking` so dnd will start a drag from the input region. Without this, dragging from the input area silently does nothing.
-2. On the inline field, pass `focusOnMouseUp` (and optionally `focusOnMouseUpDragThresholdPx`). The field will defer focus to mouseup and only focus if the press did not move past the threshold. While the input is already focused, mousedown stops propagating so dnd can't hijack text-selection drags inside the input.
-3. Keep all other RHF wiring identical to the inline-form pattern above (submit on blur, no extra editing state).
+2. On the inline field, pass `focusOnMouseUp` (and optionally `focusOnMouseUpDragThresholdPx`). The field defers focus to `mouseup` and only focuses if the press did not move past the threshold.
+3. The field also installs a window-level capture-phase mousedown listener that, while the input is focused, calls `event.stopImmediatePropagation()` — registered before dnd's listener because React effects fire child-first — so dnd's mouse sensor never runs for that gesture and the browser's native cursor-positioning / drag-to-select behavior keeps working inside the focused input. Do not try to fix this with React-level `stopPropagation` or `preventDefault`: dnd listens at window-capture (which React's bubble-phase `stopPropagation` does not reach), and `preventDefault` would suppress the very text-selection behavior we are trying to preserve.
+4. Keep all other RHF wiring identical to the inline-form pattern above (submit on blur, no extra editing state).
 
 Reach for this pattern only when an input has to coexist with a drag handle. For a plain inline rename with no surrounding drag handle, do not opt in — `focusOnMouseUp` adds latency and is unnecessary.
+
+### Pitfall: do not short-circuit `mousedown` on `defaultPrevented`
+
+`@hello-pangea/dnd`'s window-capture mousedown handler runs before any element-level handler and calls `event.preventDefault()` once it locks a draggable. The `focusOnMouseUp` element handler must keep running (to register `mouseup` focus) **even when `event.defaultPrevented` is already `true`** — that's exactly the case it exists to recover from. Treat `defaultPrevented` as informational only here, not as a guard.
 
 ## Tamagui change events: always adapt through `readTamaguiTextInputValue`
 
