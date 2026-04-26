@@ -1,5 +1,5 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Text, Theme } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 import { Popover } from "@tamagui/popover";
@@ -14,10 +14,10 @@ import { BoardActionButton, BoardPill, BoardSurface } from "../ui";
 import type { BoardLane } from "../types";
 import { EdgeMoveButton } from "./EdgeMoveButton";
 import { CARD_MOVE_EDGE_SIZE_PX } from "./layout";
+import { useDragSafePress } from "./useDragSafePress";
 import { useEdgeHoverFocus } from "./useEdgeHoverFocus";
 
 type Direction = "up" | "down" | "left" | "right";
-const PRIORITY_POPOVER_DRAG_THRESHOLD_PX = 5;
 
 type CardInteriorProps = {
   card: BoardLane["cards"][number];
@@ -53,7 +53,9 @@ export function CardInterior({
   const moveControlsVisible = canMove && visible;
   const [descriptionFocused, setDescriptionFocused] = useState(false);
   const [priorityPickerOpen, setPriorityPickerOpen] = useState(false);
-  const priorityGestureRef = useRef<{ movedBeyondThreshold: boolean } | null>(null);
+  const priorityPress = useDragSafePress({
+    onActivate: () => setPriorityPickerOpen(true),
+  });
 
   // Local optimistic priority — decoupled from the upstream board state pipeline so
   // the displayed pill reflects the user's choice the moment they click, even if the
@@ -147,39 +149,7 @@ export function CardInterior({
                   color={(boardPriorityMeta[displayedPriority]?.textColor as any) ?? "$boardAccent"}
                   hoverStyle={{ opacity: 0.92 }}
                   pressStyle={{ opacity: 0.86 }}
-                  onMouseDown={(event) => {
-                    if (typeof window === "undefined") {
-                      setPriorityPickerOpen(true);
-                      return;
-                    }
-
-                    const startX = event.clientX;
-                    const startY = event.clientY;
-                    const state = { movedBeyondThreshold: false };
-                    priorityGestureRef.current = state;
-
-                    const onWindowMove = (windowEvent: globalThis.MouseEvent) => {
-                      if (state.movedBeyondThreshold) return;
-                      const dx = windowEvent.clientX - startX;
-                      const dy = windowEvent.clientY - startY;
-                      const dist = Math.hypot(dx, dy);
-                      if (dist >= PRIORITY_POPOVER_DRAG_THRESHOLD_PX) {
-                        state.movedBeyondThreshold = true;
-                      }
-                    };
-
-                    const onWindowUp = () => {
-                      window.removeEventListener("mousemove", onWindowMove);
-                      window.removeEventListener("mouseup", onWindowUp);
-                      if (!state.movedBeyondThreshold) {
-                        setPriorityPickerOpen(true);
-                      }
-                      priorityGestureRef.current = null;
-                    };
-
-                    window.addEventListener("mousemove", onWindowMove);
-                    window.addEventListener("mouseup", onWindowUp);
-                  }}
+                  onMouseDown={priorityPress.onMouseDown}
                   onPress={() => setPriorityPickerOpen(true)}
                 >
                   {(boardPriorityMeta[displayedPriority]?.shortLabel as string | undefined) ??

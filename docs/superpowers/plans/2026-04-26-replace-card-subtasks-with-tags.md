@@ -2262,7 +2262,7 @@ The priority popover button in `src/features/boards/BoardCanvas/CardInterior.tsx
 - Create: `src/features/boards/BoardCanvas/useDragSafePress.ts`
 - Modify: `src/features/boards/BoardCanvas/CardInterior.tsx`
 
-- [ ] **Step 1: Create `src/features/boards/BoardCanvas/useDragSafePress.ts`**
+- [x] **Step 1: Create `src/features/boards/BoardCanvas/useDragSafePress.ts`**
 
 ```ts
 import { useCallback, useRef } from "react";
@@ -2331,7 +2331,7 @@ export function useDragSafePress({
 }
 ```
 
-- [ ] **Step 2: Refactor the priority button in `src/features/boards/BoardCanvas/CardInterior.tsx` to use the hook**
+- [x] **Step 2: Refactor the priority button in `src/features/boards/BoardCanvas/CardInterior.tsx` to use the hook**
 
 At the top of the file:
 
@@ -2351,7 +2351,7 @@ In the `BoardActionButton` markup for the priority pill, replace the entire `onM
 
 Also remove the `useRef` import if it's no longer used in the file.
 
-- [ ] **Step 3: Format**
+- [x] **Step 3: Format**
 
 ```bash
 npx prettier --write \
@@ -2359,7 +2359,7 @@ npx prettier --write \
   src/features/boards/BoardCanvas/CardInterior.tsx
 ```
 
-- [ ] **Step 4: Typecheck**
+- [x] **Step 4: Typecheck**
 
 ```bash
 npm run typecheck
@@ -2367,7 +2367,7 @@ npm run typecheck
 
 Expected: clean.
 
-- [ ] **Step 5: Run existing priority popover tests — expect still green**
+- [x] **Step 5: Run existing priority popover tests — expect still green**
 
 ```bash
 npm run test -- src/features/boards/BoardCanvas
@@ -2375,7 +2375,7 @@ npm run test -- src/features/boards/BoardCanvas
 
 The existing inline-rename / priority-grouping / drag-from-buttons tests should all still pass — the gesture behavior is preserved, only the location of the code moved.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
