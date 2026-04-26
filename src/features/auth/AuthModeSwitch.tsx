@@ -52,7 +52,7 @@ export function AuthModeSwitch({
           onPress={() => {
             void navigate({
               to: "/auth",
-              search: { mode: "signin", redirectTo },
+              search: { mode: "signin", redirectTo, reason: undefined },
               replace: true,
             });
           }}
@@ -77,7 +77,7 @@ export function AuthModeSwitch({
 
         void navigate({
           to: "/auth",
-          search: { mode: next, redirectTo },
+          search: { mode: next, redirectTo, reason: undefined },
           replace: true,
         });
       }}

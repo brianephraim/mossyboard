@@ -163,18 +163,26 @@ export function ResetPasswordForm({ redirectTo, formHeadingRef }: ResetPasswordF
         </YStack>
       ) : null}
 
-      <Button type="submit" theme="active" disabled={sendReset.isPending || cooldown > 0}>
+      <Button
+        disabled={sendReset.isPending || cooldown > 0}
+        backgroundColor="$blue10"
+        pressStyle={{ backgroundColor: "$blue11" }}
+        color="$color1"
+      >
         {sendReset.isPending ? "Sending..." : "Send reset email"}
       </Button>
 
       <Button
-        type="button"
         chromeless
         alignSelf="flex-start"
         paddingHorizontal={0}
         height="auto"
         onPress={() => {
-          void navigate({ to: "/auth", search: { mode: "signin", redirectTo }, replace: true });
+          void navigate({
+            to: "/auth",
+            search: { mode: "signin", redirectTo, reason: undefined },
+            replace: true,
+          });
         }}
       >
         <Text color="$blue10" textDecorationLine="underline">

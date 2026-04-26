@@ -169,8 +169,8 @@ export async function softDeleteSubtask(input: {
     if (!deleted?.deletedAt) {
       throw trpcErrors.conflict("Version conflict");
     }
-
-    return deleted;
+    const deletedAt = deleted.deletedAt;
+    return { id: deleted.id, deletedAt };
   });
 }
 

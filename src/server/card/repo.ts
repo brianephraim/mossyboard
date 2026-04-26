@@ -203,6 +203,7 @@ export async function softDeleteCard(input: {
     if (!deleted?.deletedAt) {
       throw trpcErrors.conflict("Version conflict");
     }
+    const deletedAt = deleted.deletedAt;
 
     await tx
       .update(cardSubtasks)
@@ -217,7 +218,7 @@ export async function softDeleteCard(input: {
       now,
     });
 
-    return deleted;
+    return { id: deleted.id, deletedAt };
   });
 }
 

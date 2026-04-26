@@ -68,7 +68,7 @@ export function AuthPageShell({
           paddingHorizontal={0}
           height="auto"
           onPress={() => {
-            void navigate({ to: "/", search: {} });
+            void navigate({ to: "/", search: { redirectTo: undefined } });
           }}
         >
           <Text color="$blue10" textDecorationLine="underline">

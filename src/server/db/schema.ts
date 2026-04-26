@@ -106,7 +106,7 @@ export const cards = pgTable(
       .references(() => columns.id),
     title: text("title").notNull(),
     description: text("description").notNull().default(""),
-    priority: text("priority").notNull().default("none"),
+    priority: text("priority").$type<CardPriority>().notNull().default("none"),
     position: text("position").notNull(),
     version: integer("version").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

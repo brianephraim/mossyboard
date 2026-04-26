@@ -63,11 +63,12 @@ export function BoardDrawer({
     }
   };
 
-  const onPointerDown: React.PointerEventHandler = (event) => {
-    if (!event.currentTarget) {
+  const onPointerDown = (event: PointerEvent) => {
+    const target = event.currentTarget;
+    if (!target) {
       return;
     }
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    (target as HTMLElement).setPointerCapture(event.pointerId);
 
     const handleMove = (moveEvent: PointerEvent) => {
       const innerHeight = window.innerHeight;
@@ -120,7 +121,7 @@ export function BoardDrawer({
 
   return (
     <YStack
-      position="fixed"
+      position="absolute"
       left={0}
       right={0}
       bottom={0}

@@ -130,13 +130,17 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
         </YStack>
       ) : null}
 
-      <Button type="submit" theme="active" disabled={form.formState.isSubmitting}>
+      <Button
+        disabled={form.formState.isSubmitting}
+        backgroundColor="$blue10"
+        pressStyle={{ backgroundColor: "$blue11" }}
+        color="$color1"
+      >
         {form.formState.isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
 
       <YStack gap="$2">
         <Button
-          type="button"
           chromeless
           alignSelf="flex-start"
           paddingHorizontal={0}
@@ -145,8 +149,8 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
             const email = form.getValues("email");
             void navigate({
               to: "/auth",
-              search: { mode: "reset", redirectTo },
-              state: { prefillEmail: email } as { prefillEmail?: string },
+              search: { mode: "reset", redirectTo, reason: undefined },
+              state: (prev) => ({ ...(prev ?? {}), prefillEmail: email }),
             });
           }}
         >
@@ -155,13 +159,16 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
           </Text>
         </Button>
         <Button
-          type="button"
           chromeless
           alignSelf="flex-start"
           paddingHorizontal={0}
           height="auto"
           onPress={() => {
-            void navigate({ to: "/auth", search: { mode: "signup", redirectTo }, replace: true });
+            void navigate({
+              to: "/auth",
+              search: { mode: "signup", redirectTo, reason: undefined },
+              replace: true,
+            });
           }}
         >
           <Text color="$blue10" textDecorationLine="underline">

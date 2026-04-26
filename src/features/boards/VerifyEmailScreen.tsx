@@ -45,7 +45,7 @@ export function VerifyEmailScreen({
     if (!session.isSignedIn) {
       void navigate({
         to: "/auth",
-        search: { mode: "signin", redirectTo: target },
+        search: { mode: "signin", redirectTo: target, reason: undefined },
         replace: true,
       });
       return;

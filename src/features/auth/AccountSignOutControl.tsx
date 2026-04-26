@@ -32,7 +32,15 @@ export function AccountSignOutControl({
           void signOutUser()
             .then(() => {
               onSignedOut?.();
-              void navigate({ to: afterSignOutTo, search: {} });
+              void navigate(
+                afterSignOutTo === "/auth"
+                  ? {
+                      to: "/auth",
+                      search: { mode: "signin", redirectTo: "/boards", reason: undefined },
+                      replace: true,
+                    }
+                  : { to: "/", search: { redirectTo: undefined }, replace: true },
+              );
             })
             .catch(() => {
               setError("Sign out failed. Try again.");

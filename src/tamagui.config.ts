@@ -1,7 +1,9 @@
 import { createTamagui } from "@tamagui/core";
 import { defaultConfig } from "@tamagui/config/v4";
 
-const baseTokens = defaultConfig.tokens;
+const baseTokens = defaultConfig.tokens as typeof defaultConfig.tokens & {
+  color: Record<string, string>;
+};
 
 const config = createTamagui({
   ...defaultConfig,

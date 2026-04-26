@@ -109,11 +109,13 @@ export function PublicAuthLanding({ redirectTo }: PublicAuthLandingProps) {
         <Button
           width="100%"
           size="$4"
-          theme="active"
+          backgroundColor="$blue10"
+          pressStyle={{ backgroundColor: "$blue11" }}
+          color="$color1"
           onPress={() => {
             void navigate({
               to: "/auth",
-              search: { mode: "signin", redirectTo: safeRedirect },
+              search: { mode: "signin", redirectTo: safeRedirect, reason: undefined },
             });
           }}
         >
@@ -128,7 +130,7 @@ export function PublicAuthLanding({ redirectTo }: PublicAuthLandingProps) {
           onPress={() => {
             void navigate({
               to: "/auth",
-              search: { mode: "signup", redirectTo: safeRedirect },
+              search: { mode: "signup", redirectTo: safeRedirect, reason: undefined },
             });
           }}
         >

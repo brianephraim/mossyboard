@@ -27,7 +27,7 @@ export function BoardRouteGate({ children }: Readonly<{ children: ReactNode }>) 
     if (!session.isSignedIn) {
       void navigate({
         to: "/auth",
-        search: { mode: "signin", redirectTo: redirectTarget },
+        search: { mode: "signin", redirectTo: redirectTarget, reason: undefined },
         replace: true,
       });
       return;

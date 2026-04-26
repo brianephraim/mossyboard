@@ -22,7 +22,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthRoute() {
-  const navigate = useNavigate({ from: "/auth" });
+  const navigate = useNavigate();
   const search = Route.useSearch();
   const session = useAuthSession();
   const requiresEmailVerification = useRequiresEmailVerification();
@@ -49,7 +49,7 @@ function AuthRoute() {
 
     void navigate({
       to: target,
-      search: target === "/verify-email" ? { redirectTo: redirectTarget } : {},
+      ...(target === "/verify-email" ? { search: { redirectTo: redirectTarget } } : {}),
       replace: true,
     });
   }, [

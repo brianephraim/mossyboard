@@ -262,6 +262,7 @@ export async function softDeleteBoard(input: {
     if (!deletedBoard?.deletedAt) {
       throw new Error("Failed to soft-delete board");
     }
+    const deletedAt = deletedBoard.deletedAt;
 
     const activeColumns = await tx
       .select({ id: columns.id })
@@ -303,6 +304,6 @@ export async function softDeleteBoard(input: {
       }
     }
 
-    return deletedBoard;
+    return { id: deletedBoard.id, deletedAt };
   });
 }

@@ -15,7 +15,7 @@ type PrettyModalWrapProps = {
   preventOutsideClose?: boolean;
   closeLabel?: string;
   desktopPlacement?: "center" | "side";
-  desktopWidth?: number | string;
+  desktopWidth?: number;
 };
 
 export function PrettyModalWrap({
@@ -34,8 +34,7 @@ export function PrettyModalWrap({
   const media = useMedia();
   const fullScreen = fullScreenOnMobile && media.maxMd;
   const showAsSidePanel = !fullScreen && desktopPlacement === "side";
-  const resolvedDesktopWidth =
-    desktopWidth ?? (showAsSidePanel ? "min(560px, 100vw)" : "min(720px, 92vw)");
+  const resolvedDesktopWidth = desktopWidth ?? (showAsSidePanel ? 560 : 720);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal>
@@ -56,12 +55,12 @@ export function PrettyModalWrap({
           borderColor="$boardShellBorder"
           borderRadius={fullScreen || showAsSidePanel ? 0 : "$10"}
           width={fullScreen ? "100%" : resolvedDesktopWidth}
-          maxWidth={fullScreen ? "100%" : resolvedDesktopWidth}
+          maxWidth="92%"
           maxHeight={fullScreen || showAsSidePanel ? "100%" : "92vh"}
           height={fullScreen || showAsSidePanel ? "100%" : "auto"}
           padding="$5"
           gap="$4"
-          position={showAsSidePanel ? "fixed" : "relative"}
+          position={showAsSidePanel ? "absolute" : "relative"}
           top={showAsSidePanel ? 0 : undefined}
           right={showAsSidePanel ? 0 : undefined}
           bottom={showAsSidePanel ? 0 : undefined}
@@ -100,7 +99,6 @@ export function PrettyModalWrap({
               </YStack>
               <Dialog.Close asChild>
                 <Button
-                  type="button"
                   size="$3"
                   chromeless
                   backgroundColor="transparent"

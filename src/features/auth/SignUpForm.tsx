@@ -132,7 +132,12 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
         </YStack>
       ) : null}
 
-      <Button type="submit" theme="active" disabled={form.formState.isSubmitting}>
+      <Button
+        disabled={form.formState.isSubmitting}
+        backgroundColor="$blue10"
+        pressStyle={{ backgroundColor: "$blue11" }}
+        color="$color1"
+      >
         {form.formState.isSubmitting ? "Creating account..." : "Create account"}
       </Button>
 
@@ -142,13 +147,16 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
       </Text>
 
       <Button
-        type="button"
         chromeless
         alignSelf="flex-start"
         paddingHorizontal={0}
         height="auto"
         onPress={() => {
-          void navigate({ to: "/auth", search: { mode: "signin", redirectTo }, replace: true });
+          void navigate({
+            to: "/auth",
+            search: { mode: "signin", redirectTo, reason: undefined },
+            replace: true,
+          });
         }}
       >
         <Text color="$blue10" textDecorationLine="underline">
