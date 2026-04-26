@@ -173,6 +173,35 @@ function databaseUrlsForFlavor(flavor, port) {
   };
 }
 
+function getSupabaseDbUrls() {
+  const result = spawnSync("supabase", ["status", "--output", "json"], { encoding: "utf8" });
+  if (result.status !== 0) {
+    throw new Error(
+      ["supabase status failed", result.stdout?.trim(), result.stderr?.trim()]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+
+  const raw = (result.stdout ?? "").toString();
+  const parsed = JSON.parse(raw);
+  const dbUrl = parsed?.DB_URL;
+  if (typeof dbUrl !== "string" || dbUrl.length === 0) {
+    throw new Error("supabase status did not include DB_URL");
+  }
+
+  const admin = new URL(dbUrl);
+  admin.pathname = "/postgres";
+
+  const dev = new URL(dbUrl);
+  dev.pathname = "/kanban_dev";
+
+  const test = new URL(dbUrl);
+  test.pathname = "/kanban_test";
+
+  return { adminUrl: admin.toString(), devUrl: dev.toString(), testUrl: test.toString() };
+}
+
 async function ensureRolesAndDatabases(adminUrl) {
   const admin = postgres(adminUrl, {
     prepare: false,
@@ -364,8 +393,8 @@ try {
 
   // Step 6-9: ensure DB service, roles, dbs, and write DATABASE_URLs.
   const port = 5432;
-  const urls = databaseUrlsForFlavor(flavor, port);
-  const adminUrl =
+  let derivedUrls = databaseUrlsForFlavor(flavor, port);
+  let derivedAdminUrl =
     flavor === "host"
       ? `postgres://localhost:${port}/postgres`
       : `postgres://postgres:postgres@localhost:${port}/postgres`;
@@ -383,7 +412,7 @@ try {
       }
     }
     try {
-      await ensureRolesAndDatabases(adminUrl);
+      await ensureRolesAndDatabases(derivedAdminUrl);
     } catch (err) {
       console.error(String(err));
       console.error(
@@ -430,7 +459,7 @@ try {
     }
 
     try {
-      await ensureRolesAndDatabases(adminUrl);
+      await ensureRolesAndDatabases(derivedAdminUrl);
     } catch (err) {
       console.error(String(err));
       console.error(
@@ -441,15 +470,22 @@ try {
   }
 
   if (flavor === "supabase") {
-    if (!cmdOk("pg_isready", ["-h", "localhost", "-p", String(port)])) {
+    let supa;
+    try {
+      supa = getSupabaseDbUrls();
+    } catch {
       const ok = await promptYesNo(rl, "Start Supabase local stack (supabase start)?", true);
       if (!ok) process.exit(1);
       const startRes = spawnSync("supabase", ["start"], { stdio: "inherit" });
       if (startRes.status !== 0) process.exit(startRes.status ?? 1);
+      supa = getSupabaseDbUrls();
     }
-    // Assume Supabase local Postgres is reachable on localhost:5432 with postgres/postgres.
+
+    derivedUrls = { DATABASE_URL: supa.devUrl, DATABASE_URL_TEST: supa.testUrl };
+    derivedAdminUrl = supa.adminUrl;
+
     try {
-      await ensureRolesAndDatabases(adminUrl);
+      await ensureRolesAndDatabases(derivedAdminUrl);
     } catch (err) {
       console.error(String(err));
       console.error("Could not bootstrap roles/databases for Supabase local Postgres.");
@@ -457,9 +493,9 @@ try {
     }
   }
 
-  if (!env.map.has("DATABASE_URL")) setEnvKey(env, "DATABASE_URL", urls.DATABASE_URL);
+  if (!env.map.has("DATABASE_URL")) setEnvKey(env, "DATABASE_URL", derivedUrls.DATABASE_URL);
   if (!env.map.has("DATABASE_URL_TEST"))
-    setEnvKey(env, "DATABASE_URL_TEST", urls.DATABASE_URL_TEST);
+    setEnvKey(env, "DATABASE_URL_TEST", derivedUrls.DATABASE_URL_TEST);
 
   // Persist env changes early, before migrations.
   writeEnvFile(envPath, env.lines);
