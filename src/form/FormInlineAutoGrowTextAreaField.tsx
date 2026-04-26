@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef } from "react";
-import type { ComponentProps, MouseEvent as ReactMouseEvent } from "react";
+import type { ComponentProps } from "react";
 import { TextArea } from "@tamagui/input";
 import {
   useFormContext,
@@ -32,7 +32,16 @@ type FormInlineAutoGrowTextAreaFieldProps<
   Omit<
     ComponentProps<typeof TextArea>,
     "aria-describedby" | "aria-invalid" | "id" | "name" | "ref" | "value"
-  >;
+  > & {
+    // Tamagui style props (web/native unions) aren't always reflected on the
+    // `TextArea` component props type, but they are supported at runtime.
+    fontSize?: unknown;
+    fontWeight?: unknown;
+    color?: unknown;
+    boxShadow?: unknown;
+    focusStyle?: unknown;
+    focusVisibleStyle?: unknown;
+  };
 
 const DEFAULT_DRAG_THRESHOLD_PX = 5;
 
@@ -122,8 +131,8 @@ export function FormInlineAutoGrowTextAreaField<
     return () => window.removeEventListener("mousedown", onWindowCaptureMouseDown, true);
   }, [focusOnMouseUp]);
 
-  const handleMouseDown = (event: ReactMouseEvent<HTMLTextAreaElement>) => {
-    onMouseDownProp?.(event);
+  const handleMouseDown = (event: unknown) => {
+    (onMouseDownProp as unknown as ((e: unknown) => void) | undefined)?.(event);
     if (!focusOnMouseUp) return;
 
     const node = localRef.current;
@@ -133,12 +142,14 @@ export function FormInlineAutoGrowTextAreaField<
       return;
     }
 
-    event.preventDefault();
+    (event as { preventDefault?: () => void }).preventDefault?.();
 
     if (typeof window === "undefined") return;
 
-    const startX = event.clientX;
-    const startY = event.clientY;
+    const { clientX: startX, clientY: startY } = event as {
+      clientX: number;
+      clientY: number;
+    };
     let moved = false;
 
     const onWindowMove = (moveEvent: globalThis.MouseEvent) => {
@@ -169,13 +180,17 @@ export function FormInlineAutoGrowTextAreaField<
       {...restTextAreaProps}
       id={resolvedInputId}
       name={registration.name}
-      ref={(node) => {
+      ref={(node: unknown) => {
         registration.ref(node as unknown as HTMLTextAreaElement | null);
-        localRef.current = node as unknown as HTMLTextAreaElement | null;
+        localRef.current = node as HTMLTextAreaElement | null;
+        // Disable manual resize by default; caller can override via their own styles.
+        if (localRef.current) {
+          localRef.current.style.resize = "none";
+        }
         textAreaRef?.(localRef.current);
       }}
       defaultValue={defaultValue as string | undefined}
-      onMouseDown={handleMouseDown}
+      onMouseDown={handleMouseDown as unknown as ComponentProps<typeof TextArea>["onMouseDown"]}
       onBlur={(event) => {
         registration.onBlur(event as unknown as Parameters<typeof registration.onBlur>[0]);
         (onBlurProp as unknown as ((e: typeof event) => void) | undefined)?.(event);
@@ -195,10 +210,6 @@ export function FormInlineAutoGrowTextAreaField<
       aria-describedby={describedBy}
       aria-invalid={fieldState.invalid}
       disabled={restTextAreaProps.disabled}
-      // Prevent manual resize by default (can be overridden).
-      resize={restTextAreaProps.resize ?? "none"}
-      // Ensure max height clamp behavior doesn't show flickery scrollbars.
-      overflowY={restTextAreaProps.overflowY ?? (maxHeightPx ? "hidden" : undefined)}
     />
   );
 }

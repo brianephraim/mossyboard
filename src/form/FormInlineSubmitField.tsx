@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import type { ReactElement } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 type InlineKeyDownEvent = {
@@ -14,7 +15,10 @@ export type FormInlineSubmitFieldProps<TValue> = Readonly<{
   normalize: (value: TValue) => TValue;
   isNoop: (next: TValue, current: TValue) => boolean;
   onSubmitValue: (next: TValue) => Promise<void> | void;
-  render: (opts: { onBlur: () => void; onKeyDown: (e: InlineKeyDownEvent) => void }) => JSX.Element;
+  render: (opts: {
+    onBlur: () => void;
+    onKeyDown: (e: InlineKeyDownEvent) => void;
+  }) => ReactElement;
 }>;
 
 export function FormInlineSubmitField<TValue>({
