@@ -41,6 +41,10 @@ export default defineConfig({
     {
       name: "kanban-pino-http-dev",
       configureServer(server) {
+        if (process.env.KANBAN_LOG_HTTP !== "1") {
+          return;
+        }
+
         server.middlewares.use(
           pinoHttp({
             logger,
@@ -55,7 +59,7 @@ export default defineConfig({
             customLogLevel: (_req, res, err) => {
               if (err || res.statusCode >= 500) return "error";
               if (res.statusCode >= 400) return "warn";
-              return "info";
+              return "silent";
             },
           }),
         );

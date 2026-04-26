@@ -24,24 +24,24 @@ export const trpcMiddleware = t.middleware(async ({ ctx, next, path, type }) => 
   const start = Date.now();
   try {
     const result = await next();
-    logger.info(
-      {
-        requestId: ctx.requestId,
-        path,
-        type,
-        durationMs: Date.now() - start,
-        ok: !result.ok ? false : true,
-      },
-      "trpc",
-    );
+    const durationMs = Date.now() - start;
+    const ok = result.ok ? true : false;
+
+    if (!ok) {
+      logger.warn({ requestId: ctx.requestId, path, type, durationMs, ok }, "trpc");
+    } else if (process.env.KANBAN_LOG_TRPC === "1") {
+      logger.info({ requestId: ctx.requestId, path, type, durationMs, ok }, "trpc");
+    }
+
     return result;
   } catch (err) {
+    const durationMs = Date.now() - start;
     logger.error(
       {
         requestId: ctx.requestId,
         path,
         type,
-        durationMs: Date.now() - start,
+        durationMs,
       },
       "trpc_error",
     );
