@@ -95,6 +95,22 @@ export function FormInlineTextField<
   const registration = register(name, rules);
   const localInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Prevent @hello-pangea/dnd's keyboard sensor from intercepting Space while
+  // the input is focused (it uses Space to initiate keyboard dragging).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onWindowCaptureKeyDown = (event: globalThis.KeyboardEvent) => {
+      const node = localInputRef.current;
+      if (!node) return;
+      if (document.activeElement !== node) return;
+      if (event.key === " " || event.code === "Space" || event.keyCode === 32) {
+        event.stopImmediatePropagation();
+      }
+    };
+    window.addEventListener("keydown", onWindowCaptureKeyDown, true);
+    return () => window.removeEventListener("keydown", onWindowCaptureKeyDown, true);
+  }, []);
+
   // While the input is focused, prevent dnd from acquiring a drag lock on
   // mousedown so the browser's native cursor-positioning and drag-to-select
   // text behavior keeps working.

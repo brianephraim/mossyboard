@@ -106,6 +106,7 @@ export function CardInterior({
         </XStack>
         <FormInlineSubmitField<string>
           defaultValue={card.description}
+          submitOnEnter={false}
           normalize={(value) => value.trimEnd()}
           isNoop={(next, current) => next === current}
           onSubmitValue={async (nextDescription) => {

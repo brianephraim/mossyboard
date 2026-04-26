@@ -12,6 +12,7 @@ type InlineKeyDownEvent = {
 export type FormInlineSubmitFieldProps<TValue> = Readonly<{
   defaultValue: TValue;
   disabled?: boolean;
+  submitOnEnter?: boolean;
   normalize: (value: TValue) => TValue;
   isNoop: (next: TValue, current: TValue) => boolean;
   onSubmitValue: (next: TValue) => Promise<void> | void;
@@ -24,6 +25,7 @@ export type FormInlineSubmitFieldProps<TValue> = Readonly<{
 export function FormInlineSubmitField<TValue>({
   defaultValue,
   disabled = false,
+  submitOnEnter = true,
   normalize,
   isNoop,
   onSubmitValue,
@@ -55,6 +57,7 @@ export function FormInlineSubmitField<TValue>({
           void submit();
         },
         onKeyDown: (event: InlineKeyDownEvent) => {
+          if (!submitOnEnter) return;
           if (event.nativeEvent?.isComposing === true || event.nativeEvent?.keyCode === 229) return;
           const key = event.key ?? event.nativeEvent?.key ?? "";
           if (key !== "Enter") return;

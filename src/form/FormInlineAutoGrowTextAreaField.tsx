@@ -131,6 +131,22 @@ export function FormInlineAutoGrowTextAreaField<
     return () => window.removeEventListener("mousedown", onWindowCaptureMouseDown, true);
   }, [focusOnMouseUp]);
 
+  // Prevent @hello-pangea/dnd's keyboard sensor from intercepting Space while
+  // the textarea is focused (it uses Space to initiate keyboard dragging).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onWindowCaptureKeyDown = (event: globalThis.KeyboardEvent) => {
+      const node = localRef.current;
+      if (!node) return;
+      if (document.activeElement !== node) return;
+      if (event.key === " " || event.code === "Space" || event.keyCode === 32) {
+        event.stopImmediatePropagation();
+      }
+    };
+    window.addEventListener("keydown", onWindowCaptureKeyDown, true);
+    return () => window.removeEventListener("keydown", onWindowCaptureKeyDown, true);
+  }, []);
+
   const handleMouseDown = (event: unknown) => {
     (onMouseDownProp as unknown as ((e: unknown) => void) | undefined)?.(event);
     if (!focusOnMouseUp) return;
