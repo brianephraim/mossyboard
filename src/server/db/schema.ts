@@ -4,6 +4,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -117,6 +118,44 @@ export const cards = pgTable(
   }),
 );
 
+export const tags = pgTable(
+  "tags",
+  {
+    id: uuid("id").primaryKey(),
+    ownerId: text("owner_id").notNull(),
+    name: text("name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    version: integer("version").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({
+    ownerNormalizedUnique: uniqueIndex("tags_owner_normalized_unique").on(
+      t.ownerId,
+      t.normalizedName,
+    ),
+  }),
+);
+
+export const cardTags = pgTable(
+  "card_tags",
+  {
+    cardId: uuid("card_id")
+      .notNull()
+      .references(() => cards.id),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.cardId, t.tagId] }),
+    tagIdx: index("card_tags_tag_idx").on(t.tagId),
+    cardIdx: index("card_tags_card_idx").on(t.cardId),
+  }),
+);
+
 export const boardsRelations = relations(boards, ({ many }) => ({
   columns: many(columns),
 }));
@@ -129,9 +168,25 @@ export const columnsRelations = relations(columns, ({ one, many }) => ({
   cards: many(cards),
 }));
 
-export const cardsRelations = relations(cards, ({ one }) => ({
+export const cardsRelations = relations(cards, ({ one, many }) => ({
   column: one(columns, {
     fields: [cards.columnId],
     references: [columns.id],
+  }),
+  cardTags: many(cardTags),
+}));
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  cardTags: many(cardTags),
+}));
+
+export const cardTagsRelations = relations(cardTags, ({ one }) => ({
+  card: one(cards, {
+    fields: [cardTags.cardId],
+    references: [cards.id],
+  }),
+  tag: one(tags, {
+    fields: [cardTags.tagId],
+    references: [tags.id],
   }),
 }));

@@ -317,7 +317,7 @@ This task introduces the new schema entries to drizzle, has drizzle generate the
 - Modify: `src/server/db/schema.ts`
 - Create: `drizzle/pg/0006_*.sql` (drizzle-generated, hand-edited to add RLS)
 
-- [ ] **Step 1: Add `tags` and `cardTags` tables and relations to `src/server/db/schema.ts`**
+- [x] **Step 1: Add `tags` and `cardTags` tables and relations to `src/server/db/schema.ts`**
 
 Append to `src/server/db/schema.ts` (after `cards` table and `cardsRelations`):
 
@@ -409,7 +409,7 @@ import {
 
 The unique index on `(owner_id, normalized_name)` is intentionally a full unique constraint — duplicates among soft-deleted rows are allowed only because no UI deletes tags in this cut, so soft-deletion is dormant. If the future adds tag deletion, the index should become a partial index `WHERE deleted_at IS NULL` (drizzle-kit supports `where` on indexes).
 
-- [ ] **Step 2: Generate the migration**
+- [x] **Step 2: Generate the migration**
 
 ```bash
 npm run db:generate
@@ -423,7 +423,7 @@ ls drizzle/pg/ | tail -3
 
 The file should contain `DROP TABLE "card_subtasks"`, `CREATE TABLE "tags"`, `CREATE TABLE "card_tags"`, and the unique/secondary indexes.
 
-- [ ] **Step 3: Hand-edit the generated migration to append RLS**
+- [x] **Step 3: Hand-edit the generated migration to append RLS**
 
 Open `drizzle/pg/0006_*.sql` and append (after drizzle's emitted statements):
 
@@ -451,7 +451,7 @@ CREATE POLICY "card_tags_delete_none" ON "public"."card_tags" FOR DELETE TO anon
 
 This matches the pattern from `drizzle/pg/0005_illegal_ultragirl.sql` (existing convention).
 
-- [ ] **Step 4: Run the migration on the dev DB**
+- [x] **Step 4: Run the migration on the dev DB**
 
 ```bash
 npm run db:migrate
@@ -465,13 +465,13 @@ psql "$DATABASE_URL" -c "\d tags" -c "\d card_tags"
 
 Expected: both tables listed with the columns from the schema.
 
-- [ ] **Step 5: Format the schema file**
+- [x] **Step 5: Format the schema file**
 
 ```bash
 npx prettier --write src/server/db/schema.ts
 ```
 
-- [ ] **Step 6: Run typecheck**
+- [x] **Step 6: Run typecheck**
 
 ```bash
 npm run typecheck
@@ -479,7 +479,7 @@ npm run typecheck
 
 Expected: clean.
 
-- [ ] **Step 7: Run tests**
+- [x] **Step 7: Run tests**
 
 ```bash
 npm run test
@@ -487,7 +487,7 @@ npm run test
 
 Expected: pass. The new tables exist in the test DB after `migrateTestDb()` runs (test setup picks up the new migration automatically).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A
