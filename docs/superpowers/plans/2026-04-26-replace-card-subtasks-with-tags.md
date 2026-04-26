@@ -2142,7 +2142,7 @@ EOF
 - Create: `src/features/boards/tagPalette.ts`
 - Create: `src/features/boards/tagPalette.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/features/boards/tagPalette.test.ts`:
 
@@ -2171,7 +2171,7 @@ describe("getTagSwatch", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test — expect failure**
+- [x] **Step 2: Run the test — expect failure**
 
 ```bash
 npm run test -- src/features/boards/tagPalette.test.ts
@@ -2179,7 +2179,7 @@ npm run test -- src/features/boards/tagPalette.test.ts
 
 Expected: fails with module-not-found for `./tagPalette`.
 
-- [ ] **Step 3: Implement `src/features/boards/tagPalette.ts`**
+- [x] **Step 3: Implement `src/features/boards/tagPalette.ts`**
 
 ```ts
 export type TagSwatch = {
@@ -2217,7 +2217,7 @@ export function getTagSwatch(normalizedName: string): TagSwatch {
 }
 ```
 
-- [ ] **Step 4: Run the test — expect pass**
+- [x] **Step 4: Run the test — expect pass**
 
 ```bash
 npm run test -- src/features/boards/tagPalette.test.ts
@@ -2225,13 +2225,13 @@ npm run test -- src/features/boards/tagPalette.test.ts
 
 Expected: pass.
 
-- [ ] **Step 5: Format**
+- [x] **Step 5: Format**
 
 ```bash
 npx prettier --write src/features/boards/tagPalette.ts src/features/boards/tagPalette.test.ts
 ```
 
-- [ ] **Step 6: Run full suite + typecheck**
+- [x] **Step 6: Run full suite + typecheck**
 
 ```bash
 npm run typecheck && npm run test
@@ -2239,7 +2239,7 @@ npm run typecheck && npm run test
 
 Expected: clean + green.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
