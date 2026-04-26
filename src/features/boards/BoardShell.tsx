@@ -8,7 +8,7 @@ import { XStack, YStack } from "@tamagui/stacks";
 
 import { useAuthSession, useRequiresEmailVerification } from "../../auth/session";
 import { AccountSignOutControl } from "../../features/auth/AccountSignOutControl";
-import { VerificationReminderBanner } from "../../features/auth/VerificationReminderBanner";
+import { VerificationSidebarCallout } from "../../features/auth/VerificationSidebarCallout";
 import { FormRoot, FormTextField } from "../../form";
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
 import { trpc } from "../../trpc/client";
@@ -198,11 +198,6 @@ export function BoardShell({
     }
   }, [createBoardForm, createBoardOpen]);
 
-  const verificationBanner =
-    session.user && !session.user.emailVerified && !requiresEmailVerification ? (
-      <VerificationReminderBanner userEmail={session.user.email} />
-    ) : null;
-
   const boardList = boardsQuery.data?.boards ?? [];
   const boardRail = (
     <BoardSurface padding="$4" flex={1} minHeight={0}>
@@ -284,6 +279,9 @@ export function BoardShell({
         <YStack marginTop="auto" gap="$3">
           <BoardSurface padding="$4">
             <YStack gap="$3">
+              {session.user && !session.user.emailVerified && !requiresEmailVerification ? (
+                <VerificationSidebarCallout userEmail={session.user.email} />
+              ) : null}
               <YStack gap="$1">
                 <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
                   {session.user?.email ?? "Signed in"}
@@ -330,7 +328,6 @@ export function BoardShell({
                 subtitle={subtitle}
                 actions={headerControls}
               />
-              {verificationBanner}
             </YStack>
             <YStack
               flex={1}
