@@ -3230,7 +3230,7 @@ Start dev server, click a card to open the detail modal, confirm:
 - Adding/removing tags in the modal reflects on the canvas card behind it.
 - The modal subtitle reads "Edit title, description, priority, and tags from this surface." (no "subtasks").
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A

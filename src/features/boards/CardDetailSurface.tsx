@@ -6,9 +6,11 @@ import { XStack, YStack } from "@tamagui/stacks";
 import { FormOptionButtonsField, FormRoot, FormTextAreaField, FormTextField } from "../../form";
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
 import { trpc } from "../../trpc/client";
+import { CardTagsRow } from "./BoardCanvas/CardTagsRow";
 import { boardPriorityMeta, boardPriorityValues } from "./model";
 import type { CardPriority } from "./types";
 import { BoardActionButton, BoardInlineNotice, BoardPill, BoardSurface } from "./ui";
+import { useTagMutations } from "./useTagMutations";
 
 type CardDetailForm = {
   title: string;
@@ -58,6 +60,13 @@ export function CardDetailSurface({
       retry: false,
     },
   );
+
+  const tagListQuery = trpc.tag.list.useQuery({});
+  const availableTags = tagListQuery.data ?? [];
+  const { addTag, detachTag } = useTagMutations({
+    boardId: resolvedBoardId,
+    onAnnounce,
+  });
 
   useEffect(() => {
     if (!open || !cardId || !cardQuery.isError) {
@@ -306,6 +315,20 @@ export function CardDetailSurface({
               </BoardActionButton>
             </XStack>
           </FormRoot>
+        </BoardSurface>
+
+        <BoardSurface padding="$4">
+          <YStack gap="$3">
+            <Text fontWeight="700" color="$boardHeading">
+              Tags
+            </Text>
+            <CardTagsRow
+              attachedTags={card.tags}
+              availableTags={availableTags}
+              onAddTag={(name) => addTag({ cardId: card.id, name })}
+              onDetachTag={(tagId) => detachTag({ cardId: card.id, tagId })}
+            />
+          </YStack>
         </BoardSurface>
       </YStack>
     </PrettyModalWrap>
