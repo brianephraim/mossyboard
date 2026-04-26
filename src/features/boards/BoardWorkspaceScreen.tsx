@@ -21,6 +21,14 @@ import { BoardActionButton, BoardLiveRegion } from "./ui";
 import { useBoardMutations } from "./useBoardMutations";
 import { useDualBoardDnd } from "./useDualBoardDnd";
 
+type DeleteBoardModalProps = Readonly<{
+  open: boolean;
+  boardName: string | null;
+  isDeleting: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void | Promise<void>;
+}>;
+
 type RawBoardDetailSearch = {
   card?: string;
   view?: BoardDetailSearch["view"];
@@ -130,8 +138,7 @@ export function BoardWorkspaceScreen({
     boardId: string;
     afterColumnId: string | null;
   } | null>(null);
-  const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
-  const [confirmBoardDelete, setConfirmBoardDelete] = useState(false);
+  const [deleteBoardOpen, setDeleteBoardOpen] = useState(false);
   const [drawerHeightPx, setDrawerHeightPx] = useState<number>(() => {
     const fromStorage = readDrawerHeightPx();
     const { min, max } = getDrawerBoundsPx();
@@ -257,8 +264,8 @@ export function BoardWorkspaceScreen({
         title={title}
         subtitle="Plan, filter, regroup, and move work without leaving the board route."
         headerActions={
-          <BoardActionButton onPress={() => setBoardSettingsOpen(true)}>
-            Board settings
+          <BoardActionButton tone="danger" onPress={() => setDeleteBoardOpen(true)}>
+            Delete board
           </BoardActionButton>
         }
         announcement={announcement}
@@ -379,17 +386,18 @@ export function BoardWorkspaceScreen({
         onAnnounce={setAnnouncement}
       />
 
-      <BoardSettingsModal
-        open={boardSettingsOpen}
-        board={mainBoard}
-        onOpenChange={setBoardSettingsOpen}
-        onConfirmDeleteChange={setConfirmBoardDelete}
-        confirmDelete={confirmBoardDelete}
-        onRename={async (name) => {
-          await mainMutations.renameBoard.mutateAsync({ boardId, name });
+      <DeleteBoardConfirmModal
+        open={deleteBoardOpen}
+        boardName={mainBoard?.name ?? null}
+        isDeleting={mainMutations.deleteBoard.isPending}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteBoardOpen(false);
+          }
         }}
-        onDelete={async () => {
+        onConfirm={async () => {
           await mainMutations.deleteBoard.mutateAsync({ boardId });
+          setDeleteBoardOpen(false);
           void navigate({ to: "/boards", search: { status: "deleted" } });
         }}
       />
@@ -602,93 +610,36 @@ function CreateColumnModal({
   );
 }
 
-type RenameBoardForm = { name: string };
-
-function BoardSettingsModal({
+function DeleteBoardConfirmModal({
   open,
-  board,
+  boardName,
+  isDeleting,
   onOpenChange,
-  confirmDelete,
-  onConfirmDeleteChange,
-  onRename,
-  onDelete,
-}: Readonly<{
-  open: boolean;
-  board: LoadedBoard | null;
-  onOpenChange: (open: boolean) => void;
-  confirmDelete: boolean;
-  onConfirmDeleteChange: (confirm: boolean) => void;
-  onRename: (name: string) => Promise<void>;
-  onDelete: () => Promise<void>;
-}>) {
-  const formId = useMemo(() => `rename-board-${Math.random().toString(36).slice(2)}`, []);
-  const form = useForm<RenameBoardForm>({ defaultValues: { name: "" } });
-
-  useEffect(() => {
-    if (open && board) {
-      form.reset({ name: board.name });
-      onConfirmDeleteChange(false);
-    }
-  }, [board, form, onConfirmDeleteChange, open]);
-
+  onConfirm,
+}: DeleteBoardModalProps) {
   return (
     <PrettyModalWrap
       open={open}
       onOpenChange={onOpenChange}
-      title="Board settings"
-      description="Rename or delete this board. Deleting soft-deletes the board and removes it from the rail."
+      title="Delete board"
+      description="This soft-deletes the board. You can still see deleted boards from the boards list."
       footer={
         <>
-          <BoardActionButton tone="ghost" onPress={() => onOpenChange(false)}>
-            Close
+          <BoardActionButton tone="ghost" disabled={isDeleting} onPress={() => onOpenChange(false)}>
+            Cancel
           </BoardActionButton>
-          <BoardActionButton tone="accent" type="submit" form={formId}>
-            Save
+          <BoardActionButton tone="danger" disabled={isDeleting} onPress={() => void onConfirm()}>
+            {isDeleting ? "Deleting…" : "Delete board"}
           </BoardActionButton>
         </>
       }
     >
-      <YStack gap="$4">
-        <FormRoot
-          id={formId}
-          form={form}
-          gap="$3"
-          onSubmit={async (values) => {
-            await onRename(values.name);
-          }}
-        >
-          <FormTextField<RenameBoardForm, "name">
-            name="name"
-            label="Name"
-            rules={{
-              required: "Board name is required.",
-              maxLength: { value: 80, message: "Keep the name under 80 characters." },
-            }}
-            fieldProps={{ gap: "$2" }}
-            labelProps={{ fontWeight: "700", color: "$boardHeading" }}
-            backgroundColor="$boardPanelSurfaceStrong"
-            defaultBorderColor="$boardShellBorder"
-            placeholder="My board"
-          />
-        </FormRoot>
-
-        <YStack gap="$2">
-          <Text color="$boardDangerText" fontWeight="800">
-            Delete board
-          </Text>
-          <Text color="$boardTextMuted">
-            This is a soft delete. You can still view deleted boards from the boards list.
-          </Text>
-          {!confirmDelete ? (
-            <BoardActionButton tone="danger" onPress={() => onConfirmDeleteChange(true)}>
-              Delete…
-            </BoardActionButton>
-          ) : (
-            <BoardActionButton tone="danger" onPress={() => void onDelete()}>
-              Confirm delete
-            </BoardActionButton>
-          )}
-        </YStack>
+      <YStack gap="$3">
+        <Text color="$boardTextMuted">
+          {boardName
+            ? `“${boardName}” will be removed from your active boards. Cards, columns, and subtasks come with it.`
+            : "This board will be removed from your active boards. Cards, columns, and subtasks come with it."}
+        </Text>
       </YStack>
     </PrettyModalWrap>
   );

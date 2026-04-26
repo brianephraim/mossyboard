@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLinkProps, useNavigate } from "@tanstack/react-router";
+import { Button } from "@tamagui/button";
 import { Stack, Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
@@ -64,10 +65,12 @@ function BoardRailBoardRow({
     },
   });
 
+  const showDrawerButton = !media.maxMd && onOpenInDrawer && !isCurrent;
+
   return (
     <XStack
-      alignItems="stretch"
-      justifyContent="space-between"
+      position="relative"
+      alignItems="center"
       gap="$3"
       paddingHorizontal="$3"
       paddingVertical="$3"
@@ -77,38 +80,63 @@ function BoardRailBoardRow({
       borderColor={isCurrent ? "$boardAccentWash" : "transparent"}
       hoverStyle={{ backgroundColor: "$boardAccentWash" }}
     >
+      <Stack
+        {...(linkProps as Record<string, unknown>)}
+        tag="a"
+        position="absolute"
+        inset={0}
+        borderRadius="$8"
+        zIndex={1}
+        aria-label={`Open ${name}`}
+      />
       <XStack
         width={4}
+        alignSelf="stretch"
         borderRadius="$8"
         backgroundColor={isCurrent ? "$boardAccent" : "transparent"}
         marginRight="$2"
+        pointerEvents="none"
       />
-      <YStack flex={1} gap="$1" minWidth={0}>
+      <YStack flex={1} gap="$1" minWidth={0} pointerEvents="none">
         <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
           {name}
         </Text>
         <Text color="$boardTextMuted" fontSize="$2">
           {columnCount} columns • {cardCount} cards
         </Text>
-        <XStack gap="$2" marginTop="$2" flexWrap="wrap">
-          <BoardActionButton
-            {...(linkProps as Record<string, unknown>)}
-            tag="a"
-            tone={isCurrent ? "accent" : "ghost"}
+      </YStack>
+      {showDrawerButton ? (
+        <Stack position="relative" zIndex={2}>
+          <Button
+            chromeless
+            unstyled
+            tag="button"
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+            height="auto"
+            backgroundColor="transparent"
+            borderWidth={0}
+            cursor="pointer"
+            hoverStyle={{ backgroundColor: "transparent", opacity: 0.85 }}
+            pressStyle={{ backgroundColor: "transparent" }}
+            focusStyle={{
+              outlineWidth: 2,
+              outlineStyle: "solid",
+              outlineColor: "$boardAccent",
+            }}
+            onPress={() => onOpenInDrawer?.(boardId)}
           >
-            Open
-          </BoardActionButton>
-          {!media.maxMd && onOpenInDrawer ? (
-            <BoardActionButton
-              tone="ghost"
-              disabled={isCurrent}
-              onPress={() => onOpenInDrawer(boardId)}
+            <Text
+              color="$boardTextMuted"
+              fontSize="$2"
+              fontWeight="500"
+              textDecorationLine="underline"
             >
               Open in drawer
-            </BoardActionButton>
-          ) : null}
-        </XStack>
-      </YStack>
+            </Text>
+          </Button>
+        </Stack>
+      ) : null}
     </XStack>
   );
 }
@@ -248,25 +276,20 @@ export function BoardShell({
 
         <YStack marginTop="auto" gap="$3">
           <BoardSurface padding="$4">
-            <YStack gap="$2">
-              <Text fontWeight="700" color="$boardHeading">
-                Stay grounded.
-              </Text>
-              <Text color="$boardTextMuted">
-                This first pass follows the repo mockup and keeps the board calm, readable, and
-                keyboard-friendly.
-              </Text>
-            </YStack>
-          </BoardSurface>
-
-          <BoardSurface padding="$4">
-            <YStack gap="$1">
-              <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
-                {session.user?.email ?? "Signed in"}
-              </Text>
-              <Text color="$boardTextMuted">
-                {session.user?.emailVerified ? "Verified account" : "Verification pending"}
-              </Text>
+            <YStack gap="$3">
+              <YStack gap="$1">
+                <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
+                  {session.user?.email ?? "Signed in"}
+                </Text>
+                <Text color="$boardTextMuted">
+                  {session.user?.emailVerified ? "Verified account" : "Verification pending"}
+                </Text>
+              </YStack>
+              <AccountSignOutControl
+                onSignedOut={() => {
+                  setShellAnnouncement("Signed out.");
+                }}
+              />
             </YStack>
           </BoardSurface>
         </YStack>
@@ -274,22 +297,7 @@ export function BoardShell({
     </BoardSurface>
   );
 
-  const headerControls = useMemo(
-    () => (
-      <>
-        <BoardActionButton tone="accent" onPress={() => setCreateBoardOpen(true)}>
-          Create board
-        </BoardActionButton>
-        {headerActions}
-        <AccountSignOutControl
-          onSignedOut={() => {
-            setShellAnnouncement("Signed out.");
-          }}
-        />
-      </>
-    ),
-    [headerActions],
-  );
+  const headerControls = headerActions ?? null;
 
   return (
     <BoardPageChrome>
