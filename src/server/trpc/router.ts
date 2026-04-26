@@ -9,6 +9,7 @@ import { logger } from "../logging/logger";
 import { boardRouter } from "./routers/board";
 import { cardRouter } from "./routers/card";
 import { columnRouter } from "./routers/column";
+import { tagRouter } from "./routers/tag";
 
 export const appRouter = t.router({
   health: publicProcedure.input(z.object({})).query(() => ({ ok: true })),
@@ -16,6 +17,7 @@ export const appRouter = t.router({
   board: boardRouter,
   card: cardRouter,
   column: columnRouter,
+  tag: tagRouter,
   counter: t.router({
     get: publicProcedure.input(z.object({})).query(() => readCounter()),
     increment: publicProcedure.input(z.object({})).mutation(() => incrementCounter()),

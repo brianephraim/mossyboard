@@ -1202,7 +1202,7 @@ This task does four mutually-dependent things in one commit so the build never b
 - Create: `src/server/trpc/routers/tag.ts`, `src/server/tag/router.test.ts`
 - Modify: `src/server/trpc/router.ts`, `src/server/trpc/routers/card.ts`, `src/server/card/repo.ts`, `src/server/card/repo.test.ts`, `src/server/board/repo.ts`, `src/server/board/repo.test.ts`
 
-- [ ] **Step 1: Create `src/server/trpc/routers/tag.ts`**
+- [x] **Step 1: Create `src/server/trpc/routers/tag.ts`**
 
 ```ts
 import { z } from "zod";
@@ -1236,7 +1236,7 @@ export const tagRouter = t.router({
 });
 ```
 
-- [ ] **Step 2: Wire `tag: tagRouter` into `src/server/trpc/router.ts`**
+- [x] **Step 2: Wire `tag: tagRouter` into `src/server/trpc/router.ts`**
 
 Add the import:
 
@@ -1246,13 +1246,13 @@ import { tagRouter } from "./routers/tag";
 
 And inside `t.router({...})` add the line `tag: tagRouter,` (alongside `card: cardRouter,` etc).
 
-- [ ] **Step 2a: Format the router files**
+- [x] **Step 2a: Format the router files**
 
 ```bash
 npx prettier --write src/server/trpc/routers/tag.ts src/server/trpc/router.ts
 ```
 
-- [ ] **Step 2b: Typecheck**
+- [x] **Step 2b: Typecheck**
 
 ```bash
 npm run typecheck
@@ -1260,7 +1260,7 @@ npm run typecheck
 
 Expected: clean.
 
-- [ ] **Step 2c: Run tests — expect green**
+- [x] **Step 2c: Run tests — expect green**
 
 ```bash
 npm run test
@@ -1268,7 +1268,7 @@ npm run test
 
 Expected: pass. The new router has no consumer yet — this commit is just the wire-up surface.
 
-- [ ] **Step 2d: Commit router wire-up (save-point)**
+- [x] **Step 2d: Commit router wire-up (save-point)**
 
 ```bash
 git add -A
