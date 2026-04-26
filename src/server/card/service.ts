@@ -224,7 +224,6 @@ function serializeCardDetail(row: CardDetailRow) {
     position: row.position,
     version: row.version,
     updatedAt: row.updatedAt.toISOString(),
-    subtasks: row.subtasks,
   };
 }
 

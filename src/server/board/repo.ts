@@ -4,7 +4,7 @@ import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { keyBetween } from "../../lib/ordering/key-between";
 import { db } from "../db/client";
-import { boards, cards, cardSubtasks, columns, type CardPriority } from "../db/schema";
+import { boards, cards, columns, type CardPriority } from "../db/schema";
 import { getOwnedBoard } from "./repo-shared";
 
 const DEFAULT_COLUMN_TITLES = ["To do", "In progress", "Done"] as const;
@@ -295,14 +295,6 @@ export async function softDeleteBoard(input: {
             updatedAt: now,
           })
           .where(and(inArray(cards.id, activeCardIds), isNull(cards.deletedAt)));
-
-        await tx
-          .update(cardSubtasks)
-          .set({
-            deletedAt: now,
-            updatedAt: now,
-          })
-          .where(and(inArray(cardSubtasks.cardId, activeCardIds), isNull(cardSubtasks.deletedAt)));
       }
     }
 

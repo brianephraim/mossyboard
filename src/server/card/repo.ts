@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { and, asc, desc, eq, inArray, isNull, lt, or } from "drizzle-orm";
 
-import { boards, cards, cardSubtasks, type CardPriority, columns } from "../db/schema";
+import { boards, cards, type CardPriority, columns } from "../db/schema";
 import { db } from "../db/client";
 import { trpcErrors } from "../trpc/init";
 import { resolveOrderedPosition } from "../board/ordered-position";
@@ -25,13 +25,6 @@ export type CardDetailRow = {
   position: string;
   version: number;
   updatedAt: Date;
-  subtasks: Array<{
-    id: string;
-    title: string;
-    isDone: boolean;
-    position: string;
-    version: number;
-  }>;
 };
 
 export type CardListItemRow = {
@@ -205,14 +198,6 @@ export async function softDeleteCard(input: {
     }
     const deletedAt = deleted.deletedAt;
 
-    await tx
-      .update(cardSubtasks)
-      .set({
-        deletedAt: now,
-        updatedAt: now,
-      })
-      .where(and(eq(cardSubtasks.cardId, lockedCard.id), isNull(cardSubtasks.deletedAt)));
-
     await touchBoard(tx, {
       boardId: lockedCard.boardId,
       now,
@@ -239,18 +224,6 @@ export async function getCard(input: {
     return null;
   }
 
-  const subtasks = await db
-    .select({
-      id: cardSubtasks.id,
-      title: cardSubtasks.title,
-      isDone: cardSubtasks.isDone,
-      position: cardSubtasks.position,
-      version: cardSubtasks.version,
-    })
-    .from(cardSubtasks)
-    .where(and(eq(cardSubtasks.cardId, card.id), isNull(cardSubtasks.deletedAt)))
-    .orderBy(asc(cardSubtasks.position), asc(cardSubtasks.id));
-
   return {
     id: card.id,
     columnId: card.columnId,
@@ -261,7 +234,6 @@ export async function getCard(input: {
     position: card.position,
     version: card.version,
     updatedAt: card.updatedAt,
-    subtasks,
   };
 }
 

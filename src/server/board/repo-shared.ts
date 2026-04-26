@@ -1,7 +1,7 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 
 import { db } from "../db/client";
-import { boards, cards, cardSubtasks, columns } from "../db/schema";
+import { boards, cards, columns } from "../db/schema";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -93,41 +93,6 @@ export async function getOwnedCard(
   return row ?? null;
 }
 
-export async function getOwnedSubtask(
-  executor: DatabaseExecutor,
-  input: { ownerId: string; subtaskId: string },
-) {
-  const [row] = await executor
-    .select({
-      id: cardSubtasks.id,
-      boardId: boards.id,
-      columnId: columns.id,
-      cardId: cardSubtasks.cardId,
-      title: cardSubtasks.title,
-      isDone: cardSubtasks.isDone,
-      position: cardSubtasks.position,
-      version: cardSubtasks.version,
-      updatedAt: cardSubtasks.updatedAt,
-    })
-    .from(cardSubtasks)
-    .innerJoin(cards, eq(cardSubtasks.cardId, cards.id))
-    .innerJoin(columns, eq(cards.columnId, columns.id))
-    .innerJoin(boards, eq(columns.boardId, boards.id))
-    .where(
-      and(
-        eq(cardSubtasks.id, input.subtaskId),
-        eq(boards.ownerId, input.ownerId),
-        isNull(boards.deletedAt),
-        isNull(columns.deletedAt),
-        isNull(cards.deletedAt),
-        isNull(cardSubtasks.deletedAt),
-      ),
-    )
-    .limit(1);
-
-  return row ?? null;
-}
-
 export async function lockOwnedColumn(
   tx: DatabaseTransaction,
   input: { ownerId: string; columnId: string },
@@ -192,42 +157,6 @@ export async function lockOwnedCard(
   return row ?? null;
 }
 
-export async function lockOwnedSubtask(
-  tx: DatabaseTransaction,
-  input: { ownerId: string; subtaskId: string },
-) {
-  const [row] = await tx
-    .select({
-      id: cardSubtasks.id,
-      boardId: boards.id,
-      columnId: columns.id,
-      cardId: cardSubtasks.cardId,
-      title: cardSubtasks.title,
-      isDone: cardSubtasks.isDone,
-      position: cardSubtasks.position,
-      version: cardSubtasks.version,
-      updatedAt: cardSubtasks.updatedAt,
-    })
-    .from(cardSubtasks)
-    .innerJoin(cards, eq(cardSubtasks.cardId, cards.id))
-    .innerJoin(columns, eq(cards.columnId, columns.id))
-    .innerJoin(boards, eq(columns.boardId, boards.id))
-    .where(
-      and(
-        eq(cardSubtasks.id, input.subtaskId),
-        eq(boards.ownerId, input.ownerId),
-        isNull(boards.deletedAt),
-        isNull(columns.deletedAt),
-        isNull(cards.deletedAt),
-        isNull(cardSubtasks.deletedAt),
-      ),
-    )
-    .for("update")
-    .limit(1);
-
-  return row ?? null;
-}
-
 export async function touchBoard(
   executor: DatabaseExecutor,
   input: { boardId: string; now: Date },
@@ -272,18 +201,4 @@ export async function listActiveCardsForColumn(
     .from(cards)
     .where(and(eq(cards.columnId, input.columnId), isNull(cards.deletedAt)))
     .orderBy(asc(cards.position), asc(cards.id));
-}
-
-export async function listActiveSubtasksForCard(
-  executor: DatabaseExecutor,
-  input: { cardId: string },
-) {
-  return executor
-    .select({
-      id: cardSubtasks.id,
-      position: cardSubtasks.position,
-    })
-    .from(cardSubtasks)
-    .where(and(eq(cardSubtasks.cardId, input.cardId), isNull(cardSubtasks.deletedAt)))
-    .orderBy(asc(cardSubtasks.position), asc(cardSubtasks.id));
 }

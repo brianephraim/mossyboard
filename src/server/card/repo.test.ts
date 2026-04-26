@@ -73,7 +73,6 @@ describe("card repo", () => {
     });
     assert.equal(detail?.columnId, firstColumnId);
     assert.equal(detail?.priority, "high");
-    assert.equal(detail?.subtasks.length, 0);
 
     const boardDetail = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
     const cardSummary = boardDetail?.columns[0]?.cards.find((card) => card.id === secondCard.id);

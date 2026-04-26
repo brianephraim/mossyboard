@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Checkbox } from "@tamagui/checkbox";
-import { Input } from "@tamagui/input";
 import { Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import { FormOptionButtonsField, FormRoot, FormTextAreaField, FormTextField } from "../../form";
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
-import { tamaguiInputValueOnChange } from "../../tamaguiRhfWebField";
 import { trpc } from "../../trpc/client";
 import { boardPriorityMeta, boardPriorityValues } from "./model";
 import type { CardPriority } from "./types";
@@ -43,9 +40,6 @@ export function CardDetailSurface({
   const utils = trpc.useUtils();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [resolvedBoardId, setResolvedBoardId] = useState<string>(boardId);
-  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
-  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
-  const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
   useEffect(() => {
     if (!open || !cardId) {
       setResolvedBoardId(boardId);
@@ -127,44 +121,13 @@ export function CardDetailSurface({
     },
   });
 
-  const createSubtask = trpc.subtask.create.useMutation({
-    onSuccess: async () => {
-      setNewSubtaskTitle("");
-      await Promise.all([cardQuery.refetch(), onBoardChanged()]);
-      onAnnounce("Subtask added.");
-    },
-  });
-
-  const updateSubtask = trpc.subtask.update.useMutation({
-    onSuccess: async () => {
-      setEditingSubtaskId(null);
-      setEditingSubtaskTitle("");
-      await Promise.all([cardQuery.refetch(), onBoardChanged()]);
-      onAnnounce("Subtask saved.");
-    },
-  });
-
-  const toggleSubtask = trpc.subtask.toggle.useMutation({
-    onSuccess: async () => {
-      await Promise.all([cardQuery.refetch(), onBoardChanged()]);
-      onAnnounce("Subtask updated.");
-    },
-  });
-
-  const deleteSubtask = trpc.subtask.softDelete.useMutation({
-    onSuccess: async () => {
-      await Promise.all([cardQuery.refetch(), onBoardChanged()]);
-      onAnnounce("Subtask removed.");
-    },
-  });
-
   if (cardQuery.isLoading && !cardQuery.data) {
     return (
       <PrettyModalWrap
         open={open}
         onOpenChange={onOpenChange}
         title="Card details"
-        description="Edit title, description, priority, and subtasks from this surface."
+        description="Edit title, description, priority, and tags from this surface."
         footer={null}
         desktopPlacement="side"
         desktopWidth={580}
@@ -183,7 +146,7 @@ export function CardDetailSurface({
         open={open}
         onOpenChange={onOpenChange}
         title="Card details"
-        description="Edit title, description, priority, and subtasks from this surface."
+        description="Edit title, description, priority, and tags from this surface."
         footer={null}
         desktopPlacement="side"
         desktopWidth={580}
@@ -215,14 +178,12 @@ export function CardDetailSurface({
     return null;
   }
 
-  const completedCount = card.subtasks.filter((subtask) => subtask.isDone).length;
-
   return (
     <PrettyModalWrap
       open={open}
       onOpenChange={onOpenChange}
       title={cardQuery.data?.card.title ?? "Card details"}
-      description="Edit title, description, priority, and subtasks from this surface."
+      description="Edit title, description, priority, and tags from this surface."
       footer={null}
       desktopPlacement="side"
       desktopWidth={580}
@@ -300,7 +261,6 @@ export function CardDetailSurface({
 
             <XStack gap="$2" flexWrap="wrap">
               <BoardPill>{card.columnTitle}</BoardPill>
-              <BoardPill>{completedCount} complete subtasks</BoardPill>
             </XStack>
 
             <XStack gap="$3" flexWrap="wrap">
@@ -346,153 +306,6 @@ export function CardDetailSurface({
               </BoardActionButton>
             </XStack>
           </FormRoot>
-        </BoardSurface>
-
-        <BoardSurface padding="$4">
-          <YStack gap="$3">
-            <XStack alignItems="center" justifyContent="space-between" gap="$3" flexWrap="wrap">
-              <YStack gap="$1">
-                <Text fontWeight="700" color="$boardHeading">
-                  Subtasks
-                </Text>
-                <Text color="$boardTextMuted">
-                  {completedCount} of {card.subtasks.length} complete
-                </Text>
-              </YStack>
-              <BoardPill>{card.subtasks.length}</BoardPill>
-            </XStack>
-
-            <XStack gap="$2" flexWrap="wrap">
-              <Input
-                value={newSubtaskTitle}
-                onChange={tamaguiInputValueOnChange(setNewSubtaskTitle)}
-                placeholder="Add a subtask"
-                flex={1}
-                minWidth={220}
-                backgroundColor="$boardPanelSurfaceStrong"
-                borderColor="$boardShellBorder"
-              />
-              <BoardActionButton
-                tone="accent"
-                disabled={newSubtaskTitle.trim().length === 0 || createSubtask.isPending}
-                onPress={() => {
-                  void createSubtask.mutateAsync({
-                    cardId: card.id,
-                    title: newSubtaskTitle.trim(),
-                  });
-                }}
-              >
-                Add subtask
-              </BoardActionButton>
-            </XStack>
-
-            <YStack gap="$3">
-              {card.subtasks.length === 0 ? (
-                <Text color="$boardTextMuted">
-                  No subtasks yet. Add one to start breaking the work down.
-                </Text>
-              ) : (
-                card.subtasks.map((subtask) => {
-                  const isEditing = editingSubtaskId === subtask.id;
-
-                  return (
-                    <BoardSurface key={subtask.id} padding="$3">
-                      <YStack gap="$3">
-                        <XStack gap="$3" alignItems="center">
-                          <Checkbox
-                            checked={subtask.isDone}
-                            size="$3"
-                            onCheckedChange={(checked) => {
-                              void toggleSubtask.mutateAsync({
-                                subtaskId: subtask.id,
-                                isDone: checked === true,
-                                expectedVersion: subtask.version,
-                              });
-                            }}
-                          >
-                            <Checkbox.Indicator>
-                              <Text fontWeight="800">✓</Text>
-                            </Checkbox.Indicator>
-                          </Checkbox>
-
-                          {isEditing ? (
-                            <Input
-                              value={editingSubtaskTitle}
-                              onChange={tamaguiInputValueOnChange(setEditingSubtaskTitle)}
-                              flex={1}
-                              autoFocus
-                              backgroundColor="$boardPanelSurfaceStrong"
-                              borderColor="$boardShellBorder"
-                            />
-                          ) : (
-                            <Text
-                              flex={1}
-                              color="$boardHeading"
-                              textDecorationLine={subtask.isDone ? "line-through" : "none"}
-                            >
-                              {subtask.title}
-                            </Text>
-                          )}
-                        </XStack>
-
-                        <XStack gap="$2" flexWrap="wrap">
-                          {isEditing ? (
-                            <>
-                              <BoardActionButton
-                                tone="accent"
-                                disabled={
-                                  editingSubtaskTitle.trim().length === 0 || updateSubtask.isPending
-                                }
-                                onPress={() => {
-                                  void updateSubtask.mutateAsync({
-                                    subtaskId: subtask.id,
-                                    title: editingSubtaskTitle.trim(),
-                                    expectedVersion: subtask.version,
-                                  });
-                                }}
-                              >
-                                Save
-                              </BoardActionButton>
-                              <BoardActionButton
-                                tone="ghost"
-                                onPress={() => {
-                                  setEditingSubtaskId(null);
-                                  setEditingSubtaskTitle("");
-                                }}
-                              >
-                                Cancel
-                              </BoardActionButton>
-                            </>
-                          ) : (
-                            <BoardActionButton
-                              tone="ghost"
-                              onPress={() => {
-                                setEditingSubtaskId(subtask.id);
-                                setEditingSubtaskTitle(subtask.title);
-                              }}
-                            >
-                              Edit
-                            </BoardActionButton>
-                          )}
-                          <BoardActionButton
-                            tone="ghost"
-                            onPress={() => {
-                              void deleteSubtask.mutateAsync({
-                                subtaskId: subtask.id,
-                                expectedVersion: subtask.version,
-                              });
-                            }}
-                          >
-                            Delete
-                          </BoardActionButton>
-                        </XStack>
-                      </YStack>
-                    </BoardSurface>
-                  );
-                })
-              )}
-            </YStack>
-          </YStack>
         </BoardSurface>
       </YStack>
     </PrettyModalWrap>

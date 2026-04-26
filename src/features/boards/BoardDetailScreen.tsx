@@ -1109,7 +1109,7 @@ export function BoardDetailScreen({
                 Delete board
               </Text>
               <Text color="$boardTextMuted">
-                Deleting a board removes its columns, cards, and subtasks from the active workspace.
+                Deleting a board removes its columns and cards from the active workspace.
               </Text>
               {confirmBoardDelete ? (
                 <BoardInlineNotice

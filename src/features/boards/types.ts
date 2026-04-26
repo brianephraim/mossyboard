@@ -10,7 +10,6 @@ export type LoadedColumn = LoadedBoard["columns"][number];
 export type CardSummary = LoadedColumn["cards"][number];
 export type CardDetail = RouterOutputs["card"]["get"]["card"];
 export type CardListItem = RouterOutputs["card"]["listByBoard"]["items"][number];
-export type SubtaskSummary = CardDetail["subtasks"][number];
 
 export type CardPriority = CardSummary["priority"];
 export type BoardViewMode = "board" | "list";

@@ -95,7 +95,7 @@ Subtasks must come out atomically: the schema entry, the server module, the rout
 - Modify: `src/features/boards/types.ts`, `src/features/boards/CardDetailSurface.tsx`, `src/features/boards/BoardDetailScreen.tsx`
 - Create: `drizzle/pg/0006_*.sql` (drizzle-generated; we discard it after this task and let Task 2 own the new migration; see Step 11 note)
 
-- [ ] **Step 1: Edit `src/server/db/schema.ts` to remove the `cardSubtasks` table and `cardSubtasksRelations`, and remove `subtasks: many(cardSubtasks)` from `cardsRelations`**
+- [x] **Step 1: Edit `src/server/db/schema.ts` to remove the `cardSubtasks` table and `cardSubtasksRelations`, and remove `subtasks: many(cardSubtasks)` from `cardsRelations`**
 
 Open `src/server/db/schema.ts`. Delete the entire `cardSubtasks` `pgTable(...)` block (currently around lines 121–139). Delete `cardSubtasksRelations` (currently around lines 161–166). Inside `cardsRelations`, remove the `subtasks: many(cardSubtasks),` line so `cardsRelations` becomes:
 
@@ -110,18 +110,18 @@ export const cardsRelations = relations(cards, ({ one }) => ({
 
 Update imports at the top: drop `boolean` if no longer used after removing `cardSubtasks`. (Keep all other imports as-is.)
 
-- [ ] **Step 2: Delete the entire `src/server/subtask/` directory and the subtask router file**
+- [x] **Step 2: Delete the entire `src/server/subtask/` directory and the subtask router file**
 
 ```bash
 rm -rf src/server/subtask
 rm src/server/trpc/routers/subtask.ts
 ```
 
-- [ ] **Step 3: Edit `src/server/trpc/router.ts` to drop the subtask wire-up**
+- [x] **Step 3: Edit `src/server/trpc/router.ts` to drop the subtask wire-up**
 
 Remove the import `import { subtaskRouter } from "./routers/subtask";` and remove the `subtask: subtaskRouter,` line inside `t.router({...})`. The `appRouter` should now expose `board`, `card`, `column`, `counter`, `protectedEcho`, `authEmail`, `health`, `echo` — but no `subtask`.
 
-- [ ] **Step 4: Edit `src/server/board/repo-shared.ts` to drop subtask helpers**
+- [x] **Step 4: Edit `src/server/board/repo-shared.ts` to drop subtask helpers**
 
 Remove these three exports entirely:
 
@@ -131,7 +131,7 @@ Remove these three exports entirely:
 
 Remove `cardSubtasks` from the import line at the top: change `import { boards, cards, cardSubtasks, columns } from "../db/schema";` to `import { boards, cards, columns } from "../db/schema";`.
 
-- [ ] **Step 5: Edit `src/server/card/repo.ts` to remove the `subtasks` field and its hydration**
+- [x] **Step 5: Edit `src/server/card/repo.ts` to remove the `subtasks` field and its hydration**
 
 In `CardDetailRow` (around lines 18–35), delete the `subtasks: Array<{ ... }>` field so the type becomes:
 
@@ -165,19 +165,19 @@ await tx
 
 Remove `cardSubtasks` from the import line at the top: `import { boards, cards, cardSubtasks, type CardPriority, columns } from "../db/schema";` → `import { boards, cards, type CardPriority, columns } from "../db/schema";`.
 
-- [ ] **Step 6: Edit `src/server/card/repo.test.ts` to remove the subtasks assertion**
+- [x] **Step 6: Edit `src/server/card/repo.test.ts` to remove the subtasks assertion**
 
 Find the line `assert.equal(detail?.subtasks.length, 0);` (around line 76) and delete it entirely.
 
-- [ ] **Step 7: Edit `src/server/board/repo.test.ts` to remove the subtask cascade test**
+- [x] **Step 7: Edit `src/server/board/repo.test.ts` to remove the subtask cascade test**
 
 Find the test that imports `createSubtask` (around line 60) and asserts on a `subtaskRow` (around line 114). Delete the entire `it("renames and soft-deletes a board with descendant cards and subtasks", async () => { ... })` test. Tag-cascade coverage will be added in Task 5.
 
-- [ ] **Step 8: Edit `src/features/boards/types.ts` to remove `SubtaskSummary`**
+- [x] **Step 8: Edit `src/features/boards/types.ts` to remove `SubtaskSummary`**
 
 Delete the `export type SubtaskSummary = ...` line entirely.
 
-- [ ] **Step 9: Edit `src/features/boards/CardDetailSurface.tsx` to rip out every subtask reference**
+- [x] **Step 9: Edit `src/features/boards/CardDetailSurface.tsx` to rip out every subtask reference**
 
 This is the largest UI demolition. Make the following edits in `src/features/boards/CardDetailSurface.tsx`:
 
@@ -216,11 +216,11 @@ g. Delete the entire second `<BoardSurface padding="$4"> ... </BoardSurface>` pa
 
 After this step, the file should contain only the form panel — no subtasks panel. Verify there are zero remaining `subtask` (case-insensitive) string occurrences in the file.
 
-- [ ] **Step 10: Edit `src/features/boards/BoardDetailScreen.tsx` to drop the subtasks word in the delete-board copy**
+- [x] **Step 10: Edit `src/features/boards/BoardDetailScreen.tsx` to drop the subtasks word in the delete-board copy**
 
 Find the line "Deleting a board removes its columns, cards, and subtasks from the active workspace." (around line 1112) and change it to "Deleting a board removes its columns and cards from the active workspace." (Tags follow cards transitively; no need to call them out in delete-board copy.)
 
-- [ ] **Step 11: Generate a migration that drops `card_subtasks`**
+- [x] **Step 11: Generate a migration that drops `card_subtasks`**
 
 ```bash
 npm run db:generate
@@ -263,7 +263,7 @@ And remove any `0006_snapshot.json` that drizzle wrote into `drizzle/pg/meta/`:
 rm -f drizzle/pg/meta/0006_snapshot.json
 ```
 
-- [ ] **Step 12: Format every touched file**
+- [x] **Step 12: Format every touched file**
 
 ```bash
 npx prettier --write \
@@ -278,7 +278,7 @@ npx prettier --write \
   src/features/boards/BoardDetailScreen.tsx
 ```
 
-- [ ] **Step 13: Run typecheck — expect green**
+- [x] **Step 13: Run typecheck — expect green**
 
 ```bash
 npm run typecheck
@@ -286,7 +286,7 @@ npm run typecheck
 
 Expected: clean. If anything still references `subtasks`, `cardSubtasks`, `SubtaskSummary`, `subtaskRouter`, or any subtask-related symbol, fix the residual reference before moving on.
 
-- [ ] **Step 14: Run tests — expect green**
+- [x] **Step 14: Run tests — expect green**
 
 ```bash
 npm run test
