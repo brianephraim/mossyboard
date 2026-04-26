@@ -342,51 +342,56 @@ export function BoardPane({
     return null;
   }
 
+  const showTopControls =
+    Boolean(boardQuery.error) || Boolean(state.conflictMessage) || role === "main";
+
   return (
     <YStack gap="$0" flex={1} minHeight={0} overflow="hidden">
-      <YStack padding="$5" paddingBottom="$0" gap="$4" flexShrink={0}>
-        {boardQuery.error ? (
-          <BoardInlineNotice
-            tone="warning"
-            message="The latest board refresh failed. You’re still seeing the last loaded board state."
-            actions={
-              <BoardActionButton tone="ghost" onPress={() => void boardQuery.refetch()}>
-                Retry refresh
-              </BoardActionButton>
-            }
-          />
-        ) : null}
+      {showTopControls ? (
+        <YStack padding="$5" paddingBottom="$0" gap="$4" flexShrink={0}>
+          {boardQuery.error ? (
+            <BoardInlineNotice
+              tone="warning"
+              message="The latest board refresh failed. You’re still seeing the last loaded board state."
+              actions={
+                <BoardActionButton tone="ghost" onPress={() => void boardQuery.refetch()}>
+                  Retry refresh
+                </BoardActionButton>
+              }
+            />
+          ) : null}
 
-        {state.conflictMessage ? (
-          <BoardInlineNotice
-            tone="danger"
-            message={state.conflictMessage}
-            actions={
-              <BoardActionButton
-                tone="ghost"
-                onPress={() => {
-                  void refreshBoard();
-                }}
-              >
-                Refresh board
-              </BoardActionButton>
-            }
-          />
-        ) : null}
+          {state.conflictMessage ? (
+            <BoardInlineNotice
+              tone="danger"
+              message={state.conflictMessage}
+              actions={
+                <BoardActionButton
+                  tone="ghost"
+                  onPress={() => {
+                    void refreshBoard();
+                  }}
+                >
+                  Refresh board
+                </BoardActionButton>
+              }
+            />
+          ) : null}
 
-        {role === "main" ? (
-          <BoardControls
-            search={search}
-            onSetView={(view) => onSetView?.(view)}
-            onSetGroupBy={(groupBy) => onSetGroupBy?.(groupBy)}
-            onTogglePriority={(priority) => onTogglePriority?.(priority)}
-            onClearPriority={() => onClearPriority?.()}
-          />
-        ) : null}
-      </YStack>
+          {role === "main" ? (
+            <BoardControls
+              search={search}
+              onSetView={(view) => onSetView?.(view)}
+              onSetGroupBy={(groupBy) => onSetGroupBy?.(groupBy)}
+              onTogglePriority={(priority) => onTogglePriority?.(priority)}
+              onClearPriority={() => onClearPriority?.()}
+            />
+          ) : null}
+        </YStack>
+      ) : null}
 
       {search.view === "board" ? (
-        <YStack paddingTop="$4" flex={1} minHeight={0} overflow="hidden">
+        <YStack paddingTop={role === "main" ? "$4" : "$0"} flex={1} minHeight={0} overflow="hidden">
           <BoardCanvas
             board={board}
             search={search}

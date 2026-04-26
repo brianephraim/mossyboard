@@ -263,6 +263,7 @@ export function BoardWorkspaceScreen({
         onOpenInDrawer={(id) => updateRouteSearch({ drawer: id })}
         title={title}
         subtitle="Plan, filter, regroup, and move work without leaving the board route."
+        contentBottomInsetPx={drawerBoardId ? drawerHeightPx : 0}
         headerActions={
           <BoardActionButton tone="danger" onPress={() => setDeleteBoardOpen(true)}>
             Delete board
@@ -287,7 +288,7 @@ export function BoardWorkspaceScreen({
               onOpenCreateColumn={(targetBoardId, afterColumnId) =>
                 setCreateColumnTarget({ boardId: targetBoardId, afterColumnId })
               }
-              bottomScrollPadding={drawerBoardId ? drawerHeightPx + 24 : undefined}
+              bottomScrollPadding={drawerBoardId ? 24 : undefined}
               onSetView={(view) => updateRouteSearch({ view })}
               onSetGroupBy={(groupBy) => {
                 updateRouteSearch({ groupBy });

@@ -31,6 +31,7 @@ type BoardShellProps = {
   subtitle?: string;
   announcement?: string | null;
   headerActions?: ReactNode;
+  contentBottomInsetPx?: number;
   renderContent: (controls: { openCreateBoard: () => void }) => ReactNode;
   overlay?: ReactNode;
   onOpenInDrawer?: (boardId: string) => void;
@@ -149,6 +150,7 @@ export function BoardShell({
   subtitle,
   announcement,
   headerActions,
+  contentBottomInsetPx = 0,
   renderContent,
   overlay,
   onOpenInDrawer,
@@ -328,7 +330,12 @@ export function BoardShell({
               />
               {verificationBanner}
             </YStack>
-            <YStack flex={1} minHeight={0} overflow="hidden">
+            <YStack
+              flex={1}
+              minHeight={0}
+              overflow="hidden"
+              paddingBottom={!media.maxMd && contentBottomInsetPx > 0 ? contentBottomInsetPx : 0}
+            >
               {renderContent({
                 openCreateBoard: () => {
                   setCreateBoardOpen(true);
