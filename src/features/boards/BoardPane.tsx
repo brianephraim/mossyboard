@@ -19,12 +19,15 @@ import {
 import type { BoardDetailSearch, CardPriority, LoadedBoard } from "./types";
 import { BoardActionButton, BoardInlineNotice, BoardStateCard, BoardSurface } from "./ui";
 import type { BoardMutations } from "./useBoardMutations";
+import type { SensorAPI } from "@hello-pangea/dnd";
+import type { RefObject } from "react";
 
 type BoardPaneProps = {
   boardId: string;
   boardKey: "main" | "drawer";
   search: BoardDetailSearch;
   role: "main" | "drawer";
+  programmaticSensorApiRef?: RefObject<SensorAPI | null>;
   boardQuery: ReturnType<typeof trpc.board.getWithColumnsAndCards.useQuery>;
   state: {
     optimisticBoard: LoadedBoard | null;
@@ -48,6 +51,7 @@ export function BoardPane({
   boardKey,
   search,
   role,
+  programmaticSensorApiRef,
   boardQuery,
   state,
   mutations,
@@ -450,6 +454,7 @@ export function BoardPane({
               void priority;
               void direction;
             }}
+            programmaticSensorApiRef={programmaticSensorApiRef}
             dndScopeKey={boardKey}
             bottomScrollPadding={bottomScrollPadding}
             wrapDragDropContext={false}

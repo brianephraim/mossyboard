@@ -1,4 +1,5 @@
 import type { DropResult, Sensor, SensorAPI } from "@hello-pangea/dnd";
+import type { RefObject } from "react";
 import { useMemo, useRef } from "react";
 import { YStack } from "@tamagui/stacks";
 
@@ -6,6 +7,7 @@ import { BoardInlineNotice } from "../ui";
 import { buildBoardLanes } from "../model";
 import type { BoardDetailSearch, CardPriority, LoadedBoard } from "../types";
 import type { BoardKey } from "../useDualBoardDnd";
+import { scopeId } from "../useDualBoardDnd";
 import { BoardColumnsLayout } from "./BoardColumnsLayout";
 import { BoardLaneView } from "./BoardLaneView";
 import { PriorityGroupReorderToggle } from "./PriorityGroupReorderToggle";
@@ -35,6 +37,7 @@ type BoardCanvasProps = {
     priority: CardPriority,
     direction: "up" | "down",
   ) => void;
+  programmaticSensorApiRef?: RefObject<SensorAPI | null>;
   dndScopeKey?: BoardKey;
   bottomScrollPadding?: number;
   wrapDragDropContext?: boolean;
@@ -55,6 +58,7 @@ export function BoardCanvas({
   onMoveColumn,
   onMoveCard,
   onMovePriorityGroupCard,
+  programmaticSensorApiRef,
   dndScopeKey,
   bottomScrollPadding,
   wrapDragDropContext = true,
@@ -81,6 +85,8 @@ export function BoardCanvas({
       sensorApiRef.current = api;
     };
   }, []);
+  const scoped = (id: string) => (dndScopeKey ? scopeId(dndScopeKey, id) : id);
+  const api = programmaticSensorApiRef?.current ?? sensorApiRef.current;
 
   const noticeMessage = computeNoticeMessage({
     isPriorityGroupedBoard,
@@ -97,9 +103,7 @@ export function BoardCanvas({
       onMoveColumn(columnId, direction);
       return;
     }
-    runProgrammaticDrag(sensorApiRef.current, columnId, direction, () =>
-      onMoveColumn(columnId, direction),
-    );
+    runProgrammaticDrag(api, scoped(columnId), direction, () => onMoveColumn(columnId, direction));
   };
 
   const moveCardProgrammatically = (cardId: string, direction: Direction) => {
@@ -107,9 +111,7 @@ export function BoardCanvas({
       onMoveCard(cardId, direction);
       return;
     }
-    runProgrammaticDrag(sensorApiRef.current, cardId, direction, () =>
-      onMoveCard(cardId, direction),
-    );
+    runProgrammaticDrag(api, scoped(cardId), direction, () => onMoveCard(cardId, direction));
   };
 
   const renderLane: Parameters<typeof BoardColumnsLayout>[0]["renderLane"] = (

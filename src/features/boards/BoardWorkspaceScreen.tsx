@@ -270,6 +270,7 @@ export function BoardWorkspaceScreen({
                 boardKey="main"
                 boardId={boardId}
                 search={search}
+                programmaticSensorApiRef={sensorApi}
                 boardQuery={mainQuery}
                 state={mainState}
                 mutations={mainMutations}
@@ -336,6 +337,7 @@ export function BoardWorkspaceScreen({
                       boardKey="drawer"
                       boardId={drawerBoardId}
                       search={search}
+                      programmaticSensorApiRef={sensorApi}
                       boardQuery={drawerQuery}
                       state={drawerState}
                       mutations={drawerMutations}
