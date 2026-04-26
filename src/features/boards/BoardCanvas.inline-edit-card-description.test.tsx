@@ -27,6 +27,7 @@ const board: LoadedBoard = {
           priority: "high",
           position: "1000",
           version: 7,
+          tags: [],
         },
       ],
     },

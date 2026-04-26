@@ -28,6 +28,7 @@ const board: LoadedBoard = {
           priority: "high",
           position: "1000",
           version: 0,
+          tags: [],
         },
         {
           id: "card-2",
@@ -37,6 +38,7 @@ const board: LoadedBoard = {
           priority: "low",
           position: "2000",
           version: 0,
+          tags: [],
         },
       ],
     },
@@ -55,6 +57,7 @@ const board: LoadedBoard = {
           priority: "none",
           position: "1000",
           version: 0,
+          tags: [],
         },
       ],
     },

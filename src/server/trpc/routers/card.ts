@@ -99,6 +99,18 @@ export const cardRouter = t.router({
         filters: z
           .object({
             priority: z.array(cardPrioritySchema).min(1).optional(),
+            tags: z
+              .array(
+                z
+                  .string()
+                  .trim()
+                  .min(1)
+                  .max(40)
+                  .transform((v) => v.toLowerCase()),
+              )
+              .min(1)
+              .max(20)
+              .optional(),
           })
           .optional(),
         limit: z.number().int().min(1).max(100).default(50),

@@ -4,8 +4,8 @@ import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { keyBetween } from "../../lib/ordering/key-between";
 import { db } from "../db/client";
-import { boards, cards, columns, type CardPriority } from "../db/schema";
-import { getOwnedBoard } from "./repo-shared";
+import { boards, cards, cardTags, columns, type CardPriority } from "../db/schema";
+import { getOwnedBoard, listTagsForCards } from "./repo-shared";
 
 const DEFAULT_COLUMN_TITLES = ["To do", "In progress", "Done"] as const;
 
@@ -37,6 +37,7 @@ export type LoadedBoardRow = {
       priority: CardPriority;
       position: string;
       version: number;
+      tags: Array<{ id: string; name: string; normalizedName: string }>;
     }>;
   }>;
 };
@@ -151,6 +152,11 @@ export async function getBoardWithColumnsAndCards(input: {
           .where(and(inArray(cards.columnId, columnIds), isNull(cards.deletedAt)))
           .orderBy(asc(cards.position), asc(cards.id));
 
+  const tagMap = await listTagsForCards(db, {
+    ownerId: input.ownerId,
+    cardIds: cardRows.map((card) => card.id),
+  });
+
   const cardsByColumn = new Map<string, LoadedBoardRow["columns"][number]["cards"]>();
 
   for (const card of cardRows) {
@@ -163,6 +169,7 @@ export async function getBoardWithColumnsAndCards(input: {
       priority: card.priority,
       position: card.position,
       version: card.version,
+      tags: tagMap.get(card.id) ?? [],
     });
     cardsByColumn.set(card.columnId, list);
   }
@@ -295,6 +302,8 @@ export async function softDeleteBoard(input: {
             updatedAt: now,
           })
           .where(and(inArray(cards.id, activeCardIds), isNull(cards.deletedAt)));
+
+        await tx.delete(cardTags).where(inArray(cardTags.cardId, activeCardIds));
       }
     }
 

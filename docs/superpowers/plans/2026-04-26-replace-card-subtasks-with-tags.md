@@ -1280,7 +1280,7 @@ EOF
 )"
 ```
 
-- [ ] **Step 3: Update `src/server/trpc/routers/card.ts` to accept `tags` filter on `listByBoard`**
+- [x] **Step 3: Update `src/server/trpc/routers/card.ts` to accept `tags` filter on `listByBoard`**
 
 Find the `listByBoard` procedure's `.input(...)` zod schema. Add a `tags` field:
 
@@ -1315,7 +1315,7 @@ Note: this code matches the existing `listByBoard` shape; if the existing schema
 
 Pass `input.tags` through to `listCardsByBoardForUser` (or whatever the service-layer wrapper is called); update the service if needed to forward `tags?: string[]`.
 
-- [ ] **Step 4: Update `src/server/card/repo.ts` to re-introduce `tags` on `CardDetailRow` and hydrate everywhere**
+- [x] **Step 4: Update `src/server/card/repo.ts` to re-introduce `tags` on `CardDetailRow` and hydrate everywhere**
 
 Change `CardDetailRow`:
 
@@ -1438,7 +1438,7 @@ Add `sql` to the drizzle-orm import: `import { and, asc, desc, eq, inArray, isNu
 
 If `getBoardWithColumnsAndCards` (or its repo equivalent) exists in `src/server/board/repo.ts`, append a similar `listTagsForCards` hydration call so each card returned by board hydration has a `tags` array. The fan-out: collect every cardId from the columns, single batched call, then attach. Do not introduce N+1.
 
-- [ ] **Step 5: Update `src/server/board/repo.ts` for the cascade on board soft-delete**
+- [x] **Step 5: Update `src/server/board/repo.ts` for the cascade on board soft-delete**
 
 Locate the `softDeleteBoard` (or `softDelete` for boards) function. Inside its transaction, after the existing column/card cascade (which sets `deletedAt` on descendant cards), append:
 
@@ -1461,7 +1461,7 @@ await tx
 
 Add `cardTags` to the schema import.
 
-- [ ] **Step 5a: Format card + board repos and the card-router input change**
+- [x] **Step 5a: Format card + board repos and the card-router input change**
 
 ```bash
 npx prettier --write \
@@ -1470,7 +1470,7 @@ npx prettier --write \
   src/server/board/repo.ts
 ```
 
-- [ ] **Step 5b: Typecheck**
+- [x] **Step 5b: Typecheck**
 
 ```bash
 npm run typecheck
@@ -1478,7 +1478,7 @@ npm run typecheck
 
 Expected: clean. If existing tests in `card/repo.test.ts` or `board/repo.test.ts` no longer compile because they reference removed shapes, that's expected — Steps 6 and 7 update them. Defer the test-run until then.
 
-- [ ] **Step 5c: Commit card hydration + cascades (save-point)**
+- [x] **Step 5c: Commit card hydration + cascades (save-point)**
 
 Run `npm run test` first; it should pass even before Steps 6–7 because the existing test files don't yet reference the new shapes negatively. If a test fails because it asserts on the old subtask cascade (the test was supposed to be removed in Task 1 — verify by `rg "subtask" src/server/board/repo.test.ts`), drop it now.
 

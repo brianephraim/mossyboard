@@ -31,6 +31,7 @@ const boardFixture: LoadedBoard = {
           priority: "low",
           position: "1000",
           version: 0,
+          tags: [],
         },
         {
           id: "card-2",
@@ -40,6 +41,7 @@ const boardFixture: LoadedBoard = {
           priority: "high",
           position: "2000",
           version: 0,
+          tags: [],
         },
         {
           id: "card-3",
@@ -49,6 +51,7 @@ const boardFixture: LoadedBoard = {
           priority: "medium",
           position: "3000",
           version: 0,
+          tags: [],
         },
         {
           id: "card-4",
@@ -58,6 +61,7 @@ const boardFixture: LoadedBoard = {
           priority: "high",
           position: "4000",
           version: 0,
+          tags: [],
         },
         {
           id: "card-5",
@@ -67,6 +71,7 @@ const boardFixture: LoadedBoard = {
           priority: "none",
           position: "5000",
           version: 0,
+          tags: [],
         },
       ],
     },
@@ -85,6 +90,7 @@ const boardFixture: LoadedBoard = {
           priority: "none",
           position: "1000",
           version: 0,
+          tags: [],
         },
         {
           id: "card-7",
@@ -94,6 +100,7 @@ const boardFixture: LoadedBoard = {
           priority: "low",
           position: "2000",
           version: 0,
+          tags: [],
         },
       ],
     },

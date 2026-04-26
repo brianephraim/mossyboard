@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 
-import { and, asc, desc, eq, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 
-import { boards, cards, type CardPriority, columns } from "../db/schema";
+import { boards, cards, cardTags, type CardPriority, columns, tags } from "../db/schema";
 import { db } from "../db/client";
 import { trpcErrors } from "../trpc/init";
 import { resolveOrderedPosition } from "../board/ordered-position";
@@ -11,9 +11,16 @@ import {
   getOwnedCard,
   getOwnedColumn,
   listActiveCardsForColumn,
+  listTagsForCards,
   lockOwnedCard,
   touchBoard,
 } from "../board/repo-shared";
+
+export type CardTagSummary = {
+  id: string;
+  name: string;
+  normalizedName: string;
+};
 
 export type CardDetailRow = {
   id: string;
@@ -25,6 +32,7 @@ export type CardDetailRow = {
   position: string;
   version: number;
   updatedAt: Date;
+  tags: CardTagSummary[];
 };
 
 export type CardListItemRow = {
@@ -37,6 +45,7 @@ export type CardListItemRow = {
   position: string;
   version: number;
   updatedAt: Date;
+  tags: CardTagSummary[];
 };
 
 export async function createCard(input: {
@@ -198,6 +207,8 @@ export async function softDeleteCard(input: {
     }
     const deletedAt = deleted.deletedAt;
 
+    await tx.delete(cardTags).where(eq(cardTags.cardId, lockedCard.id));
+
     await touchBoard(tx, {
       boardId: lockedCard.boardId,
       now,
@@ -224,6 +235,11 @@ export async function getCard(input: {
     return null;
   }
 
+  const tagMap = await listTagsForCards(db, {
+    ownerId: input.ownerId,
+    cardIds: [card.id],
+  });
+
   return {
     id: card.id,
     columnId: card.columnId,
@@ -234,6 +250,7 @@ export async function getCard(input: {
     position: card.position,
     version: card.version,
     updatedAt: card.updatedAt,
+    tags: tagMap.get(card.id) ?? [],
   };
 }
 
@@ -294,6 +311,7 @@ export async function listCardsByBoard(input: {
   ownerId: string;
   boardId: string;
   priority?: CardPriority[];
+  tags?: string[];
   limit: number;
   cursor?: {
     updatedAt: Date;
@@ -322,6 +340,19 @@ export async function listCardsByBoard(input: {
 
   if (input.priority && input.priority.length > 0) {
     filters.push(inArray(cards.priority, input.priority));
+  }
+
+  if (input.tags && input.tags.length > 0) {
+    filters.push(
+      sql`EXISTS (
+        SELECT 1 FROM ${cardTags} ct
+        JOIN ${tags} t ON t.id = ct.tag_id
+        WHERE ct.card_id = ${cards.id}
+          AND t.owner_id = ${input.ownerId}
+          AND t.deleted_at IS NULL
+          AND t.normalized_name = ANY(${input.tags})
+      )`,
+    );
   }
 
   if (input.cursor) {
@@ -360,8 +391,18 @@ export async function listCardsByBoard(input: {
     .limit(input.limit + 1);
 
   const hasMore = rows.length > input.limit;
-  const items = hasMore ? rows.slice(0, input.limit) : rows;
-  const lastItem = items.at(-1);
+  const baseItems = hasMore ? rows.slice(0, input.limit) : rows;
+  const lastItem = baseItems.at(-1);
+
+  const tagMap = await listTagsForCards(db, {
+    ownerId: input.ownerId,
+    cardIds: baseItems.map((row) => row.id),
+  });
+
+  const items = baseItems.map((row) => ({
+    ...row,
+    tags: tagMap.get(row.id) ?? [],
+  }));
 
   return {
     items,

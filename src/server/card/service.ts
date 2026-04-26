@@ -181,6 +181,7 @@ export async function listCardsByBoardForUser(
     boardId: string;
     filters?: {
       priority?: CardPriority[];
+      tags?: string[];
     };
     limit: number;
     cursor?: {
@@ -193,6 +194,7 @@ export async function listCardsByBoardForUser(
     ownerId,
     boardId: input.boardId,
     priority: input.filters?.priority,
+    tags: input.filters?.tags,
     limit: input.limit,
     cursor: input.cursor
       ? {
@@ -224,6 +226,7 @@ function serializeCardDetail(row: CardDetailRow) {
     position: row.position,
     version: row.version,
     updatedAt: row.updatedAt.toISOString(),
+    tags: row.tags,
   };
 }
 
@@ -238,5 +241,6 @@ function serializeCardListItem(row: CardListItemRow) {
     position: row.position,
     version: row.version,
     updatedAt: row.updatedAt.toISOString(),
+    tags: row.tags,
   };
 }
