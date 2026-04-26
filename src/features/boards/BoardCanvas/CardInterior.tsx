@@ -123,6 +123,7 @@ export function CardInterior({
               name="value"
               aria-label="Card description"
               defaultValue={card.description}
+              placeholder="Add a description…"
               focusOnMouseUp
               onBlur={onBlur}
               onKeyDown={onKeyDown}
