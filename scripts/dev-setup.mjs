@@ -244,13 +244,17 @@ function ensureDockerPostgresRunning(hostPort) {
     throw new Error("Docker is not available. Install/start Docker Desktop first.");
   }
   // Bring up the dev compose file.
-  const up = spawnSync("docker", ["compose", "-f", "docker-compose.dev.yml", "up", "-d"], {
-    stdio: "inherit",
-    env: {
-      ...process.env,
-      KANBAN_DOCKER_PG_PORT: String(hostPort),
+  const up = spawnSync(
+    "docker",
+    ["compose", "-f", "docker-compose.dev.yml", "up", "-d", "--force-recreate"],
+    {
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        KANBAN_DOCKER_PG_PORT: String(hostPort),
+      },
     },
-  });
+  );
   if (up.status !== 0) throw new Error("docker compose up failed");
 }
 
@@ -407,6 +411,12 @@ try {
     flavor === "docker" && cmdOk("pg_isready", ["-h", "localhost", "-p", String(port)])
       ? 5433
       : port;
+
+  if (flavor === "docker" && dockerHostPort !== port) {
+    console.log(
+      `Docker Postgres will use localhost:${dockerHostPort} (localhost:${port} is already in use).`,
+    );
+  }
 
   let derivedUrls =
     flavor === "docker"
