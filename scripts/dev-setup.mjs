@@ -92,27 +92,29 @@ async function pickDbFlavor(rl, detected) {
   if (available.length === 1) return available[0];
 
   const menu = [
-    ["a", "supabase", "Supabase CLI"],
-    ["b", "docker", "Docker"],
-    ["c", "host", "Host Postgres"],
+    [
+      "1",
+      "supabase",
+      "Supabase CLI",
+      "Convenient local stack; `supabase start` usually runs via Docker.",
+    ],
+    ["2", "docker", "Docker", "Runs only Postgres via `docker compose` (no Supabase services)."],
+    ["3", "host", "Host Postgres", "Uses a Postgres already running on your machine (no Docker)."],
   ];
+
+  const detectedLabels =
+    available.length > 0 ? available.join(", ") : "none (you can still pick one and install it)";
 
   const answer = (
     await rl.question(
-      `Pick a local Postgres flavor:\n` +
-        menu.map(([k, , label]) => `  (${k}) ${label}`).join("\n") +
+      `Pick a local Postgres flavor (detected: ${detectedLabels}):\n` +
+        menu.map(([k, _id, label, note]) => `  ${k}) ${label} — ${note}`).join("\n") +
         `\n> `,
     )
-  )
-    .trim()
-    .toLowerCase();
+  ).trim();
 
   const byKey = new Map(menu.map(([k, id]) => [k, id]));
-  const picked = byKey.get(answer);
-  if (!picked) {
-    return "docker";
-  }
-  return picked;
+  return byKey.get(answer) ?? "docker";
 }
 
 function databaseUrlsForFlavor(flavor, port) {
@@ -286,6 +288,12 @@ try {
   if (flavor === "host" && !cmdOk("pg_isready", ["-h", "localhost"])) {
     console.error(
       "Host Postgres not detected. Install Postgres (e.g. brew install postgresql@16).",
+    );
+    process.exit(1);
+  }
+  if (flavor === "supabase" && !cmdOk("docker", ["info"])) {
+    console.error(
+      "Supabase CLI mode typically requires Docker to run `supabase start`. Start Docker Desktop or pick option 3 (Host Postgres).",
     );
     process.exit(1);
   }
