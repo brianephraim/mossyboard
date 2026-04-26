@@ -1,4 +1,5 @@
 export { FormFieldFrame } from "./FormFieldFrame";
+export { FormInlineAutoGrowTextAreaField } from "./FormInlineAutoGrowTextAreaField";
 export { FormInlineRenameField } from "./FormInlineRenameField";
 export type { FormInlineRenameFieldProps } from "./FormInlineRenameField";
 export { FormInlineTextField } from "./FormInlineTextField";
