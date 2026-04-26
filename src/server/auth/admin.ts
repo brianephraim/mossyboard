@@ -18,14 +18,20 @@ function parseServiceAccount(json: string): ServiceAccount {
 }
 
 if (getApps().length === 0) {
-  const sa = parseServiceAccount(serverFirebaseEnv.FIREBASE_SERVICE_ACCOUNT_JSON);
-  initializeApp({
-    credential: cert({
-      projectId: sa.project_id,
-      clientEmail: sa.client_email,
-      privateKey: sa.private_key,
-    }),
-  });
+  if (serverFirebaseEnv.FIREBASE_AUTH_EMULATOR_HOST) {
+    initializeApp({
+      projectId: serverFirebaseEnv.VITE_PUBLIC_FIREBASE_PROJECT_ID!,
+    });
+  } else {
+    const sa = parseServiceAccount(serverFirebaseEnv.FIREBASE_SERVICE_ACCOUNT_JSON!);
+    initializeApp({
+      credential: cert({
+        projectId: sa.project_id,
+        clientEmail: sa.client_email,
+        privateKey: sa.private_key,
+      }),
+    });
+  }
 }
 
 export const adminAuth = getAuth();

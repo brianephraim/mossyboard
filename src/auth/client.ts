@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import {
   browserLocalPersistence,
+  connectAuthEmulator,
   createUserWithEmailAndPassword,
   getAuth,
   onIdTokenChanged,
@@ -21,6 +22,10 @@ const app = initializeApp({
 });
 
 export const auth = getAuth(app);
+
+if (import.meta.env.MODE !== "production") {
+  connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
+}
 
 let started = false;
 let initialAuthResolved = false;
