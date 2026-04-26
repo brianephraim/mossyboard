@@ -354,8 +354,7 @@ export function BoardResponsiveColumns({
 
   if (media.maxMd) {
     return (
-      <YStack gap="$4" padding="$4" flex={1} minHeight={0}>
-        {rail}
+      <YStack padding="$4" flex={1} minHeight={0}>
         {content}
       </YStack>
     );

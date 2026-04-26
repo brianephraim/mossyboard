@@ -207,7 +207,7 @@ export function BoardDetailScreen({
       await Promise.all([refreshBoard(), utils.card.listByBoard.invalidate({ boardId })]);
       setCreateCardColumnId(null);
       setAnnouncement("Card created.");
-      updateRouteSearch({ card: cardId });
+      void cardId;
     },
     onError: async (error) => {
       await handleMutationError(error.message);

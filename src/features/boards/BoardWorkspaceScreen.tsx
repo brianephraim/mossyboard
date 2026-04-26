@@ -492,7 +492,7 @@ export function BoardWorkspaceScreen({
             title: target.title,
           });
           setCreateCardTarget(null);
-          updateRouteSearch({ card: result.cardId });
+          void result;
         }}
       />
 

@@ -162,6 +162,7 @@ export function BoardShell({
   const session = useAuthSession();
   const requiresEmailVerification = useRequiresEmailVerification();
   const [createBoardOpen, setCreateBoardOpen] = useState(false);
+  const [mobileRailOpen, setMobileRailOpen] = useState(false);
   const [shellAnnouncement, setShellAnnouncement] = useState<string | null>(null);
   const createBoardFormId = useId();
   const boardsQuery = trpc.board.list.useQuery({});
@@ -197,6 +198,12 @@ export function BoardShell({
       createBoardForm.reset({ name: "" });
     }
   }, [createBoardForm, createBoardOpen]);
+
+  useEffect(() => {
+    if (!media.maxMd) {
+      setMobileRailOpen(false);
+    }
+  }, [media.maxMd]);
 
   const boardList = boardsQuery.data?.boards ?? [];
   const boardRail = (
@@ -302,7 +309,22 @@ export function BoardShell({
     </BoardSurface>
   );
 
-  const headerControls = headerActions ?? null;
+  const headerControls = media.maxMd ? (
+    <XStack gap="$3" flexWrap="wrap" alignItems="center" justifyContent="flex-end">
+      {headerActions}
+      <BoardActionButton
+        tone="ghost"
+        aria-label="Open sidebar menu"
+        onPress={() => setMobileRailOpen(true)}
+      >
+        <Text aria-hidden fontSize="$6" lineHeight="$1">
+          ☰
+        </Text>
+      </BoardActionButton>
+    </XStack>
+  ) : (
+    (headerActions ?? null)
+  );
 
   return (
     <BoardPageChrome>
@@ -346,6 +368,22 @@ export function BoardShell({
       />
 
       {overlay}
+
+      <PrettyModalWrap
+        open={mobileRailOpen}
+        onOpenChange={setMobileRailOpen}
+        title="Menu"
+        description="Boards, account, and sidebar actions."
+        footer={
+          <BoardActionButton tone="ghost" onPress={() => setMobileRailOpen(false)}>
+            Close
+          </BoardActionButton>
+        }
+      >
+        <YStack maxHeight="70vh" overflow="scroll">
+          {boardRail}
+        </YStack>
+      </PrettyModalWrap>
 
       <PrettyModalWrap
         open={createBoardOpen}

@@ -5,6 +5,12 @@ const baseTokens = defaultConfig.tokens as typeof defaultConfig.tokens & {
   color: Record<string, string>;
 };
 
+const media = {
+  ...defaultConfig.media,
+  maxMd: { maxWidth: 975 },
+  md: { minWidth: 976 },
+} as const;
+
 const config = createTamagui({
   ...defaultConfig,
   settings: {
@@ -13,6 +19,7 @@ const config = createTamagui({
     themeClassNameOnRoot: false,
     onlyAllowShorthands: false,
   },
+  media,
   tokens: {
     ...baseTokens,
     color: {
