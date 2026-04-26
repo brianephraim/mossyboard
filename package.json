@@ -6,6 +6,7 @@
     "predev": "node scripts/db-migrate.mjs",
     "dev": "vite",
     "build": "vite build",
+    "vercel-build": "node scripts/vercel-build.mjs",
     "start": "node .output/server/index.mjs",
     "test": "vitest run",
     "lint": "eslint .",
