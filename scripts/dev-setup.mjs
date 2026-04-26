@@ -163,15 +163,18 @@ async function pickDbFlavor(rl, detected, dockerStatus) {
 }
 
 function databaseUrlsForFlavor(flavor, port) {
-  const base = `postgres://postgres:postgres@localhost:${port}`;
+  const base =
+    flavor === "host"
+      ? `postgres://localhost:${port}`
+      : `postgres://postgres:postgres@localhost:${port}`;
   return {
     DATABASE_URL: `${base}/kanban_dev`,
     DATABASE_URL_TEST: `${base}/kanban_test`,
   };
 }
 
-async function ensureRolesAndDatabases(port) {
-  const admin = postgres(`postgres://postgres:postgres@localhost:${port}/postgres`, {
+async function ensureRolesAndDatabases(adminUrl) {
+  const admin = postgres(adminUrl, {
     prepare: false,
     max: 1,
   });
@@ -362,6 +365,10 @@ try {
   // Step 6-9: ensure DB service, roles, dbs, and write DATABASE_URLs.
   const port = 5432;
   const urls = databaseUrlsForFlavor(flavor, port);
+  const adminUrl =
+    flavor === "host"
+      ? `postgres://localhost:${port}/postgres`
+      : `postgres://postgres:postgres@localhost:${port}/postgres`;
 
   if (flavor === "docker") {
     if (!cmdOk("pg_isready", ["-h", "localhost", "-p", String(port)])) {
@@ -375,7 +382,15 @@ try {
         await new Promise((r) => setTimeout(r, 250));
       }
     }
-    await ensureRolesAndDatabases(port);
+    try {
+      await ensureRolesAndDatabases(adminUrl);
+    } catch (err) {
+      console.error(String(err));
+      console.error(
+        "Could not bootstrap roles/databases. If you are using host Postgres, pick option 3.",
+      );
+      process.exit(1);
+    }
   }
 
   if (flavor === "host") {
@@ -414,7 +429,15 @@ try {
       }
     }
 
-    await ensureRolesAndDatabases(port);
+    try {
+      await ensureRolesAndDatabases(adminUrl);
+    } catch (err) {
+      console.error(String(err));
+      console.error(
+        "Could not connect to your local Postgres as an admin user. If your local Postgres requires a password, set DATABASE_URL manually in .env to include credentials, then re-run npm run dev.",
+      );
+      process.exit(1);
+    }
   }
 
   if (flavor === "supabase") {
@@ -425,7 +448,13 @@ try {
       if (startRes.status !== 0) process.exit(startRes.status ?? 1);
     }
     // Assume Supabase local Postgres is reachable on localhost:5432 with postgres/postgres.
-    await ensureRolesAndDatabases(port);
+    try {
+      await ensureRolesAndDatabases(adminUrl);
+    } catch (err) {
+      console.error(String(err));
+      console.error("Could not bootstrap roles/databases for Supabase local Postgres.");
+      process.exit(1);
+    }
   }
 
   if (!env.map.has("DATABASE_URL")) setEnvKey(env, "DATABASE_URL", urls.DATABASE_URL);
