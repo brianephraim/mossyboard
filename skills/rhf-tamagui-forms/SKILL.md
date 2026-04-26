@@ -63,6 +63,18 @@ When building `src/form/*Field` primitives, **compose** handlers instead of over
 
 If you overwrite `onBlur`/`onChange` with RHF handlers, feature-level behavior like “save on blur” silently stops working.
 
+## Inline edit inside a `@hello-pangea/dnd` drag handle
+
+When an inline-edit input lives inside a draggable region (e.g. a column header that is also a drag handle), three things fight each other: dnd by default refuses drags from interactive elements (`<input>`, `<button>`, ...), the browser focuses an input on `mousedown` (which "wins" over an intent-to-drag), and dnd swallows clicks once a drag has started.
+
+The supported pattern in this repo:
+
+1. On the parent `<Draggable>`, set `disableInteractiveElementBlocking` so dnd will start a drag from the input region. Without this, dragging from the input area silently does nothing.
+2. On the inline field, pass `focusOnMouseUp` (and optionally `focusOnMouseUpDragThresholdPx`). The field will defer focus to mouseup and only focus if the press did not move past the threshold. While the input is already focused, mousedown stops propagating so dnd can't hijack text-selection drags inside the input.
+3. Keep all other RHF wiring identical to the inline-form pattern above (submit on blur, no extra editing state).
+
+Reach for this pattern only when an input has to coexist with a drag handle. For a plain inline rename with no surrounding drag handle, do not opt in — `focusOnMouseUp` adds latency and is unnecessary.
+
 ## Tamagui change events: always adapt through `readTamaguiTextInputValue`
 
 Tamagui’s `Input` `onChange` can deliver non-standard event shapes (web/native-ish hybrids).

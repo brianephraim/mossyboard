@@ -1,5 +1,5 @@
-import { useId } from "react";
-import type { ComponentProps } from "react";
+import { useId, useRef } from "react";
+import type { ComponentProps, MouseEvent as ReactMouseEvent } from "react";
 import { Input } from "@tamagui/input";
 import {
   useFormContext,
@@ -12,6 +12,28 @@ import {
 import { joinAriaIds } from "./FormFieldFrame";
 import { readTamaguiTextInputValue } from "./tamaguiFieldAdapters";
 
+// Flip to `true` to trace each step of the focus-on-mouseup gesture
+// in the browser console (filter by `[ft-focus]`). Kept in source so we
+// can re-enable quickly without restructuring the handlers.
+const DEBUG_FOCUS_ON_MOUSE_UP = false;
+let debugSeq = 0;
+function nextDebugId() {
+  debugSeq += 1;
+  return debugSeq;
+}
+function debugFocus(message: string, data: Record<string, unknown> = {}) {
+  if (!DEBUG_FOCUS_ON_MOUSE_UP) return;
+  // eslint-disable-next-line no-console
+  console.log(`[ft-focus] ${message}`, data);
+}
+function describeNode(node: Element | null | undefined): string {
+  if (!node) return "<none>";
+  const tag = node.tagName.toLowerCase();
+  const aria = node.getAttribute("aria-label");
+  const id = node.getAttribute("id");
+  return `${tag}${id ? `#${id}` : ""}${aria ? `[aria-label="${aria}"]` : ""}`;
+}
+
 type FormInlineTextFieldProps<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues>,
@@ -23,11 +45,27 @@ type FormInlineTextFieldProps<
   name: TName;
   rules?: RegisterOptions<TFieldValues, TName>;
   inputRef?: (node: HTMLInputElement | null) => void;
+  /**
+   * When true, defer focusing the input from a mouse press until the
+   * matching mouseup, and only if the pointer moved less than
+   * `focusOnMouseUpDragThresholdPx`. Lets the input coexist with a
+   * `@hello-pangea/dnd` drag handle that wraps it: a click focuses
+   * the input, but a drag-out gesture instead moves the parent
+   * draggable.
+   *
+   * The parent `Draggable` should set `disableInteractiveElementBlocking`,
+   * otherwise dnd refuses to start a drag from the input region.
+   */
+  focusOnMouseUp?: boolean;
+  /** Movement threshold (px) above which mouseup will not refocus. */
+  focusOnMouseUpDragThresholdPx?: number;
 }> &
   Omit<
     ComponentProps<typeof Input>,
     "aria-describedby" | "aria-invalid" | "id" | "name" | "ref" | "value"
   >;
+
+const DEFAULT_DRAG_THRESHOLD_PX = 5;
 
 export function FormInlineTextField<
   TFieldValues extends FieldValues,
@@ -39,6 +77,8 @@ export function FormInlineTextField<
   inputRef,
   name,
   rules,
+  focusOnMouseUp = false,
+  focusOnMouseUpDragThresholdPx = DEFAULT_DRAG_THRESHOLD_PX,
   ...inputProps
 }: FormInlineTextFieldProps<TFieldValues, TName>) {
   const generatedId = useId();
@@ -46,8 +86,131 @@ export function FormInlineTextField<
   const fieldState = getFieldState(name, formState);
   const resolvedInputId = inputId ?? `${generatedId}-field`;
   const describedBy = joinAriaIds(additionalDescribedBy);
-  const { onBlur: onBlurProp, onChange: onChangeProp, ...restInputProps } = inputProps;
+  const {
+    onBlur: onBlurProp,
+    onChange: onChangeProp,
+    onMouseDown: onMouseDownProp,
+    ...restInputProps
+  } = inputProps;
   const registration = register(name, rules);
+  const localInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleMouseDown = (event: ReactMouseEvent<HTMLInputElement>) => {
+    onMouseDownProp?.(event);
+    const gestureId = nextDebugId();
+    debugFocus("mouseDown received", {
+      gestureId,
+      focusOnMouseUp,
+      defaultPrevented: event.defaultPrevented,
+      button: event.button,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      hasInputRef: localInputRef.current !== null,
+      activeElementBefore: describeNode(
+        typeof document !== "undefined" ? (document.activeElement as Element | null) : null,
+      ),
+    });
+    if (!focusOnMouseUp) {
+      debugFocus("mouseDown skipped (focusOnMouseUp disabled)", {
+        gestureId,
+        focusOnMouseUp,
+      });
+      return;
+    }
+    // Note: we intentionally do NOT short-circuit on event.defaultPrevented.
+    // @hello-pangea/dnd's window-level capture mousedown handler runs
+    // before this element-level handler and calls preventDefault() once it
+    // acquires a lock — that's exactly the scenario this code exists to
+    // recover from, by manually focusing on the matching mouseup if the
+    // pointer didn't move past the drag threshold.
+    const node = localInputRef.current;
+    const alreadyFocused =
+      typeof document !== "undefined" && node !== null && document.activeElement === node;
+    if (alreadyFocused) {
+      debugFocus("mouseDown while already focused; stopping propagation", { gestureId });
+      // While focused, suppress propagation so the surrounding
+      // dnd drag handle doesn't initiate a drag during text selection.
+      event.stopPropagation();
+      return;
+    }
+    if (typeof window === "undefined") {
+      return;
+    }
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let movedBeyondThreshold = false;
+    let moveCount = 0;
+    const onWindowMove = (windowEvent: globalThis.MouseEvent) => {
+      moveCount += 1;
+      if (movedBeyondThreshold) return;
+      const dx = windowEvent.clientX - startX;
+      const dy = windowEvent.clientY - startY;
+      const distance = Math.hypot(dx, dy);
+      if (distance > focusOnMouseUpDragThresholdPx) {
+        movedBeyondThreshold = true;
+        debugFocus("mouseMove crossed drag threshold", {
+          gestureId,
+          distance,
+          threshold: focusOnMouseUpDragThresholdPx,
+          moveCount,
+        });
+      }
+    };
+    const onWindowUp = (windowEvent: globalThis.MouseEvent) => {
+      window.removeEventListener("mousemove", onWindowMove);
+      window.removeEventListener("mouseup", onWindowUp);
+      const dx = windowEvent.clientX - startX;
+      const dy = windowEvent.clientY - startY;
+      debugFocus("mouseUp window-level handler fired", {
+        gestureId,
+        movedBeyondThreshold,
+        moveCount,
+        finalDistance: Math.hypot(dx, dy),
+        threshold: focusOnMouseUpDragThresholdPx,
+        hasInputRef: localInputRef.current !== null,
+        activeElementBeforeFocus: describeNode(document.activeElement as Element | null),
+      });
+      if (movedBeyondThreshold) {
+        debugFocus("mouseUp skip focus (was a drag)", { gestureId });
+        return;
+      }
+      const target = localInputRef.current;
+      if (!target) {
+        debugFocus("mouseUp skip focus (no input ref)", { gestureId });
+        return;
+      }
+      if (document.activeElement === target) {
+        debugFocus("mouseUp skip focus (already active)", { gestureId });
+        return;
+      }
+      try {
+        target.focus();
+      } catch (err) {
+        debugFocus("mouseUp focus() threw", { gestureId, err: String(err) });
+      }
+      debugFocus("mouseUp called focus()", {
+        gestureId,
+        activeElementImmediate: describeNode(document.activeElement as Element | null),
+        nowFocused: document.activeElement === target,
+      });
+      // Detect if focus is stolen back by something else right after.
+      window.setTimeout(() => {
+        debugFocus("mouseUp focus state after 50ms", {
+          gestureId,
+          activeElement: describeNode(document.activeElement as Element | null),
+          stillFocused: document.activeElement === target,
+        });
+      }, 50);
+    };
+    window.addEventListener("mousemove", onWindowMove);
+    window.addEventListener("mouseup", onWindowUp);
+    debugFocus("mouseDown registered window mousemove + mouseup", {
+      gestureId,
+      startX,
+      startY,
+      threshold: focusOnMouseUpDragThresholdPx,
+    });
+  };
 
   return (
     <Input
@@ -56,10 +219,20 @@ export function FormInlineTextField<
       name={registration.name}
       ref={(node: HTMLInputElement | null) => {
         registration.ref(node);
+        localInputRef.current = node;
         inputRef?.(node);
       }}
       defaultValue={defaultValue as string | undefined}
+      onMouseDown={handleMouseDown}
+      onFocus={() => {
+        debugFocus("input received focus event", {
+          activeElement: describeNode(document.activeElement as Element | null),
+        });
+      }}
       onBlur={(event) => {
+        debugFocus("input received blur event", {
+          activeElementAtBlur: describeNode(document.activeElement as Element | null),
+        });
         registration.onBlur(event);
         onBlurProp?.(event);
       }}

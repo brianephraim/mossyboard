@@ -78,7 +78,12 @@ export function BoardColumnsLayout({
                 ) : null}
 
                 {lanes.map((lane, laneIndex) => (
-                  <Draggable key={lane.id} draggableId={scoped(lane.id)} index={laneIndex}>
+                  <Draggable
+                    key={lane.id}
+                    draggableId={scoped(lane.id)}
+                    index={laneIndex}
+                    disableInteractiveElementBlocking
+                  >
                     {(columnProvided) => {
                       const { rest: colDragRest, style: colDragStyle } = mergeDraggableStyle(
                         dndColumnShellStyle,

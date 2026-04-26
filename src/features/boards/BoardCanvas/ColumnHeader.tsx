@@ -100,6 +100,7 @@ export function ColumnHeaderWithInlineRename({
                   aria-label="Column title"
                   defaultValue={lane.title}
                   disabled={blockActions}
+                  focusOnMouseUp
                   onBlur={() => {
                     if (blockActions) return;
                     void submit();
