@@ -43,7 +43,9 @@ export function CardInterior({
   onMove,
   onRenameTitle,
 }: Readonly<CardInteriorProps>) {
-  const { visible, onHoverChange, onFocus, onBlur } = useEdgeHoverFocus();
+  const { visible, onHoverChange, onFocus, onBlur } = useEdgeHoverFocus({
+    includeFocusWithin: false,
+  });
   const moveControlsVisible = canMove && visible;
 
   return (
