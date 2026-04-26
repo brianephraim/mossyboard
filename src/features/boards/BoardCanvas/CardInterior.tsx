@@ -12,6 +12,8 @@ import {
 import { boardPriorityMeta, boardPriorityValues } from "../model";
 import { BoardActionButton, BoardPill, BoardSurface } from "../ui";
 import type { BoardLane } from "../types";
+import { CardTagsRow } from "./CardTagsRow";
+import type { CardTagsRowTag } from "./CardTagsRow";
 import { EdgeMoveButton } from "./EdgeMoveButton";
 import { CARD_MOVE_EDGE_SIZE_PX } from "./layout";
 import { useDragSafePress } from "./useDragSafePress";
@@ -25,8 +27,11 @@ type CardInteriorProps = {
   canMove: boolean;
   moveDirections?: Array<Direction>;
   dragHandleProps?: DraggableProvided["dragHandleProps"];
+  availableTags: ReadonlyArray<CardTagsRowTag>;
   onOpen: () => void;
   onMove: (cardId: string, direction: Direction) => void;
+  onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
+  onDetachTag: (input: { cardId: string; tagId: string }) => Promise<void>;
   onRenameTitle: (input: {
     cardId: string;
     title: string;
@@ -43,8 +48,11 @@ export function CardInterior({
   canMove,
   moveDirections = ["up", "down", "left", "right"],
   dragHandleProps,
+  availableTags,
   onOpen,
   onMove,
+  onAddTag,
+  onDetachTag,
   onRenameTitle,
 }: Readonly<CardInteriorProps>) {
   const { visible, onHoverChange, onFocus, onBlur } = useEdgeHoverFocus({
@@ -264,6 +272,13 @@ export function CardInterior({
           )}
         />
 
+        <CardTagsRow
+          attachedTags={card.tags}
+          availableTags={availableTags}
+          onAddTag={(name) => onAddTag({ cardId: card.id, name })}
+          onDetachTag={(tagId) => onDetachTag({ cardId: card.id, tagId })}
+        />
+
         <XStack gap="$2" flexWrap="wrap" alignItems="center">
           <BoardActionButton tone="ghost" onPress={onOpen}>
             Open
@@ -279,15 +294,21 @@ export function CardPreview({
   card,
   showColumnContext,
   canMove,
+  availableTags,
   onOpen,
   onMove,
+  onAddTag,
+  onDetachTag,
   onRenameTitle,
 }: Readonly<{
   card: BoardLane["cards"][number];
   showColumnContext: boolean;
   canMove: boolean;
+  availableTags: ReadonlyArray<CardTagsRowTag>;
   onOpen: () => void;
   onMove: (cardId: string, direction: Direction) => void;
+  onAddTag: CardInteriorProps["onAddTag"];
+  onDetachTag: CardInteriorProps["onDetachTag"];
   onRenameTitle: CardInteriorProps["onRenameTitle"];
 }>) {
   return (
@@ -296,8 +317,11 @@ export function CardPreview({
         card={card}
         showColumnContext={showColumnContext}
         canMove={canMove}
+        availableTags={availableTags}
         onOpen={onOpen}
         onMove={onMove}
+        onAddTag={onAddTag}
+        onDetachTag={onDetachTag}
         onRenameTitle={onRenameTitle}
       />
     </BoardSurface>

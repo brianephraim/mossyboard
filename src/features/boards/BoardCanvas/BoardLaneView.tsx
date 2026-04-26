@@ -8,6 +8,7 @@ import type { BoardDetailSearch, BoardLane, CardPriority } from "../types";
 import type { BoardKey } from "../useDualBoardDnd";
 import { scopeId } from "../useDualBoardDnd";
 import { CardInterior } from "./CardInterior";
+import type { CardTagsRowTag } from "./CardTagsRow";
 import { ColumnHeaderWithInlineRename } from "./ColumnHeader";
 import { LaneEmptyState } from "./LaneEmptyState";
 import { StaticLaneCards } from "./StaticLaneCards";
@@ -23,8 +24,11 @@ type BoardLaneViewProps = {
   canMoveColumn: boolean;
   groupedBoardReorderEnabled: boolean;
   dragHandleProps?: DraggableProvided["dragHandleProps"];
+  availableTags: ReadonlyArray<CardTagsRowTag>;
   onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (columnId: string) => void;
+  onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
+  onDetachTag: (input: { cardId: string; tagId: string }) => Promise<void>;
   onRenameCardTitle: (input: {
     cardId: string;
     title: string;
@@ -58,8 +62,11 @@ export function BoardLaneView({
   canMoveColumn,
   groupedBoardReorderEnabled,
   dragHandleProps,
+  availableTags,
   onOpenCard,
   onOpenCreateCard,
+  onAddTag,
+  onDetachTag,
   onRenameCardTitle,
   onRenameColumn,
   renamePendingColumnId,
@@ -162,8 +169,11 @@ export function BoardLaneView({
                               showColumnContext={false}
                               canMove
                               dragHandleProps={cardProvided.dragHandleProps}
+                              availableTags={availableTags}
                               onOpen={() => onOpenCard(card.id)}
                               onMove={onMoveCard}
+                              onAddTag={onAddTag}
+                              onDetachTag={onDetachTag}
                               onRenameTitle={onRenameCardTitle}
                             />
                           </div>
@@ -191,9 +201,12 @@ export function BoardLaneView({
             groupBy={groupBy}
             hasActivePriorityFilters={hasActivePriorityFilters}
             groupedBoardReorderEnabled={groupedBoardReorderEnabled}
+            availableTags={availableTags}
             onOpenCard={onOpenCard}
             onMoveCard={onMoveCard}
             onMovePriorityGroupCard={onMovePriorityGroupCard}
+            onAddTag={onAddTag}
+            onDetachTag={onDetachTag}
             onRenameCardTitle={onRenameCardTitle}
             dndScopeKey={dndScopeKey}
             bottomScrollPadding={bottomScrollPadding}

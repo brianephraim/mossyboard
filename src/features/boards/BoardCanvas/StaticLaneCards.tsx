@@ -9,6 +9,7 @@ import type { BoardDetailSearch, BoardLane, CardPriority } from "../types";
 import type { BoardKey } from "../useDualBoardDnd";
 import { scopeId } from "../useDualBoardDnd";
 import { CardInterior, CardPreview } from "./CardInterior";
+import type { CardTagsRowTag } from "./CardTagsRow";
 import { LaneEmptyState } from "./LaneEmptyState";
 import {
   dndCardListStyle,
@@ -24,6 +25,7 @@ type StaticLaneCardsProps = {
   groupBy: BoardDetailSearch["groupBy"];
   hasActivePriorityFilters: boolean;
   groupedBoardReorderEnabled: boolean;
+  availableTags: ReadonlyArray<CardTagsRowTag>;
   onOpenCard: (cardId: string) => void;
   onMoveCard: (cardId: string, direction: Direction) => void;
   onMovePriorityGroupCard: (
@@ -31,6 +33,8 @@ type StaticLaneCardsProps = {
     priority: CardPriority,
     direction: "up" | "down",
   ) => void;
+  onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
+  onDetachTag: (input: { cardId: string; tagId: string }) => Promise<void>;
   onRenameCardTitle: (input: {
     cardId: string;
     title: string;
@@ -47,9 +51,12 @@ export function StaticLaneCards({
   groupBy,
   hasActivePriorityFilters,
   groupedBoardReorderEnabled,
+  availableTags,
   onOpenCard,
   onMoveCard,
   onMovePriorityGroupCard,
+  onAddTag,
+  onDetachTag,
   onRenameCardTitle,
   dndScopeKey,
   bottomScrollPadding,
@@ -75,9 +82,12 @@ export function StaticLaneCards({
             laneId={lane.id}
             showDivider={index > 0}
             canReorder={groupedBoardReorderEnabled}
+            availableTags={availableTags}
             onOpenCard={onOpenCard}
             onMoveCard={onMoveCard}
             onMovePriorityGroupCard={onMovePriorityGroupCard}
+            onAddTag={onAddTag}
+            onDetachTag={onDetachTag}
             onRenameCardTitle={onRenameCardTitle}
             dndScopeKey={dndScopeKey}
             bottomScrollPadding={bottomScrollPadding}
@@ -107,8 +117,11 @@ export function StaticLaneCards({
           card={card}
           showColumnContext={false}
           canMove={false}
+          availableTags={availableTags}
           onOpen={() => onOpenCard(card.id)}
           onMove={onMoveCard}
+          onAddTag={onAddTag}
+          onDetachTag={onDetachTag}
           onRenameTitle={onRenameCardTitle}
         />
       ))}
@@ -126,9 +139,12 @@ function PriorityGroupSection({
   laneId,
   showDivider,
   canReorder,
+  availableTags,
   onOpenCard,
   onMoveCard,
   onMovePriorityGroupCard,
+  onAddTag,
+  onDetachTag,
   onRenameCardTitle,
   dndScopeKey,
   bottomScrollPadding,
@@ -137,6 +153,7 @@ function PriorityGroupSection({
   laneId: string;
   showDivider: boolean;
   canReorder: boolean;
+  availableTags: ReadonlyArray<CardTagsRowTag>;
   onOpenCard: (cardId: string) => void;
   onMoveCard: (cardId: string, direction: Direction) => void;
   onMovePriorityGroupCard: (
@@ -144,6 +161,8 @@ function PriorityGroupSection({
     priority: CardPriority,
     direction: "up" | "down",
   ) => void;
+  onAddTag: StaticLaneCardsProps["onAddTag"];
+  onDetachTag: StaticLaneCardsProps["onDetachTag"];
   onRenameCardTitle: StaticLaneCardsProps["onRenameCardTitle"];
   dndScopeKey?: BoardKey;
   bottomScrollPadding?: number;
@@ -216,7 +235,10 @@ function PriorityGroupSection({
                           canMove
                           moveDirections={["up", "down"]}
                           dragHandleProps={cardProvided.dragHandleProps}
+                          availableTags={availableTags}
                           onOpen={() => onOpenCard(card.id)}
+                          onAddTag={onAddTag}
+                          onDetachTag={onDetachTag}
                           onRenameTitle={onRenameCardTitle}
                           onMove={(cardId, direction) => {
                             if (direction === "up" || direction === "down") {
@@ -244,8 +266,11 @@ function PriorityGroupSection({
               card={card}
               showColumnContext={false}
               canMove={false}
+              availableTags={availableTags}
               onOpen={() => onOpenCard(card.id)}
               onMove={onMoveCard}
+              onAddTag={onAddTag}
+              onDetachTag={onDetachTag}
               onRenameTitle={onRenameCardTitle}
             />
           ))}

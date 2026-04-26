@@ -2799,7 +2799,7 @@ EOF
 
 - Modify: `src/features/boards/BoardCanvas/CardInterior.tsx`, `src/features/boards/BoardCanvas/index.tsx`, `src/features/boards/BoardCanvas/BoardLaneView.tsx`, `src/features/boards/BoardCanvas/StaticLaneCards.tsx`, `src/features/boards/BoardCanvas/BoardColumnsLayout.tsx`, plus any other file in the fan-out.
 
-- [ ] **Step 1: Map every prop-drilling layer between `BoardWorkspaceScreen` / `BoardDetailScreen` and `CardInterior`**
+- [x] **Step 1: Map every prop-drilling layer between `BoardWorkspaceScreen` / `BoardDetailScreen` and `CardInterior`**
 
 ```bash
 rg -n "CardInterior|CardPreview" src/features/boards
@@ -2807,7 +2807,7 @@ rg -n "CardInterior|CardPreview" src/features/boards
 
 Identify the chain. Likely: `BoardWorkspaceScreen` → `BoardCanvas/index.tsx` → `BoardColumnsLayout` → `BoardLaneView` → `StaticLaneCards` → `CardInterior` / `CardPreview`. Adjust the chain to the actual file structure.
 
-- [ ] **Step 2: Add tag props to `CardInterior` and `CardPreview` in `src/features/boards/BoardCanvas/CardInterior.tsx`**
+- [x] **Step 2: Add tag props to `CardInterior` and `CardPreview` in `src/features/boards/BoardCanvas/CardInterior.tsx`**
 
 Update the `CardInteriorProps` type:
 
@@ -2891,7 +2891,7 @@ export function CardPreview({
 }
 ```
 
-- [ ] **Step 3: Thread the new props through every fan-out file**
+- [x] **Step 3: Thread the new props through every fan-out file**
 
 For each file in the fan-out chain identified in Step 1, add `availableTags`, `onAddTag`, `onDetachTag` to the component's prop type and forward them to children. Example for `BoardLaneView.tsx`:
 
@@ -2906,13 +2906,13 @@ type BoardLaneViewProps = {
 
 Pass them down identically through each layer. **Do not** transform or memoize the callbacks at intermediate layers — the originals from the screen come in already memoized.
 
-- [ ] **Step 3a: Format the canvas folder**
+- [x] **Step 3a: Format the canvas folder**
 
 ```bash
 npx prettier --write src/features/boards/BoardCanvas
 ```
 
-- [ ] **Step 3b: Typecheck**
+- [x] **Step 3b: Typecheck**
 
 ```bash
 npm run typecheck
@@ -2930,7 +2930,7 @@ Task 12 replaces these stubs with the real `useTagMutations` wiring. Re-run `npm
 
 Expected after stubs: clean.
 
-- [ ] **Step 3c: Run tests**
+- [x] **Step 3c: Run tests**
 
 ```bash
 npm run test
@@ -2940,7 +2940,7 @@ Expected: existing canvas tests may fail because their `<CardInterior />` render
 
 If only harness-related tests fail, proceed to Step 3d.
 
-- [ ] **Step 3d: Commit fan-out plumbing (save-point)**
+- [x] **Step 3d: Commit fan-out plumbing (save-point)** — skipped per plan (folded into Step 8 commit)
 
 Even though `npm run test` may have lingering failures from the harnesses (Step 4), `npm run typecheck` is clean. Commit anyway? **No** — the convention says no broken tree commits. Instead, fold Steps 3 → 4 into a single commit by skipping this 3d save-point and going straight to Step 4. If the harnesses already pass (no failures introduced), commit here:
 
@@ -2956,7 +2956,7 @@ EOF
 
 If you skipped the commit because tests are red, mark this step done anyway — the harness updates in Step 4 will land everything in the Step 8 commit.
 
-- [ ] **Step 4: Update existing canvas tests to pass default empty arrays for the new props**
+- [x] **Step 4: Update existing canvas tests to pass default empty arrays for the new props**
 
 Tests that render `<CardInterior />` directly (e.g. `BoardCanvas.inline-edit-card-title.test.tsx`, `BoardCanvas.inline-rename.test.tsx`, `BoardCanvas.priority-grouping.test.tsx`, `BoardCanvas.inline-edit-card-description.test.tsx`) need stubs:
 
@@ -2974,13 +2974,13 @@ rg -n "tags:" src/features/boards/BoardCanvas
 
 Use that to ensure all canvas-related card fixtures now include `tags: []`.
 
-- [ ] **Step 5: Format**
+- [x] **Step 5: Format**
 
 ```bash
 npx prettier --write src/features/boards/BoardCanvas
 ```
 
-- [ ] **Step 6: Typecheck**
+- [x] **Step 6: Typecheck**
 
 ```bash
 npm run typecheck
@@ -2988,7 +2988,7 @@ npm run typecheck
 
 Expected: clean. Any TS error here means a fan-out layer was missed; fix it before tests.
 
-- [ ] **Step 7: Run all tests**
+- [x] **Step 7: Run all tests**
 
 ```bash
 npm run test
@@ -2996,7 +2996,7 @@ npm run test
 
 Expected: green. Existing inline-edit / drag / priority tests should still pass with the harness-stubbed props.
 
-- [ ] **Step 8: Commit (test harness updates, plus fan-out if Step 3d was skipped)**
+- [x] **Step 8: Commit (test harness updates, plus fan-out if Step 3d was skipped)**
 
 ```bash
 git add -A

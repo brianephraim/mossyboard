@@ -10,6 +10,7 @@ import type { BoardKey } from "../useDualBoardDnd";
 import { scopeId } from "../useDualBoardDnd";
 import { BoardColumnsLayout } from "./BoardColumnsLayout";
 import { BoardLaneView } from "./BoardLaneView";
+import type { CardTagsRowTag } from "./CardTagsRow";
 import { PriorityGroupReorderToggle } from "./PriorityGroupReorderToggle";
 
 type Direction = "up" | "down" | "left" | "right";
@@ -48,6 +49,9 @@ type BoardCanvasProps = {
   dndScopeKey?: BoardKey;
   bottomScrollPadding?: number;
   wrapDragDropContext?: boolean;
+  availableTags: ReadonlyArray<CardTagsRowTag>;
+  onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
+  onDetachTag: (input: { cardId: string; tagId: string }) => Promise<void>;
 };
 
 export function BoardCanvas({
@@ -70,6 +74,9 @@ export function BoardCanvas({
   dndScopeKey,
   bottomScrollPadding,
   wrapDragDropContext = true,
+  availableTags,
+  onAddTag,
+  onDetachTag,
 }: Readonly<BoardCanvasProps>) {
   const lanes = buildBoardLanes(board, {
     groupBy: search.groupBy,
@@ -136,8 +143,11 @@ export function BoardCanvas({
       canMoveColumn={enableColumnDnD}
       groupedBoardReorderEnabled={groupedBoardReorderEnabled}
       dragHandleProps={dragHandleProps}
+      availableTags={availableTags}
       onOpenCard={onOpenCard}
       onOpenCreateCard={onOpenCreateCard}
+      onAddTag={onAddTag}
+      onDetachTag={onDetachTag}
       onRenameCardTitle={onRenameCardTitle}
       onRenameColumn={onRenameColumn}
       renamePendingColumnId={renamePendingColumnId}

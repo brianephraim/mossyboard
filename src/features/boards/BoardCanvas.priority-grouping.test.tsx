@@ -104,6 +104,9 @@ describe("BoardCanvas priority grouping", () => {
           onMoveColumn={vi.fn()}
           onMoveCard={vi.fn()}
           onMovePriorityGroupCard={vi.fn()}
+          availableTags={[]}
+          onAddTag={async () => undefined}
+          onDetachTag={async () => undefined}
         />
       </TamaguiRootProvider>,
     );
@@ -145,6 +148,9 @@ describe("BoardCanvas priority grouping", () => {
           onMoveColumn={vi.fn()}
           onMoveCard={vi.fn()}
           onMovePriorityGroupCard={vi.fn()}
+          availableTags={[]}
+          onAddTag={async () => undefined}
+          onDetachTag={async () => undefined}
         />
       </TamaguiRootProvider>,
     );
@@ -176,6 +182,9 @@ describe("BoardCanvas priority grouping", () => {
           onMoveColumn={vi.fn()}
           onMoveCard={vi.fn()}
           onMovePriorityGroupCard={vi.fn()}
+          availableTags={[]}
+          onAddTag={async () => undefined}
+          onDetachTag={async () => undefined}
         />
       </TamaguiRootProvider>,
     );
@@ -202,6 +211,9 @@ describe("BoardCanvas priority grouping", () => {
           onMoveColumn={vi.fn()}
           onMoveCard={vi.fn()}
           onMovePriorityGroupCard={vi.fn()}
+          availableTags={[]}
+          onAddTag={async () => undefined}
+          onDetachTag={async () => undefined}
         />
       </TamaguiRootProvider>,
     );
@@ -237,6 +249,9 @@ describe("BoardCanvas priority grouping", () => {
           onMoveColumn={vi.fn()}
           onMoveCard={vi.fn()}
           onMovePriorityGroupCard={vi.fn()}
+          availableTags={[]}
+          onAddTag={async () => undefined}
+          onDetachTag={async () => undefined}
         />
       </TamaguiRootProvider>,
     );

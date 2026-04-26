@@ -472,6 +472,9 @@ export function BoardPane({
             dndScopeKey={boardKey}
             bottomScrollPadding={bottomScrollPadding}
             wrapDragDropContext={false}
+            availableTags={[]}
+            onAddTag={async () => undefined}
+            onDetachTag={async () => undefined}
           />
         </YStack>
       ) : (

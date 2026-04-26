@@ -840,6 +840,9 @@ export function BoardDetailScreen({
               onMoveColumn={handleMoveColumn}
               onMoveCard={handleMoveCard}
               onMovePriorityGroupCard={handleMoveCardInPriorityGroup}
+              availableTags={[]}
+              onAddTag={async () => undefined}
+              onDetachTag={async () => undefined}
             />
           </YStack>
         ) : (
