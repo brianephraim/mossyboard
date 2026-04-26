@@ -579,6 +579,12 @@ try {
       env: { ...process.env, ...Object.fromEntries(env.map) },
     });
     if (seed.status !== 0) process.exit(seed.status ?? 1);
+    console.log("");
+    console.log("Seeded starter data for the default emulator user.");
+    console.log("Sign in with: dev@example.com / password");
+    console.log(
+      "If you sign in with a different email, set KANBAN_DEV_OWNER_ID to that user's UID in .env and re-run: npm run db:seed",
+    );
   }
 
   const elapsed = nowMs() - start;
