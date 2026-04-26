@@ -214,4 +214,84 @@ describe("card repo", () => {
       [firstCard.id],
     );
   }, 20000);
+
+  it("filters cards by tags (OR semantics across the array) and hydrates tag rows", async () => {
+    if (!canRun) return;
+
+    process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
+
+    const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+    const { createCard, listCardsByBoard } = await import("./repo");
+    const { addTagToCard } = await import("../tag/repo");
+
+    const ownerId = randomUUID();
+    const board = await createBoard({ ownerId, name: "Tag filter board" });
+    const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+    const columnId = loadedBoard?.columns[0]?.id;
+    assert.ok(columnId, "expected a starter column");
+
+    const c1 = await createCard({
+      ownerId,
+      columnId,
+      title: "C1",
+      description: "",
+      priority: "none",
+    });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const c2 = await createCard({
+      ownerId,
+      columnId,
+      title: "C2",
+      description: "",
+      priority: "none",
+    });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const c3 = await createCard({
+      ownerId,
+      columnId,
+      title: "C3",
+      description: "",
+      priority: "none",
+    });
+
+    await addTagToCard({ ownerId, cardId: c1.id, rawName: "Bug" });
+    await addTagToCard({ ownerId, cardId: c2.id, rawName: "Frontend" });
+
+    const both = await listCardsByBoard({
+      ownerId,
+      boardId: board.id,
+      tags: ["bug", "frontend"],
+      limit: 50,
+      cursor: null,
+    });
+    assert.deepEqual(both.items.map((row) => row.id).sort(), [c1.id, c2.id].sort());
+
+    const onlyBug = await listCardsByBoard({
+      ownerId,
+      boardId: board.id,
+      tags: ["bug"],
+      limit: 50,
+      cursor: null,
+    });
+    assert.deepEqual(
+      onlyBug.items.map((row) => row.id),
+      [c1.id],
+    );
+    const taggedRow = onlyBug.items.find((row) => row.id === c1.id);
+    assert.deepEqual(
+      taggedRow?.tags.map((t) => t.normalizedName),
+      ["bug"],
+    );
+
+    const noFilter = await listCardsByBoard({
+      ownerId,
+      boardId: board.id,
+      limit: 50,
+      cursor: null,
+    });
+    assert.deepEqual(noFilter.items.map((row) => row.id).sort(), [c1.id, c2.id, c3.id].sort());
+
+    const c3Row = noFilter.items.find((row) => row.id === c3.id);
+    assert.deepEqual(c3Row?.tags, []);
+  }, 20000);
 });

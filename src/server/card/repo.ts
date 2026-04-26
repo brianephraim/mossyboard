@@ -343,16 +343,19 @@ export async function listCardsByBoard(input: {
   }
 
   if (input.tags && input.tags.length > 0) {
-    filters.push(
-      sql`EXISTS (
-        SELECT 1 FROM ${cardTags} ct
-        JOIN ${tags} t ON t.id = ct.tag_id
-        WHERE ct.card_id = ${cards.id}
-          AND t.owner_id = ${input.ownerId}
-          AND t.deleted_at IS NULL
-          AND t.normalized_name = ANY(${input.tags})
-      )`,
-    );
+    const matchingTags = db
+      .select({ one: sql`1` })
+      .from(cardTags)
+      .innerJoin(tags, eq(tags.id, cardTags.tagId))
+      .where(
+        and(
+          eq(cardTags.cardId, cards.id),
+          eq(tags.ownerId, input.ownerId),
+          isNull(tags.deletedAt),
+          inArray(tags.normalizedName, input.tags),
+        ),
+      );
+    filters.push(sql`EXISTS ${matchingTags}`);
   }
 
   if (input.cursor) {

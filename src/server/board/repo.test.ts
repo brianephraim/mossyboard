@@ -47,4 +47,42 @@ describe("board repo", () => {
     assert.ok(loaded?.columns[0]?.position < loaded?.columns[1]?.position);
     assert.ok(loaded?.columns[1]?.position < loaded?.columns[2]?.position);
   }, 20000);
+
+  it("hard-deletes card_tags when a board is soft-deleted", async () => {
+    if (!canRun) return;
+
+    process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
+
+    const { eq } = await import("drizzle-orm");
+    const { createBoard, getBoardWithColumnsAndCards, softDeleteBoard } = await import("./repo");
+    const { createCard } = await import("../card/repo");
+    const { addTagToCard } = await import("../tag/repo");
+    const { db } = await import("../db/client");
+    const { cardTags } = await import("../db/schema");
+
+    const ownerId = randomUUID();
+    const board = await createBoard({ ownerId, name: "Cascade board" });
+    const loaded = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+    const columnId = loaded?.columns[0]?.id;
+    assert.ok(columnId, "expected a starter column");
+
+    const card = await createCard({
+      ownerId,
+      columnId,
+      title: "Card with tag",
+      description: "",
+      priority: "none",
+    });
+
+    await addTagToCard({ ownerId, cardId: card.id, rawName: "x" });
+
+    const before = await db.select().from(cardTags).where(eq(cardTags.cardId, card.id));
+    assert.equal(before.length, 1);
+
+    const deleted = await softDeleteBoard({ ownerId, boardId: board.id });
+    assert.ok(deleted?.deletedAt);
+
+    const after = await db.select().from(cardTags).where(eq(cardTags.cardId, card.id));
+    assert.equal(after.length, 0);
+  }, 20000);
 });

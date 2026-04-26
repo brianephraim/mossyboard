@@ -1492,7 +1492,7 @@ EOF
 )"
 ```
 
-- [ ] **Step 6: Update `src/server/card/repo.test.ts` — assertion swap + new filter test**
+- [x] **Step 6: Update `src/server/card/repo.test.ts` — assertion swap + new filter test**
 
 Replace any pre-existing assertion that referenced `subtasks` with a `tags`-shaped check. Add a new test case to the existing `describe("listCardsByBoard", ...)` block (or create the block if absent):
 
@@ -1552,7 +1552,7 @@ it("hydrates tags on each row", async () => {
 
 Add the necessary imports at the top of the test file (`addTagToCard` from `../tag/repo`, `listCardsByBoard` from `./repo`).
 
-- [ ] **Step 7: Update `src/server/board/repo.test.ts` — add tag-cascade test**
+- [x] **Step 7: Update `src/server/board/repo.test.ts` — add tag-cascade test**
 
 ```ts
 it("hard-deletes card_tags when a board is soft-deleted", async () => {
@@ -1573,7 +1573,7 @@ it("hard-deletes card_tags when a board is soft-deleted", async () => {
 
 Adjust `softDeleteBoard` import + signature to match the actual function in `src/server/board/repo.ts`. Add `cardTags` and `eq` and `addTagToCard` imports as needed.
 
-- [ ] **Step 8: Create `src/server/tag/router.test.ts`**
+- [x] **Step 8: Create `src/server/tag/router.test.ts`**
 
 ```ts
 import { strict as assert } from "node:assert";
@@ -1673,7 +1673,7 @@ Notes:
 
   Adjust the cast shape to match whatever `protectedProcedure`'s context type expects in `src/server/trpc/init.ts`. If the auth gate keys off `userId === undefined`, the unauthenticated helper above is sufficient.
 
-- [ ] **Step 9: Format every touched file**
+- [x] **Step 9: Format every touched file**
 
 ```bash
 npx prettier --write \
@@ -1687,7 +1687,7 @@ npx prettier --write \
   src/server/board/repo.test.ts
 ```
 
-- [ ] **Step 10: Typecheck and run all tests**
+- [x] **Step 10: Typecheck and run all tests**
 
 ```bash
 npm run typecheck && npm run test
@@ -1695,7 +1695,7 @@ npm run typecheck && npm run test
 
 Expected: clean + green.
 
-- [ ] **Step 11: Commit test coverage**
+- [x] **Step 11: Commit test coverage**
 
 ```bash
 git add -A
