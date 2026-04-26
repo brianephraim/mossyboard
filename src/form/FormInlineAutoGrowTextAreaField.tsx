@@ -26,6 +26,7 @@ type FormInlineAutoGrowTextAreaFieldProps<
   textAreaRef?: (node: HTMLTextAreaElement | null) => void;
   minHeightPx?: number;
   maxHeightPx?: number;
+  overflowYWhenClamped?: "auto" | "hidden";
   focusOnMouseUp?: boolean;
   focusOnMouseUpDragThresholdPx?: number;
 }> &
@@ -47,7 +48,15 @@ const DEFAULT_DRAG_THRESHOLD_PX = 5;
 
 function resizeTextArea(
   node: HTMLTextAreaElement,
-  { minHeightPx, maxHeightPx }: { minHeightPx?: number; maxHeightPx?: number },
+  {
+    minHeightPx,
+    maxHeightPx,
+    overflowYWhenClamped,
+  }: {
+    minHeightPx?: number;
+    maxHeightPx?: number;
+    overflowYWhenClamped?: "auto" | "hidden";
+  },
 ) {
   node.style.height = "auto";
   const min = minHeightPx ?? 0;
@@ -56,7 +65,7 @@ function resizeTextArea(
 
   if (maxHeightPx !== undefined && desired > maxHeightPx) {
     node.style.height = `${maxHeightPx}px`;
-    node.style.overflowY = "auto";
+    node.style.overflowY = overflowYWhenClamped ?? "auto";
     return;
   }
 
@@ -76,6 +85,7 @@ export function FormInlineAutoGrowTextAreaField<
   textAreaRef,
   minHeightPx,
   maxHeightPx,
+  overflowYWhenClamped,
   focusOnMouseUp = false,
   focusOnMouseUpDragThresholdPx = DEFAULT_DRAG_THRESHOLD_PX,
   ...textAreaProps
@@ -101,7 +111,7 @@ export function FormInlineAutoGrowTextAreaField<
   const runResize = () => {
     const node = localRef.current;
     if (!node) return;
-    resizeTextArea(node, { minHeightPx, maxHeightPx });
+    resizeTextArea(node, { minHeightPx, maxHeightPx, overflowYWhenClamped });
   };
 
   // Resize on mount and when the value changes externally.

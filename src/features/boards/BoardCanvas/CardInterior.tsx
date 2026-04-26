@@ -258,6 +258,7 @@ const CardInteriorImpl = ({
               paddingVertical={0}
               minHeightPx={24}
               maxHeightPx={descriptionFocused ? undefined : 180}
+              overflowYWhenClamped="hidden"
               onFocus={() => {
                 setDescriptionFocused(true);
               }}
