@@ -2,14 +2,12 @@ import { Stack } from "@tamagui/core";
 import { FormInlineRenameField } from "../../form";
 
 type EditableBoardTitleProps = {
-  name: "title";
   title: string;
   disabled?: boolean;
   onSave: (title: string) => Promise<void> | void;
 };
 
 export function EditableBoardTitle({
-  name: _name,
   title,
   disabled = false,
   onSave,
