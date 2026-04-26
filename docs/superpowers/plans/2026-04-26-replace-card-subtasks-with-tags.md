@@ -2398,7 +2398,7 @@ The component renders the wrapping pill row, the `+` add button anchored to a Ta
 - Create: `src/features/boards/BoardCanvas.tag-row.test.tsx`
 - Create: `src/features/boards/BoardCanvas/CardTagsRow.tsx`
 
-- [ ] **Step 1: Look at sibling tests for harness conventions**
+- [x] **Step 1: Look at sibling tests for harness conventions**
 
 ```bash
 ls src/features/boards/BoardCanvas.*.test.tsx
@@ -2407,7 +2407,7 @@ sed -n '1,60p' src/features/boards/BoardCanvas.inline-edit-card-title.test.tsx
 
 This reveals the import conventions, render harness, and any factory functions used (e.g. `renderBoardCanvas(...)`).
 
-- [ ] **Step 2: Create `src/features/boards/BoardCanvas.tag-row.test.tsx`**
+- [x] **Step 2: Create `src/features/boards/BoardCanvas.tag-row.test.tsx`**
 
 ```tsx
 import { describe, it, expect, vi } from "vitest";
@@ -2549,7 +2549,7 @@ describe("CardTagsRow", () => {
 });
 ```
 
-- [ ] **Step 3: Run the new test — expect failure**
+- [x] **Step 3: Run the new test — expect failure**
 
 ```bash
 npm run test -- src/features/boards/BoardCanvas.tag-row.test.tsx
@@ -2557,7 +2557,7 @@ npm run test -- src/features/boards/BoardCanvas.tag-row.test.tsx
 
 Expected: fails with module-not-found for `./BoardCanvas/CardTagsRow`.
 
-- [ ] **Step 4: Implement `src/features/boards/BoardCanvas/CardTagsRow.tsx`**
+- [x] **Step 4: Implement `src/features/boards/BoardCanvas/CardTagsRow.tsx`**
 
 ```tsx
 import { useState, useMemo } from "react";
@@ -2755,7 +2755,7 @@ export function CardTagsRow({ attachedTags, availableTags, onAddTag, onDetachTag
 }
 ```
 
-- [ ] **Step 5: Run the new test — expect pass**
+- [x] **Step 5: Run the new test — expect pass**
 
 ```bash
 npm run test -- src/features/boards/BoardCanvas.tag-row.test.tsx
@@ -2763,7 +2763,7 @@ npm run test -- src/features/boards/BoardCanvas.tag-row.test.tsx
 
 Expected: pass. If individual cases fail because `Popover.Content` doesn't render with `role="dialog"` in jsdom (Tamagui's portal behavior may not render it directly into the DOM tree), adjust the test to use `screen.findByText("Tags")` instead of `findByRole("dialog")`. The behavioral assertions remain the same.
 
-- [ ] **Step 6: Format**
+- [x] **Step 6: Format**
 
 ```bash
 npx prettier --write \
@@ -2771,7 +2771,7 @@ npx prettier --write \
   src/features/boards/BoardCanvas.tag-row.test.tsx
 ```
 
-- [ ] **Step 7: Run the full suite + typecheck**
+- [x] **Step 7: Run the full suite + typecheck**
 
 ```bash
 npm run typecheck && npm run test
@@ -2779,7 +2779,7 @@ npm run typecheck && npm run test
 
 Expected: clean + green.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A
