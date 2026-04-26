@@ -1,8 +1,15 @@
 import type * as React from "react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { FormInlineTextField } from "./FormInlineTextField";
+
+type InlineKeyDownEvent = {
+  key?: string;
+  nativeEvent?: { key?: string };
+  preventDefault?: () => void;
+  stopPropagation?: () => void;
+};
 
 export type FormInlineRenameFieldProps = {
   ariaLabel: string;
@@ -34,6 +41,7 @@ export function FormInlineRenameField({
   inputProps,
 }: Readonly<FormInlineRenameFieldProps>) {
   const form = useForm<{ title: string }>({ defaultValues: { title: defaultValue } });
+  const skipNextBlurSubmitRef = useRef(false);
 
   useEffect(() => {
     form.reset({ title: defaultValue });
@@ -45,7 +53,7 @@ export function FormInlineRenameField({
       form.reset({ title: defaultValue });
       return;
     }
-    if (next === defaultValue) {
+    if (next === defaultValue.trim()) {
       return;
     }
     await onSubmitTitle(next);
@@ -62,12 +70,25 @@ export function FormInlineRenameField({
         maxLength={maxLength}
         onBlur={() => {
           if (disabled) return;
+          if (skipNextBlurSubmitRef.current) {
+            skipNextBlurSubmitRef.current = false;
+            return;
+          }
           void submit();
         }}
-        onKeyDown={(event: { key?: string; nativeEvent?: { key?: string } }) => {
+        onKeyDown={(event: InlineKeyDownEvent) => {
           const key = event.key ?? event.nativeEvent?.key ?? "";
           if (key === "Enter") {
+            if (disabled) return;
+            skipNextBlurSubmitRef.current = true;
+            event.preventDefault?.();
+            // Keep key presses from bubbling into parent <form> handlers when present.
+            event.stopPropagation?.();
             void submit();
+            // If blur never happens (or happens much later), don't suppress a future blur submit.
+            setTimeout(() => {
+              skipNextBlurSubmitRef.current = false;
+            }, 0);
           }
         }}
         {...(inputProps ?? {})}
