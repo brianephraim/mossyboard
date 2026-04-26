@@ -1,6 +1,6 @@
 import type { DropResult, Sensor, SensorAPI } from "@hello-pangea/dnd";
 import type { RefObject } from "react";
-import { useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { YStack } from "@tamagui/stacks";
 
 import { BoardInlineNotice } from "../ui";
@@ -78,11 +78,13 @@ export function BoardCanvas({
   onAddTag,
   onDetachTag,
 }: Readonly<BoardCanvasProps>) {
-  const lanes = buildBoardLanes(board, {
-    groupBy: search.groupBy,
-    priority: search.priority,
-    tags: search.tags,
-  });
+  const lanes = useMemo(() => {
+    return buildBoardLanes(board, {
+      groupBy: search.groupBy,
+      priority: search.priority,
+      tags: search.tags,
+    });
+  }, [board, search.groupBy, search.priority, search.tags]);
   const hasActivePriorityFilters = search.priority.length > 0;
   const isPriorityGroupedBoard = search.view === "board" && search.groupBy === "priority";
   const isPriorityFilteredColumnBoard =
@@ -114,6 +116,105 @@ export function BoardCanvas({
     isBoardView: search.view === "board",
   });
 
+  const moveColumnProgrammatically = useCallback(
+    (columnId: string, direction: "left" | "right") => {
+      if (!enableColumnDnD) {
+        onMoveColumn(columnId, direction);
+        return;
+      }
+      runProgrammaticDrag(api, scoped(columnId), direction, () =>
+        onMoveColumn(columnId, direction),
+      );
+    },
+    [api, enableColumnDnD, onMoveColumn, scoped],
+  );
+
+  const moveCardProgrammatically = useCallback(
+    (cardId: string, direction: Direction) => {
+      if (!enableCardReorder) {
+        onMoveCard(cardId, direction);
+        return;
+      }
+      runProgrammaticDrag(api, scoped(cardId), direction, () => onMoveCard(cardId, direction));
+    },
+    [api, enableCardReorder, onMoveCard, scoped],
+  );
+
+  const renderLane: Parameters<typeof BoardColumnsLayout>[0]["renderLane"] = useCallback(
+    (lane, _laneIndex, dragHandleProps) => (
+      <BoardLaneView
+        lane={lane}
+        canReorder={enableCardReorder}
+        groupBy={search.groupBy}
+        hasActivePriorityFilters={hasActivePriorityFilters}
+        canMoveColumn={enableColumnDnD}
+        groupedBoardReorderEnabled={groupedBoardReorderEnabled}
+        dragHandleProps={dragHandleProps}
+        availableTags={availableTags}
+        onOpenCard={onOpenCard}
+        onOpenCreateCard={onOpenCreateCard}
+        onAddTag={onAddTag}
+        onDetachTag={onDetachTag}
+        onRenameCardTitle={onRenameCardTitle}
+        onRenameColumn={onRenameColumn}
+        renamePendingColumnId={renamePendingColumnId}
+        onOpenCreateColumnAfter={onOpenCreateColumnAfter}
+        onMoveColumn={enableColumnDnD ? moveColumnProgrammatically : onMoveColumn}
+        onMoveCard={enableCardReorder ? moveCardProgrammatically : onMoveCard}
+        onMovePriorityGroupCard={onMovePriorityGroupCard}
+        dndScopeKey={dndScopeKey}
+        bottomScrollPadding={bottomScrollPadding}
+      />
+    ),
+    [
+      availableTags,
+      bottomScrollPadding,
+      dndScopeKey,
+      enableCardReorder,
+      enableColumnDnD,
+      groupedBoardReorderEnabled,
+      hasActivePriorityFilters,
+      moveCardProgrammatically,
+      moveColumnProgrammatically,
+      onAddTag,
+      onDetachTag,
+      onMoveCard,
+      onMoveColumn,
+      onMovePriorityGroupCard,
+      onOpenCard,
+      onOpenCreateCard,
+      onOpenCreateColumnAfter,
+      onRenameCardTitle,
+      onRenameColumn,
+      renamePendingColumnId,
+      search.groupBy,
+    ],
+  );
+
+  // keep legacy signatures below (used by callers/tests)
+  const _moveColumnProgrammatically = moveColumnProgrammatically;
+  const _moveCardProgrammatically = moveCardProgrammatically;
+
+  // Backward-compatible aliasing for the below usage sites.
+  const moveColumnProgrammaticallyAlias = _moveColumnProgrammatically;
+  const moveCardProgrammaticallyAlias = _moveCardProgrammatically;
+
+  // NOTE: renderLane is now stable via useCallback.
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  void moveColumnProgrammaticallyAlias;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  void moveCardProgrammaticallyAlias;
+
+  // (Old inline functions removed below.)
+
+  /*
+   * Previous implementation had inline move/programmatic + inline renderLane,
+   * which caused unnecessary prop churn for large boards.
+   */
+
+  // --- removed code below ---
+  /*
   const moveColumnProgrammatically = (columnId: string, direction: "left" | "right") => {
     if (!enableColumnDnD) {
       onMoveColumn(columnId, direction);
@@ -130,35 +231,7 @@ export function BoardCanvas({
     runProgrammaticDrag(api, scoped(cardId), direction, () => onMoveCard(cardId, direction));
   };
 
-  const renderLane: Parameters<typeof BoardColumnsLayout>[0]["renderLane"] = (
-    lane,
-    _laneIndex,
-    dragHandleProps,
-  ) => (
-    <BoardLaneView
-      lane={lane}
-      canReorder={enableCardReorder}
-      groupBy={search.groupBy}
-      hasActivePriorityFilters={hasActivePriorityFilters}
-      canMoveColumn={enableColumnDnD}
-      groupedBoardReorderEnabled={groupedBoardReorderEnabled}
-      dragHandleProps={dragHandleProps}
-      availableTags={availableTags}
-      onOpenCard={onOpenCard}
-      onOpenCreateCard={onOpenCreateCard}
-      onAddTag={onAddTag}
-      onDetachTag={onDetachTag}
-      onRenameCardTitle={onRenameCardTitle}
-      onRenameColumn={onRenameColumn}
-      renamePendingColumnId={renamePendingColumnId}
-      onOpenCreateColumnAfter={onOpenCreateColumnAfter}
-      onMoveColumn={enableColumnDnD ? moveColumnProgrammatically : onMoveColumn}
-      onMoveCard={enableCardReorder ? moveCardProgrammatically : onMoveCard}
-      onMovePriorityGroupCard={onMovePriorityGroupCard}
-      dndScopeKey={dndScopeKey}
-      bottomScrollPadding={bottomScrollPadding}
-    />
-  );
+  */
 
   return (
     <YStack gap="$4" flex={1} minHeight={0} overflow="hidden">

@@ -1,5 +1,5 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Text, Theme } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 import { Popover } from "@tamagui/popover";
@@ -42,7 +42,7 @@ type CardInteriorProps = {
 };
 
 /** Tamagui-only card body; drag handle is a plain `div` for hello-pangea. */
-export function CardInterior({
+const CardInteriorImpl = ({
   card,
   showColumnContext,
   canMove,
@@ -54,7 +54,7 @@ export function CardInterior({
   onAddTag,
   onDetachTag,
   onRenameTitle,
-}: Readonly<CardInteriorProps>) {
+}: Readonly<CardInteriorProps>) => {
   const { visible, onHoverChange, onFocus, onBlur } = useEdgeHoverFocus({
     includeFocusWithin: false,
   });
@@ -288,9 +288,28 @@ export function CardInterior({
       </YStack>
     </div>
   );
-}
+};
 
-export function CardPreview({
+export const CardInterior = memo(CardInteriorImpl, (prev, next) => {
+  const a = prev.card;
+  const b = next.card;
+  return (
+    a.id === b.id &&
+    a.title === b.title &&
+    a.description === b.description &&
+    a.priority === b.priority &&
+    a.version === b.version &&
+    a.columnId === b.columnId &&
+    a.originalColumnTitle === b.originalColumnTitle &&
+    a.tags === b.tags &&
+    prev.showColumnContext === next.showColumnContext &&
+    prev.canMove === next.canMove &&
+    prev.dragHandleProps === next.dragHandleProps &&
+    prev.availableTags === next.availableTags
+  );
+});
+
+const CardPreviewImpl = ({
   card,
   showColumnContext,
   canMove,
@@ -310,7 +329,7 @@ export function CardPreview({
   onAddTag: CardInteriorProps["onAddTag"];
   onDetachTag: CardInteriorProps["onDetachTag"];
   onRenameTitle: CardInteriorProps["onRenameTitle"];
-}>) {
+}>) => {
   return (
     <BoardSurface padding="$4">
       <CardInterior
@@ -326,4 +345,22 @@ export function CardPreview({
       />
     </BoardSurface>
   );
-}
+};
+
+export const CardPreview = memo(CardPreviewImpl, (prev, next) => {
+  const a = prev.card;
+  const b = next.card;
+  return (
+    a.id === b.id &&
+    a.title === b.title &&
+    a.description === b.description &&
+    a.priority === b.priority &&
+    a.version === b.version &&
+    a.columnId === b.columnId &&
+    a.originalColumnTitle === b.originalColumnTitle &&
+    a.tags === b.tags &&
+    prev.showColumnContext === next.showColumnContext &&
+    prev.canMove === next.canMove &&
+    prev.availableTags === next.availableTags
+  );
+});
