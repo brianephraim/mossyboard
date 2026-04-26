@@ -25,6 +25,13 @@ type BoardLaneViewProps = {
   dragHandleProps?: DraggableProvided["dragHandleProps"];
   onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (columnId: string) => void;
+  onRenameCardTitle: (input: {
+    cardId: string;
+    title: string;
+    description: string;
+    priority: CardPriority;
+    expectedVersion: number;
+  }) => Promise<void>;
   onRenameColumn: (input: {
     columnId: string;
     title: string;
@@ -53,6 +60,7 @@ export function BoardLaneView({
   dragHandleProps,
   onOpenCard,
   onOpenCreateCard,
+  onRenameCardTitle,
   onRenameColumn,
   renamePendingColumnId,
   onMoveColumn,
@@ -156,6 +164,7 @@ export function BoardLaneView({
                               dragHandleProps={cardProvided.dragHandleProps}
                               onOpen={() => onOpenCard(card.id)}
                               onMove={onMoveCard}
+                              onRenameTitle={onRenameCardTitle}
                             />
                           </div>
                         );
@@ -185,6 +194,7 @@ export function BoardLaneView({
             onOpenCard={onOpenCard}
             onMoveCard={onMoveCard}
             onMovePriorityGroupCard={onMovePriorityGroupCard}
+            onRenameCardTitle={onRenameCardTitle}
             dndScopeKey={dndScopeKey}
             bottomScrollPadding={bottomScrollPadding}
           />

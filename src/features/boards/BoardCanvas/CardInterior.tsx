@@ -2,6 +2,7 @@ import type { DraggableProvided } from "@hello-pangea/dnd";
 import { Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
+import { FormInlineRenameField } from "../../../form";
 import { BoardActionButton, BoardPill, BoardSurface, PriorityPill } from "../ui";
 import type { BoardLane } from "../types";
 import { EdgeMoveButton } from "./EdgeMoveButton";
@@ -18,6 +19,13 @@ type CardInteriorProps = {
   dragHandleProps?: DraggableProvided["dragHandleProps"];
   onOpen: () => void;
   onMove: (cardId: string, direction: Direction) => void;
+  onRenameTitle: (input: {
+    cardId: string;
+    title: string;
+    description: string;
+    priority: BoardLane["cards"][number]["priority"];
+    expectedVersion: number;
+  }) => Promise<void>;
 };
 
 /** Tamagui-only card body; drag handle is a plain `div` for hello-pangea. */
@@ -29,6 +37,7 @@ export function CardInterior({
   dragHandleProps,
   onOpen,
   onMove,
+  onRenameTitle,
 }: Readonly<CardInteriorProps>) {
   const { visible, onHoverChange, onFocus, onBlur } = useEdgeHoverFocus();
   const moveControlsVisible = canMove && visible;
@@ -51,9 +60,44 @@ export function CardInterior({
           : null}
 
         <XStack justifyContent="space-between" alignItems="flex-start" gap="$3">
-          <Text tag="h3" fontWeight="700" color="$boardHeading" flex={1}>
-            {card.title}
-          </Text>
+          <FormInlineRenameField
+            ariaLabel="Card title"
+            defaultValue={card.title}
+            focusOnMouseUp
+            onSubmitTitle={async (nextTitle) => {
+              await onRenameTitle({
+                cardId: card.id,
+                title: nextTitle,
+                description: card.description,
+                priority: card.priority,
+                expectedVersion: card.version,
+              });
+            }}
+            inputProps={{
+              width: "auto",
+              maxWidth: "100%",
+              flexGrow: 1,
+              flexShrink: 1,
+              minWidth: 0,
+              color: "$boardHeading",
+              fontSize: "$5",
+              fontWeight: "700",
+              borderWidth: 1,
+              borderRadius: "$4",
+              borderColor: "transparent",
+              backgroundColor: "transparent",
+              boxShadow: "transparent 0px 0px 0px 0px",
+              paddingHorizontal: 0,
+              paddingVertical: 0,
+              focusStyle: { outlineWidth: 0 },
+              focusVisibleStyle: {
+                outlineWidth: 0,
+                backgroundColor: "$boardPanelSurfaceStrong",
+                borderColor: "$boardAccent",
+                boxShadow: "rgba(95, 121, 56, 0.16) 0px 0px 0px 3px",
+              },
+            }}
+          />
           <PriorityPill priority={card.priority} />
         </XStack>
         {card.description ? (
@@ -81,12 +125,14 @@ export function CardPreview({
   canMove,
   onOpen,
   onMove,
+  onRenameTitle,
 }: Readonly<{
   card: BoardLane["cards"][number];
   showColumnContext: boolean;
   canMove: boolean;
   onOpen: () => void;
   onMove: (cardId: string, direction: Direction) => void;
+  onRenameTitle: CardInteriorProps["onRenameTitle"];
 }>) {
   return (
     <BoardSurface padding="$4">
@@ -96,6 +142,7 @@ export function CardPreview({
         canMove={canMove}
         onOpen={onOpen}
         onMove={onMove}
+        onRenameTitle={onRenameTitle}
       />
     </BoardSurface>
   );

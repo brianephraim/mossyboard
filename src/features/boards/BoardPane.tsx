@@ -398,6 +398,9 @@ export function BoardPane({
             onDragEnd={handleDragEnd}
             onOpenCard={onOpenCard}
             onOpenCreateCard={(columnId) => onOpenCreateCard(boardId, columnId)}
+            onRenameCardTitle={async (input) => {
+              await mutations.updateCard.mutateAsync(input);
+            }}
             onRenameColumn={async (input) => {
               await mutations.renameColumn.mutateAsync(input);
             }}

@@ -23,6 +23,13 @@ type BoardCanvasProps = {
   onDragEnd: (result: DropResult) => void;
   onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (columnId: string) => void;
+  onRenameCardTitle: (input: {
+    cardId: string;
+    title: string;
+    description: string;
+    priority: CardPriority;
+    expectedVersion: number;
+  }) => Promise<void>;
   onRenameColumn: (input: {
     columnId: string;
     title: string;
@@ -52,6 +59,7 @@ export function BoardCanvas({
   onDragEnd,
   onOpenCard,
   onOpenCreateCard,
+  onRenameCardTitle,
   onRenameColumn,
   renamePendingColumnId,
   onOpenCreateColumnAfter,
@@ -129,6 +137,7 @@ export function BoardCanvas({
       dragHandleProps={dragHandleProps}
       onOpenCard={onOpenCard}
       onOpenCreateCard={onOpenCreateCard}
+      onRenameCardTitle={onRenameCardTitle}
       onRenameColumn={onRenameColumn}
       renamePendingColumnId={renamePendingColumnId}
       onOpenCreateColumnAfter={onOpenCreateColumnAfter}

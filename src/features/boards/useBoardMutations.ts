@@ -17,6 +17,7 @@ export type BoardMutations = {
   reorderColumn: ReturnType<typeof trpc.column.reorder.useMutation>;
   reorderCard: ReturnType<typeof trpc.card.reorder.useMutation>;
   moveCard: ReturnType<typeof trpc.card.move.useMutation>;
+  updateCard: ReturnType<typeof trpc.card.update.useMutation>;
 };
 
 export function useBoardMutations(input: {
@@ -140,6 +141,21 @@ export function useBoardMutations(input: {
     },
   });
 
+  const updateCard = trpc.card.update.useMutation({
+    onSuccess: async () => {
+      if (!boardId) {
+        return;
+      }
+      await Promise.all([refreshBoard(), utils.card.listByBoard.invalidate({ boardId })]);
+      input.setAnnouncement("Card updated.");
+    },
+    onError: async () => {
+      await handleMutationError(
+        "We couldn’t update that card because the board changed. Refresh and try again.",
+      );
+    },
+  });
+
   return {
     refreshBoard,
     handleMutationError,
@@ -151,5 +167,6 @@ export function useBoardMutations(input: {
     reorderColumn,
     reorderCard,
     moveCard,
+    updateCard,
   };
 }

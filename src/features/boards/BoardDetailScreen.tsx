@@ -272,6 +272,18 @@ export function BoardDetailScreen({
     },
   });
 
+  const updateCard = trpc.card.update.useMutation({
+    onSuccess: async () => {
+      await Promise.all([refreshBoard(), utils.card.listByBoard.invalidate({ boardId })]);
+      setAnnouncement("Card updated.");
+    },
+    onError: async () => {
+      await handleMutationError(
+        "We couldn’t update that card because the board changed. Refresh and try again.",
+      );
+    },
+  });
+
   const listItems = useMemo(
     () => listQuery.data?.pages.flatMap((page) => page.items) ?? [],
     [listQuery.data?.pages],
@@ -783,6 +795,9 @@ export function BoardDetailScreen({
               }}
               onOpenCreateCard={(columnId) => {
                 setCreateCardColumnId(columnId);
+              }}
+              onRenameCardTitle={async (input) => {
+                await updateCard.mutateAsync(input);
               }}
               onRenameColumn={async (input) => {
                 await renameColumn.mutateAsync(input);
