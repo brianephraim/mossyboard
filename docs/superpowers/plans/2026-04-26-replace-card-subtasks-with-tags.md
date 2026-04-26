@@ -863,7 +863,7 @@ EOF
 
 This task writes the full repo test suite up front (the tests already match the implementation done in Task 3 — TDD ordering is inverted because the next test would have caught issues with the tx logic in step ordering).
 
-- [ ] **Step 1: Examine an existing repo test for setup pattern**
+- [x] **Step 1: Examine an existing repo test for setup pattern**
 
 ```bash
 sed -n '1,80p' src/server/card/repo.test.ts
@@ -871,7 +871,7 @@ sed -n '1,80p' src/server/card/repo.test.ts
 
 Look at how the test file imports test helpers (`migrateTestDb`, owner-id factory, card factory). Mirror that setup style in the new file.
 
-- [ ] **Step 2: Create `src/server/tag/repo.test.ts` with the full suite**
+- [x] **Step 2: Create `src/server/tag/repo.test.ts` with the full suite**
 
 ```ts
 import { strict as assert } from "node:assert";
@@ -1151,7 +1151,7 @@ Notes for the implementer:
 - The test helpers `migrateTestDb`, `withFreshOwner`, `insertBoard`, `insertColumn`, `insertCard` exist in `src/server/testing/database.ts`. Inspect that file first to confirm exact signatures; if a helper has a different name (`createOwner`, `seedBoard`, etc.), substitute and keep the test logic the same.
 - If `db.delete(...)` doesn't surface `rowCount` on this driver, replace the count check in `detachTagFromCard` repo with a `.returning({ id: cardTags.tagId })` and `.length > 0`.
 
-- [ ] **Step 3: Run the new test file**
+- [x] **Step 3: Run the new test file**
 
 ```bash
 npm run test -- src/server/tag/repo.test.ts
@@ -1159,13 +1159,13 @@ npm run test -- src/server/tag/repo.test.ts
 
 Expected: pass. If `assert.rejects(..., /comma/)` fails because the implementation throws a different error message, adjust either the message in `repo.ts` or the regex here so they agree.
 
-- [ ] **Step 4: Format**
+- [x] **Step 4: Format**
 
 ```bash
 npx prettier --write src/server/tag/repo.test.ts
 ```
 
-- [ ] **Step 5: Run full test suite**
+- [x] **Step 5: Run full test suite**
 
 ```bash
 npm run test
@@ -1173,7 +1173,7 @@ npm run test
 
 Expected: all green.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
