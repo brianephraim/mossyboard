@@ -9,6 +9,7 @@ const config = createTamagui({
     ...defaultConfig.settings,
     // Root route owns `<html>` / `<body>`; keep Tamagui theme class on the provider subtree.
     themeClassNameOnRoot: false,
+    onlyAllowShorthands: false,
   },
   tokens: {
     ...baseTokens,
