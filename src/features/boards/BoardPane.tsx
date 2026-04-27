@@ -427,14 +427,7 @@ export function BoardPane({
           overflow="scroll"
         >
           <BoardListMode
-            listItems={listItems.map((card) => ({
-              id: card.id,
-              title: card.title,
-              description: card.description,
-              priority: card.priority,
-              columnTitle: card.columnTitle,
-              version: card.version,
-            }))}
+            listItems={listItems}
             isLoading={listQuery.isLoading && !listQuery.data}
             isLoadingMore={listQuery.isFetchingNextPage}
             errorMessage={listQuery.error?.message ?? null}
@@ -442,9 +435,21 @@ export function BoardPane({
             onLoadMore={() => {
               void listQuery.fetchNextPage();
             }}
+            availableTags={availableTags}
             onOpenCard={onOpenCard}
             onDeleteCard={async (input) => {
               await mutations.softDeleteCard.mutateAsync(input);
+            }}
+            onAddTag={onAddTag}
+            onDetachTag={onDetachTag}
+            onRenameCardTitle={async (input) => {
+              await mutations.updateCard.mutateAsync({
+                cardId: input.cardId,
+                title: input.title,
+                description: input.description,
+                priority: input.priority,
+                expectedVersion: input.expectedVersion,
+              });
             }}
           />
         </YStack>
