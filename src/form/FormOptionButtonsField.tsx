@@ -12,7 +12,8 @@ import {
   type UseControllerProps,
 } from "react-hook-form";
 
-import { FormFieldFrame, joinAriaIds } from "./FormFieldFrame";
+import { FormFieldFrame } from "./FormFieldFrame";
+import { joinAriaIds } from "./joinAriaIds";
 
 type FormFieldFrameProps = ComponentProps<typeof FormFieldFrame>;
 

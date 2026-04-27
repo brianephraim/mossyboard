@@ -103,7 +103,10 @@ export function BoardCanvas({
       sensorApiRef.current = api;
     };
   }, []);
-  const scoped = (id: string) => (dndScopeKey ? scopeId(dndScopeKey, id) : id);
+  const scoped = useCallback(
+    (id: string) => (dndScopeKey ? scopeId(dndScopeKey, id) : id),
+    [dndScopeKey],
+  );
   const api = programmaticSensorApiRef?.current ?? sensorApiRef.current;
 
   const noticeMessage = computeNoticeMessage({
@@ -201,9 +204,7 @@ export function BoardCanvas({
 
   // NOTE: renderLane is now stable via useCallback.
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   void moveColumnProgrammaticallyAlias;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   void moveCardProgrammaticallyAlias;
 
   // (Old inline functions removed below.)

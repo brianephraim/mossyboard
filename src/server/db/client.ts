@@ -5,9 +5,7 @@ import { serverEnv } from "../config";
 import * as schema from "./schema";
 
 declare global {
-  // eslint-disable-next-line no-var
   var __db__: ReturnType<typeof drizzle<typeof schema>> | undefined;
-  // eslint-disable-next-line no-var
   var __sql__: postgres.Sql | undefined;
 }
 

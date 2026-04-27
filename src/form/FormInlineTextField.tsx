@@ -9,7 +9,7 @@ import {
   type RegisterOptions,
 } from "react-hook-form";
 
-import { joinAriaIds } from "./FormFieldFrame";
+import { joinAriaIds } from "./joinAriaIds";
 import { readTamaguiTextInputValue } from "./tamaguiFieldAdapters";
 
 // Flip to `true` to trace each step of the focus-on-mouseup gesture
@@ -23,7 +23,6 @@ function nextDebugId() {
 }
 function debugFocus(message: string, data: Record<string, unknown> = {}) {
   if (!DEBUG_FOCUS_ON_MOUSE_UP) return;
-  // eslint-disable-next-line no-console
   console.log(`[ft-focus] ${message}`, data);
 }
 function describeNode(node: Element | null | undefined): string {

@@ -17,11 +17,6 @@ type FormFieldFrameProps = Readonly<{
   errorProps?: Omit<ComponentProps<typeof Text>, "children" | "id" | "role">;
 }>;
 
-export function joinAriaIds(...values: Array<string | undefined>): string | undefined {
-  const ids = values.filter((value): value is string => Boolean(value));
-  return ids.length > 0 ? ids.join(" ") : undefined;
-}
-
 export function FormFieldFrame({
   children,
   description,

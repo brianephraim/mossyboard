@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SignInForm } from "./SignInForm";
-import { AuthAnnounceProvider } from "./AuthAnnounceContext";
+import { AuthAnnounceProvider } from "./AuthAnnounceProvider";
 import { TamaguiRootProvider } from "../../tamagui/TamaguiRootProvider";
 
 vi.mock("@tanstack/react-router", () => ({

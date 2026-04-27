@@ -11,7 +11,8 @@ import {
   type UseControllerProps,
 } from "react-hook-form";
 
-import { FormFieldFrame, joinAriaIds } from "./FormFieldFrame";
+import { FormFieldFrame } from "./FormFieldFrame";
+import { joinAriaIds } from "./joinAriaIds";
 import { tamaguiInputValueOnChange } from "./tamaguiFieldAdapters";
 
 type FormFieldFrameProps = ComponentProps<typeof FormFieldFrame>;

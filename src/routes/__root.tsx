@@ -15,7 +15,7 @@ import { PortalProvider } from "@tamagui/portal";
 import "../../.tamagui/tamagui.css";
 
 import { startAuthSession } from "../auth/client";
-import { AuthAnnounceProvider } from "../features/auth/AuthAnnounceContext";
+import { AuthAnnounceProvider } from "../features/auth/AuthAnnounceProvider";
 import { AppNav } from "../navigation/AppNav";
 import { StoreProvider } from "../store/StoreProvider";
 import { TamaguiRootProvider } from "../tamagui/TamaguiRootProvider";

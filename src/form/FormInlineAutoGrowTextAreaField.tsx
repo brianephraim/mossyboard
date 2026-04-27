@@ -10,7 +10,7 @@ import {
   useWatch,
 } from "react-hook-form";
 
-import { joinAriaIds } from "./FormFieldFrame";
+import { joinAriaIds } from "./joinAriaIds";
 import { readTamaguiTextInputValue } from "./tamaguiFieldAdapters";
 
 type FormInlineAutoGrowTextAreaFieldProps<

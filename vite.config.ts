@@ -53,7 +53,6 @@ export default defineConfig({
               const id = Array.isArray(existing) ? existing[0] : existing;
               if (id) return id;
 
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
               return (res as any).reqId;
             },
             customLogLevel: (_req, res, err) => {
