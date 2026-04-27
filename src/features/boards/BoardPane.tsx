@@ -350,8 +350,9 @@ export function BoardPane({
     return null;
   }
 
+  const showInlineBoardControls = role === "main" && !media.maxMd;
   const showTopControls =
-    Boolean(boardQuery.error) || Boolean(state.conflictMessage) || role === "main";
+    Boolean(boardQuery.error) || Boolean(state.conflictMessage) || showInlineBoardControls;
 
   return (
     <YStack gap="$0" flex={1} minHeight={0} overflow="hidden">
@@ -386,7 +387,7 @@ export function BoardPane({
             />
           ) : null}
 
-          {role === "main" && !media.maxMd ? (
+          {showInlineBoardControls ? (
             <BoardControlsPanel
               search={search}
               onSetView={(view) => onSetView?.(view)}
@@ -399,7 +400,7 @@ export function BoardPane({
       ) : null}
 
       {search.view === "board" ? (
-        <YStack paddingTop={role === "main" ? "$4" : "$0"} flex={1} minHeight={0} overflow="hidden">
+        <YStack paddingTop={showTopControls ? "$4" : "$0"} flex={1} minHeight={0} overflow="hidden">
           <BoardCanvas
             board={board}
             search={search}
