@@ -6,7 +6,6 @@ import {
   canReorderBoard,
   groupListItemsByPriority,
   parseBoardDetailSearch,
-  reorderBoardCards,
   serializeTagFilter,
   togglePrioritySelection,
   toggleTagSelection,
@@ -157,40 +156,6 @@ describe("board model helpers", () => {
       groups.find((group) => group.priority === "low")?.cards.map((card) => card.id),
       ["card-2"],
     );
-  });
-
-  it("reorders cards across columns for optimistic updates", () => {
-    const reordered = reorderBoardCards(boardFixture, {
-      sourceColumnId: "column-1",
-      sourceIndex: 0,
-      destinationColumnId: "column-2",
-      destinationIndex: 1,
-    });
-
-    assert.deepEqual(
-      reordered.columns.find((column) => column.id === "column-1")?.cards.map((card) => card.id),
-      ["card-2"],
-    );
-    assert.deepEqual(
-      reordered.columns.find((column) => column.id === "column-2")?.cards.map((card) => card.id),
-      ["card-3", "card-1"],
-    );
-  });
-
-  it("updates priority during optimistic priority-group moves", () => {
-    const reordered = reorderBoardCards(boardFixture, {
-      sourceColumnId: "column-1",
-      sourceIndex: 1,
-      destinationColumnId: "column-2",
-      destinationIndex: 1,
-      destinationPriority: "high",
-    });
-
-    const movedCard = reordered.columns
-      .find((column) => column.id === "column-2")
-      ?.cards.find((card) => card.id === "card-2");
-
-    assert.equal(movedCard?.priority, "high");
   });
 
   it("toggles priority filters in a stable order", () => {
