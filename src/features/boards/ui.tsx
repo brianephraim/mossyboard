@@ -141,27 +141,36 @@ export function BoardSectionHeading({
   subtitle?: string;
   actions?: ReactNode;
 }>) {
-  const media = useMedia();
-
   return (
-    <XStack
-      justifyContent="space-between"
-      alignItems="flex-start"
-      gap="$4"
-      flexWrap={media.maxSm ? "wrap" : "nowrap"}
-    >
-      <YStack gap="$2" maxWidth={760} flex={1} minWidth={0}>
-        {eyebrow ? (
-          <Text
-            textTransform="uppercase"
-            letterSpacing={1.5}
-            fontSize="$2"
-            color="$boardTextSubtle"
-          >
-            {eyebrow}
-          </Text>
-        ) : null}
-        {typeof title === "string" ? (
+    <YStack gap="$2">
+      {eyebrow ? (
+        <Text textTransform="uppercase" letterSpacing={1.5} fontSize="$2" color="$boardTextSubtle">
+          {eyebrow}
+        </Text>
+      ) : null}
+      <YStack gap="$2" maxWidth={760} minWidth={0}>
+        {actions ? (
+          <XStack alignItems="center" gap="$3" width="100%" minWidth={0}>
+            <Stack flex={1} minWidth={0}>
+              {typeof title === "string" ? (
+                <Text
+                  tag="h1"
+                  fontSize="$10"
+                  fontWeight="800"
+                  color="$boardHeading"
+                  lineHeight="$9"
+                >
+                  {title}
+                </Text>
+              ) : (
+                title
+              )}
+            </Stack>
+            <XStack flexShrink={0} alignItems="center">
+              {actions}
+            </XStack>
+          </XStack>
+        ) : typeof title === "string" ? (
           <Text tag="h1" fontSize="$10" fontWeight="800" color="$boardHeading" lineHeight="$9">
             {title}
           </Text>
@@ -174,12 +183,7 @@ export function BoardSectionHeading({
           </Text>
         ) : null}
       </YStack>
-      {actions ? (
-        <XStack gap="$3" flexWrap="wrap" justifyContent="flex-end" flexShrink={0}>
-          {actions}
-        </XStack>
-      ) : null}
-    </XStack>
+    </YStack>
   );
 }
 

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Text, useMedia } from "@tamagui/core";
-import { XStack, YStack } from "@tamagui/stacks";
+import { YStack } from "@tamagui/stacks";
 
 import {
   selectGroupedBoardReorderEnabled,
@@ -9,16 +9,16 @@ import {
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { trpc } from "../../trpc/client";
 import { BoardCanvas } from "./BoardCanvas";
-import { boardPriorityMeta } from "./model";
 import { canReorderBoard, getCardPosition, getColumnPosition, getNeighborIds } from "./model";
 import {
   getFilteredColumnPlacement,
   getPriorityGroupPlacement,
   parsePriorityGroupDroppableId,
 } from "./priorityGrouping";
+import { BoardControlsPanel } from "./BoardControlsPanel";
 import type { CardTagsRowTag } from "./BoardCanvas/CardTagsRow";
 import type { BoardDetailSearch, CardPriority, LoadedBoard } from "./types";
-import { BoardActionButton, BoardInlineNotice, BoardStateCard, BoardSurface } from "./ui";
+import { BoardActionButton, BoardInlineNotice, BoardStateCard } from "./ui";
 import type { BoardMutations } from "./useBoardMutations";
 import type { SensorAPI } from "@hello-pangea/dnd";
 import type { RefObject } from "react";
@@ -71,6 +71,7 @@ export function BoardPane({
   onTogglePriority,
   onClearPriority,
 }: Readonly<BoardPaneProps>) {
+  const media = useMedia();
   const dispatch = useAppDispatch();
   const groupedBoardReorderPreference = useAppSelector(selectGroupedBoardReorderEnabled);
 
@@ -385,8 +386,8 @@ export function BoardPane({
             />
           ) : null}
 
-          {role === "main" ? (
-            <BoardControls
+          {role === "main" && !media.maxMd ? (
+            <BoardControlsPanel
               search={search}
               onSetView={(view) => onSetView?.(view)}
               onSetGroupBy={(groupBy) => onSetGroupBy?.(groupBy)}
@@ -513,96 +514,6 @@ export function BoardPane({
         </YStack>
       )}
     </YStack>
-  );
-}
-
-function BoardControls({
-  search,
-  onSetView,
-  onSetGroupBy,
-  onTogglePriority,
-  onClearPriority,
-}: Readonly<{
-  search: BoardDetailSearch;
-  onSetView: (view: BoardDetailSearch["view"]) => void;
-  onSetGroupBy: (groupBy: BoardDetailSearch["groupBy"]) => void;
-  onTogglePriority: (priority: CardPriority) => void;
-  onClearPriority: () => void;
-}>) {
-  const media = useMedia();
-  const sectionFontSize = media.maxMd ? "$3" : "$4";
-  const surfacePadding = media.maxMd ? "$3" : "$4";
-  const rowGap = media.maxMd ? "$2" : "$3";
-
-  return (
-    <BoardSurface padding={surfacePadding}>
-      <YStack gap={rowGap}>
-        <XStack gap={rowGap} flexWrap="wrap" alignItems="center">
-          <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
-            View
-          </Text>
-          <BoardActionButton
-            tone={search.view === "board" ? "accent" : "ghost"}
-            onPress={() => onSetView("board")}
-          >
-            Board
-          </BoardActionButton>
-          <BoardActionButton
-            tone={search.view === "list" ? "accent" : "ghost"}
-            onPress={() => onSetView("list")}
-          >
-            List
-          </BoardActionButton>
-
-          {search.view === "board" ? (
-            <>
-              <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
-                Group by
-              </Text>
-              <BoardActionButton
-                tone={search.groupBy === "column" ? "accent" : "ghost"}
-                onPress={() => onSetGroupBy("column")}
-              >
-                User order
-              </BoardActionButton>
-              <BoardActionButton
-                tone={search.groupBy === "priority" ? "accent" : "ghost"}
-                onPress={() => onSetGroupBy("priority")}
-              >
-                Priority
-              </BoardActionButton>
-            </>
-          ) : null}
-        </XStack>
-
-        <YStack gap={media.maxMd ? "$1.5" : "$2"}>
-          <XStack gap={media.maxMd ? "$1.5" : "$2"} flexWrap="wrap" alignItems="center">
-            <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
-              Priority filter
-            </Text>
-            {(["none", "low", "medium", "high"] as const).map((priority) => {
-              const meta = boardPriorityMeta[priority];
-              const active = search.priority.includes(priority);
-
-              return (
-                <BoardActionButton
-                  key={priority}
-                  tone={active ? "accent" : "ghost"}
-                  onPress={() => onTogglePriority(priority)}
-                >
-                  {meta.label}
-                </BoardActionButton>
-              );
-            })}
-            {search.priority.length > 0 ? (
-              <BoardActionButton tone="ghost" onPress={onClearPriority}>
-                Clear filters
-              </BoardActionButton>
-            ) : null}
-          </XStack>
-        </YStack>
-      </YStack>
-    </BoardSurface>
   );
 }
 

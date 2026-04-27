@@ -6,6 +6,7 @@ import { Button } from "@tamagui/button";
 import { Stack, Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
+import mossyboardIconUrl from "../../assets/branding/mossyboard-icon.png";
 import { useAuthSession, useRequiresEmailVerification } from "../../auth/session";
 import { AccountSignOutControl } from "../../features/auth/AccountSignOutControl";
 import { VerificationSidebarCallout } from "../../features/auth/VerificationSidebarCallout";
@@ -31,6 +32,7 @@ type BoardShellProps = {
   subtitle?: string;
   announcement?: string | null;
   headerActions?: ReactNode;
+  mobileMenuContent?: ReactNode;
   contentBottomInsetPx?: number;
   renderContent: (controls: { openCreateBoard: () => void }) => ReactNode;
   overlay?: ReactNode;
@@ -151,6 +153,7 @@ export function BoardShell({
   subtitle,
   announcement,
   headerActions,
+  mobileMenuContent,
   contentBottomInsetPx = 0,
   renderContent,
   overlay,
@@ -225,18 +228,21 @@ export function BoardShell({
               height={48}
               borderRadius={9999}
               backgroundColor="$boardAccentSoft"
+              backgroundImage={`url(${mossyboardIconUrl})`}
+              backgroundSize="cover"
+              backgroundPosition="center"
+              backgroundRepeat="no-repeat"
               alignItems="center"
               justifyContent="center"
-            >
-              <Text color="$boardAccent" fontSize="$6" fontWeight="800" aria-hidden>
-                ↟
-              </Text>
-            </Stack>
+              aria-hidden
+            ></Stack>
             <YStack gap="$1">
               <Text fontSize="$9" fontWeight="800" color="$boardHeading">
                 Mossyboard
               </Text>
-              <Text color="$boardTextMuted">Steady, green, and focused.</Text>
+              <Text fontSize="$3" color="$boardTextMuted">
+                Steady, green, and focused.
+              </Text>
             </YStack>
           </XStack>
 
@@ -309,21 +315,16 @@ export function BoardShell({
     </BoardSurface>
   );
 
-  const headerControls = media.maxMd ? (
-    <XStack gap="$3" flexWrap="wrap" alignItems="center" justifyContent="flex-end">
-      {headerActions}
-      <BoardActionButton
-        tone="ghost"
-        aria-label="Open sidebar menu"
-        onPress={() => setMobileRailOpen(true)}
-      >
-        <Text aria-hidden fontSize="$6" lineHeight="$1">
-          ☰
-        </Text>
-      </BoardActionButton>
-    </XStack>
-  ) : (
-    (headerActions ?? null)
+  const headerControls = (
+    <BoardActionButton
+      tone="ghost"
+      aria-label="Open sidebar menu"
+      onPress={() => setMobileRailOpen(true)}
+    >
+      <Text aria-hidden fontSize="$6" lineHeight="$1">
+        ☰
+      </Text>
+    </BoardActionButton>
   );
 
   return (
@@ -344,12 +345,7 @@ export function BoardShell({
             }
           >
             <YStack padding="$5" paddingBottom="$0" gap="$5" flexShrink={0}>
-              <BoardSectionHeading
-                eyebrow="Workspace"
-                title={title}
-                subtitle={subtitle}
-                actions={headerControls}
-              />
+              <BoardSectionHeading title={title} subtitle={subtitle} actions={headerControls} />
             </YStack>
             <YStack
               flex={1}
@@ -380,8 +376,16 @@ export function BoardShell({
           </BoardActionButton>
         }
       >
-        <YStack maxHeight="70vh" overflow="scroll">
-          {boardRail}
+        <YStack maxHeight="70vh" overflow="scroll" gap="$4">
+          {headerActions || (media.maxMd && mobileMenuContent) ? (
+            <YStack padding="$4" gap="$3">
+              {headerActions ? <YStack gap="$2">{headerActions}</YStack> : null}
+              {media.maxMd && mobileMenuContent ? (
+                <YStack gap="$2">{mobileMenuContent}</YStack>
+              ) : null}
+            </YStack>
+          ) : null}
+          {media.maxMd ? boardRail : null}
         </YStack>
       </PrettyModalWrap>
 

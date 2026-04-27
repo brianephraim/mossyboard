@@ -12,6 +12,7 @@ import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
 import { trpc } from "../../trpc/client";
 import { BoardDrawer } from "./BoardDrawer";
 import { BoardPane } from "./BoardPane";
+import { BoardControlsPanel } from "./BoardControlsPanel";
 import { BoardShell } from "./BoardShell";
 import { CardDetailSurface } from "./CardDetailSurface";
 import { EditableBoardTitle } from "./EditableBoardTitle";
@@ -309,7 +310,6 @@ export function BoardWorkspaceScreen({
         currentBoardId={boardId}
         onOpenInDrawer={(id) => updateRouteSearch({ drawer: id })}
         title={title}
-        subtitle="Plan, filter, regroup, and move work without leaving the board route."
         contentBottomInsetPx={drawerBoardId ? drawerHeightPx : 0}
         headerActions={
           <XStack gap="$3" flexWrap="wrap">
@@ -320,6 +320,21 @@ export function BoardWorkspaceScreen({
               Delete board
             </BoardActionButton>
           </XStack>
+        }
+        mobileMenuContent={
+          <BoardControlsPanel
+            search={search}
+            onSetView={(view) => updateRouteSearch({ view })}
+            onSetGroupBy={(groupBy) => {
+              updateRouteSearch({ groupBy });
+              setAnnouncement("Board grouping updated.");
+            }}
+            onTogglePriority={(priority) => {
+              const nextPriority = togglePrioritySelection(search.priority, priority);
+              updateRouteSearch({ priority: serializePriorityFilter(nextPriority) });
+            }}
+            onClearPriority={() => updateRouteSearch({ priority: undefined })}
+          />
         }
         announcement={announcement}
         renderContent={() => (

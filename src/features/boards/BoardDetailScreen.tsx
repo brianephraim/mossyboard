@@ -14,11 +14,11 @@ import {
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { trpc } from "../../trpc/client";
 import { BoardShell } from "./BoardShell";
+import { BoardControlsPanel } from "./BoardControlsPanel";
 import { BoardCanvas } from "./BoardCanvas";
 import { CardDetailSurface } from "./CardDetailSurface";
 import { EditableBoardTitle } from "./EditableBoardTitle";
 import {
-  boardPriorityMeta,
   canReorderBoard,
   getCardPosition,
   getColumnPosition,
@@ -78,6 +78,7 @@ export function BoardDetailScreen({
   const dispatch = useAppDispatch();
   const navigate = useNavigate({ from: "/boards/$boardId" });
   const utils = trpc.useUtils();
+  const media = useMedia();
   const search = parseBoardDetailSearch(rawSearch as Record<string, unknown>);
   const columnReorderEnabled = canReorderBoard(search);
   const groupedBoardReorderPreference = useAppSelector(selectGroupedBoardReorderEnabled);
@@ -792,25 +793,27 @@ export function BoardDetailScreen({
             />
           ) : null}
 
-          <BoardControls
-            search={search}
-            onSetView={(view) => {
-              updateRouteSearch({ view });
-            }}
-            onSetGroupBy={(groupBy) => {
-              updateRouteSearch({ groupBy });
-              setAnnouncement("Board grouping updated.");
-            }}
-            onTogglePriority={(priority) => {
-              const nextPriority = togglePrioritySelection(search.priority, priority);
-              updateRouteSearch({
-                priority: serializePriorityFilter(nextPriority),
-              });
-            }}
-            onClearPriority={() => {
-              updateRouteSearch({ priority: undefined });
-            }}
-          />
+          {!media.maxMd ? (
+            <BoardControlsPanel
+              search={search}
+              onSetView={(view) => {
+                updateRouteSearch({ view });
+              }}
+              onSetGroupBy={(groupBy) => {
+                updateRouteSearch({ groupBy });
+                setAnnouncement("Board grouping updated.");
+              }}
+              onTogglePriority={(priority) => {
+                const nextPriority = togglePrioritySelection(search.priority, priority);
+                updateRouteSearch({
+                  priority: serializePriorityFilter(nextPriority),
+                });
+              }}
+              onClearPriority={() => {
+                updateRouteSearch({ priority: undefined });
+              }}
+            />
+          ) : null}
         </YStack>
 
         {search.view === "board" ? (
@@ -923,11 +926,54 @@ export function BoardDetailScreen({
             "Board"
           )
         }
-        subtitle="Plan, filter, regroup, and move work without leaving the board route."
         headerActions={
-          <BoardActionButton onPress={() => setBoardSettingsOpen(true)}>
-            Board settings
-          </BoardActionButton>
+          <XStack gap="$3" flexWrap="wrap">
+            <BoardActionButton tone="ghost" onPress={() => setAddSampleDataOpen(true)}>
+              Add sample data
+            </BoardActionButton>
+            <BoardActionButton
+              tone={confirmBoardDelete ? "danger" : "ghost"}
+              disabled={deleteBoard.isPending}
+              onPress={() => {
+                if (!confirmBoardDelete) {
+                  setConfirmBoardDelete(true);
+                  return;
+                }
+
+                void deleteBoard.mutateAsync({ boardId });
+              }}
+            >
+              {deleteBoard.isPending
+                ? "Deleting…"
+                : confirmBoardDelete
+                  ? "Confirm delete board"
+                  : "Delete board"}
+            </BoardActionButton>
+            <BoardActionButton onPress={() => setBoardSettingsOpen(true)}>
+              Board settings
+            </BoardActionButton>
+          </XStack>
+        }
+        mobileMenuContent={
+          <BoardControlsPanel
+            search={search}
+            onSetView={(view) => {
+              updateRouteSearch({ view });
+            }}
+            onSetGroupBy={(groupBy) => {
+              updateRouteSearch({ groupBy });
+              setAnnouncement("Board grouping updated.");
+            }}
+            onTogglePriority={(priority) => {
+              const nextPriority = togglePrioritySelection(search.priority, priority);
+              updateRouteSearch({
+                priority: serializePriorityFilter(nextPriority),
+              });
+            }}
+            onClearPriority={() => {
+              updateRouteSearch({ priority: undefined });
+            }}
+          />
         }
         announcement={announcement}
         renderContent={() => renderBoardContent()}
@@ -1260,96 +1306,6 @@ export function BoardDetailScreen({
         </FormRoot>
       </PrettyModalWrap>
     </>
-  );
-}
-
-function BoardControls({
-  search,
-  onSetView,
-  onSetGroupBy,
-  onTogglePriority,
-  onClearPriority,
-}: Readonly<{
-  search: BoardDetailSearch;
-  onSetView: (view: BoardDetailSearch["view"]) => void;
-  onSetGroupBy: (groupBy: BoardDetailSearch["groupBy"]) => void;
-  onTogglePriority: (priority: CardPriority) => void;
-  onClearPriority: () => void;
-}>) {
-  const media = useMedia();
-  const sectionFontSize = media.maxMd ? "$3" : "$4";
-  const surfacePadding = media.maxMd ? "$3" : "$4";
-  const rowGap = media.maxMd ? "$2" : "$3";
-
-  return (
-    <BoardSurface padding={surfacePadding}>
-      <YStack gap={rowGap}>
-        <XStack gap={rowGap} flexWrap="wrap" alignItems="center">
-          <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
-            View
-          </Text>
-          <BoardActionButton
-            tone={search.view === "board" ? "accent" : "ghost"}
-            onPress={() => onSetView("board")}
-          >
-            Board
-          </BoardActionButton>
-          <BoardActionButton
-            tone={search.view === "list" ? "accent" : "ghost"}
-            onPress={() => onSetView("list")}
-          >
-            List
-          </BoardActionButton>
-
-          {search.view === "board" ? (
-            <>
-              <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
-                Group by
-              </Text>
-              <BoardActionButton
-                tone={search.groupBy === "column" ? "accent" : "ghost"}
-                onPress={() => onSetGroupBy("column")}
-              >
-                User order
-              </BoardActionButton>
-              <BoardActionButton
-                tone={search.groupBy === "priority" ? "accent" : "ghost"}
-                onPress={() => onSetGroupBy("priority")}
-              >
-                Priority
-              </BoardActionButton>
-            </>
-          ) : null}
-        </XStack>
-
-        <YStack gap={media.maxMd ? "$1.5" : "$2"}>
-          <XStack gap={media.maxMd ? "$1.5" : "$2"} flexWrap="wrap" alignItems="center">
-            <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
-              Priority filter
-            </Text>
-            {(["none", "low", "medium", "high"] as const).map((priority) => {
-              const meta = boardPriorityMeta[priority];
-              const active = search.priority.includes(priority);
-
-              return (
-                <BoardActionButton
-                  key={priority}
-                  tone={active ? "accent" : "ghost"}
-                  onPress={() => onTogglePriority(priority)}
-                >
-                  {meta.label}
-                </BoardActionButton>
-              );
-            })}
-            {search.priority.length > 0 ? (
-              <BoardActionButton tone="ghost" onPress={onClearPriority}>
-                Clear filters
-              </BoardActionButton>
-            ) : null}
-          </XStack>
-        </YStack>
-      </YStack>
-    </BoardSurface>
   );
 }
 

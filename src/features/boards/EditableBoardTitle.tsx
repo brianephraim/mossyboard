@@ -21,11 +21,11 @@ export function EditableBoardTitle({
         disabled={disabled}
         onSubmitTitle={onSave}
         inputProps={{
-          width: "auto",
+          width: "100%",
           maxWidth: "100%",
-          flexGrow: 0,
+          flexGrow: 1,
           flexShrink: 1,
-          alignSelf: "flex-start",
+          alignSelf: "stretch",
           color: "$boardHeading",
           fontSize: "$10",
           fontWeight: "800",
