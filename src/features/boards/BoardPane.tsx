@@ -51,6 +51,9 @@ type BoardPaneProps = {
   onSetGroupBy?: (groupBy: BoardDetailSearch["groupBy"]) => void;
   onTogglePriority?: (priority: CardPriority) => void;
   onClearPriority?: () => void;
+  paginationByColumn?: Readonly<
+    Record<string, { hasNextPage: boolean; onLoadMore: () => void } | undefined>
+  >;
 };
 
 export function BoardPane({
@@ -74,6 +77,7 @@ export function BoardPane({
   onSetGroupBy,
   onTogglePriority,
   onClearPriority,
+  paginationByColumn,
 }: Readonly<BoardPaneProps>) {
   const media = useMedia();
   const dispatch = useAppDispatch();
@@ -407,6 +411,7 @@ export function BoardPane({
             availableTags={availableTags}
             onAddTag={onAddTag}
             onDetachTag={onDetachTag}
+            paginationByColumn={paginationByColumn}
           />
         </YStack>
       ) : (

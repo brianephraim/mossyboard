@@ -18,6 +18,7 @@ import { BoardShell } from "./BoardShell";
 import { CardDetailSurface } from "./CardDetailSurface";
 import { EditableBoardTitle } from "./EditableBoardTitle";
 import { PaneCardsHydrator } from "./columnCards/PaneCardsHydrator";
+import type { SlicePagination } from "./columnCards/SliceHydrator";
 import { synthesizeBoardFromStructure } from "./columnCards/synthesizeBoard";
 import type { ColumnCardItem } from "./columnCards/useColumnCards";
 import {
@@ -67,6 +68,10 @@ type BoardPaneState = {
 
 type SliceItemsByColumn = Record<string, Record<string, ColumnCardItem[]>>;
 
+type SlicePaginationByColumn = Record<string, Record<string, SlicePagination>>;
+
+type ColumnPagination = { hasNextPage: boolean; onLoadMore: () => void };
+
 function useBoardPaneState(boardId: string) {
   const [optimisticStructure, setOptimisticStructure] = useState<LoadedBoardStructure | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
@@ -94,6 +99,31 @@ function unionSlicesByColumn(sliceItems: SliceItemsByColumn): Record<string, Col
       }
     }
     result[columnId] = [...merged.values()];
+  }
+  return result;
+}
+
+/**
+ * Collapse all slice paginations for one column into a single
+ * `{ hasNextPage, onLoadMore }`. `hasNextPage` is true if any slice still has
+ * pages to load; `onLoadMore` triggers `fetchNextPage` on every slice that
+ * still has more, so the union of loaded items grows.
+ */
+function aggregatePaginationByColumn(
+  paginationByColumn: SlicePaginationByColumn,
+): Record<string, ColumnPagination> {
+  const result: Record<string, ColumnPagination> = {};
+  for (const [columnId, slices] of Object.entries(paginationByColumn)) {
+    const sliceList = Object.values(slices);
+    const hasNextPage = sliceList.some((s) => s.hasNextPage);
+    const onLoadMore = () => {
+      for (const s of sliceList) {
+        if (s.hasNextPage && !s.isFetchingNextPage) {
+          s.fetchNextPage();
+        }
+      }
+    };
+    result[columnId] = { hasNextPage, onLoadMore };
   }
   return result;
 }
@@ -259,12 +289,16 @@ export function BoardWorkspaceScreen({
 
   const [mainSliceItems, setMainSliceItems] = useState<SliceItemsByColumn>({});
   const [drawerSliceItems, setDrawerSliceItems] = useState<SliceItemsByColumn>({});
+  const [mainSlicePagination, setMainSlicePagination] = useState<SlicePaginationByColumn>({});
+  const [drawerSlicePagination, setDrawerSlicePagination] = useState<SlicePaginationByColumn>({});
 
   useEffect(() => {
     setMainSliceItems({});
+    setMainSlicePagination({});
   }, [boardId]);
   useEffect(() => {
     setDrawerSliceItems({});
+    setDrawerSlicePagination({});
   }, [drawerBoardId]);
 
   const handleMainSliceChange = useCallback(
@@ -298,10 +332,62 @@ export function BoardWorkspaceScreen({
     [],
   );
 
+  const handleMainSlicePaginationChange = useCallback(
+    (columnId: string, sliceKey: string, pagination: SlicePagination) => {
+      setMainSlicePagination((prev) => {
+        const colSlices = prev[columnId] ?? {};
+        const existing = colSlices[sliceKey];
+        if (
+          existing &&
+          existing.hasNextPage === pagination.hasNextPage &&
+          existing.isFetchingNextPage === pagination.isFetchingNextPage &&
+          existing.fetchNextPage === pagination.fetchNextPage
+        ) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [columnId]: { ...colSlices, [sliceKey]: pagination },
+        };
+      });
+    },
+    [],
+  );
+  const handleDrawerSlicePaginationChange = useCallback(
+    (columnId: string, sliceKey: string, pagination: SlicePagination) => {
+      setDrawerSlicePagination((prev) => {
+        const colSlices = prev[columnId] ?? {};
+        const existing = colSlices[sliceKey];
+        if (
+          existing &&
+          existing.hasNextPage === pagination.hasNextPage &&
+          existing.isFetchingNextPage === pagination.isFetchingNextPage &&
+          existing.fetchNextPage === pagination.fetchNextPage
+        ) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [columnId]: { ...colSlices, [sliceKey]: pagination },
+        };
+      });
+    },
+    [],
+  );
+
   const mainCardsByColumn = useMemo(() => unionSlicesByColumn(mainSliceItems), [mainSliceItems]);
   const drawerCardsByColumn = useMemo(
     () => unionSlicesByColumn(drawerSliceItems),
     [drawerSliceItems],
+  );
+
+  const mainPaginationByColumn = useMemo(
+    () => aggregatePaginationByColumn(mainSlicePagination),
+    [mainSlicePagination],
+  );
+  const drawerPaginationByColumn = useMemo(
+    () => aggregatePaginationByColumn(drawerSlicePagination),
+    [drawerSlicePagination],
   );
 
   const mainStructure: LoadedBoardStructure | null =
@@ -392,6 +478,7 @@ export function BoardWorkspaceScreen({
           structure={mainStructure}
           search={search}
           onSliceItemsChange={handleMainSliceChange}
+          onSlicePaginationChange={handleMainSlicePaginationChange}
         />
       ) : null}
       {drawerStructure ? (
@@ -399,6 +486,7 @@ export function BoardWorkspaceScreen({
           structure={drawerStructure}
           search={search}
           onSliceItemsChange={handleDrawerSliceChange}
+          onSlicePaginationChange={handleDrawerSlicePaginationChange}
         />
       ) : null}
       <BoardShell
@@ -454,6 +542,7 @@ export function BoardWorkspaceScreen({
               onOpenCreateColumn={(targetBoardId, afterColumnId) =>
                 setCreateColumnTarget({ boardId: targetBoardId, afterColumnId })
               }
+              paginationByColumn={mainPaginationByColumn}
               bottomScrollPadding={drawerBoardId ? 24 : undefined}
               onSetView={(view) => updateRouteSearch({ view })}
               onSetGroupBy={(groupBy) => {
@@ -538,6 +627,7 @@ export function BoardWorkspaceScreen({
                   onOpenCreateColumn={(targetBoardId, afterColumnId) =>
                     setCreateColumnTarget({ boardId: targetBoardId, afterColumnId })
                   }
+                  paginationByColumn={drawerPaginationByColumn}
                 />
               )}
             </BoardDrawer>

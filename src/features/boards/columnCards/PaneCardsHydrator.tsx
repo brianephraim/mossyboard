@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import type { BoardDetailSearch, LoadedBoardStructure } from "../types";
 import { describeColumnSlice } from "./keys";
 import { sliceCacheKey } from "./sliceCacheKey";
-import { SliceHydrator } from "./SliceHydrator";
+import { SliceHydrator, type SlicePagination } from "./SliceHydrator";
 import type { ColumnCardItem } from "./useColumnCards";
 
 /**
@@ -15,6 +15,7 @@ export function PaneCardsHydrator({
   structure,
   search,
   onSliceItemsChange,
+  onSlicePaginationChange,
 }: Readonly<{
   structure: LoadedBoardStructure;
   search: BoardDetailSearch;
@@ -23,6 +24,11 @@ export function PaneCardsHydrator({
     sliceKey: string,
     items: ColumnCardItem[],
     flags: { isLoading: boolean; error: unknown },
+  ) => void;
+  onSlicePaginationChange?: (
+    columnId: string,
+    sliceKey: string,
+    pagination: SlicePagination,
   ) => void;
 }>) {
   const flatSlices = useMemo(
@@ -38,7 +44,13 @@ export function PaneCardsHydrator({
   return (
     <>
       {flatSlices.map(({ slice, key }) => (
-        <SliceHydrator key={key} slice={slice} sliceKey={key} onItemsChange={onSliceItemsChange} />
+        <SliceHydrator
+          key={key}
+          slice={slice}
+          sliceKey={key}
+          onItemsChange={onSliceItemsChange}
+          onPaginationChange={onSlicePaginationChange}
+        />
       ))}
     </>
   );

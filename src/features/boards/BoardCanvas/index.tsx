@@ -52,6 +52,9 @@ type BoardCanvasProps = {
   availableTags: ReadonlyArray<CardTagsRowTag>;
   onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
   onDetachTag: (input: { cardId: string; tagId: string }) => Promise<void>;
+  paginationByColumn?: Readonly<
+    Record<string, { hasNextPage: boolean; onLoadMore: () => void } | undefined>
+  >;
 };
 
 export function BoardCanvas({
@@ -77,6 +80,7 @@ export function BoardCanvas({
   availableTags,
   onAddTag,
   onDetachTag,
+  paginationByColumn,
 }: Readonly<BoardCanvasProps>) {
   const lanes = useMemo(() => {
     return buildBoardLanes(board, {
@@ -144,31 +148,37 @@ export function BoardCanvas({
   );
 
   const renderLane: Parameters<typeof BoardColumnsLayout>[0]["renderLane"] = useCallback(
-    (lane, _laneIndex, dragHandleProps) => (
-      <BoardLaneView
-        lane={lane}
-        canReorder={enableCardReorder}
-        groupBy={search.groupBy}
-        hasActivePriorityFilters={hasActivePriorityFilters}
-        canMoveColumn={enableColumnDnD}
-        groupedBoardReorderEnabled={groupedBoardReorderEnabled}
-        dragHandleProps={dragHandleProps}
-        availableTags={availableTags}
-        onOpenCard={onOpenCard}
-        onOpenCreateCard={onOpenCreateCard}
-        onAddTag={onAddTag}
-        onDetachTag={onDetachTag}
-        onRenameCardTitle={onRenameCardTitle}
-        onRenameColumn={onRenameColumn}
-        renamePendingColumnId={renamePendingColumnId}
-        onOpenCreateColumnAfter={onOpenCreateColumnAfter}
-        onMoveColumn={enableColumnDnD ? moveColumnProgrammatically : onMoveColumn}
-        onMoveCard={enableCardReorder ? moveCardProgrammatically : onMoveCard}
-        onMovePriorityGroupCard={onMovePriorityGroupCard}
-        dndScopeKey={dndScopeKey}
-        bottomScrollPadding={bottomScrollPadding}
-      />
-    ),
+    (lane, _laneIndex, dragHandleProps) => {
+      const columnId = lane.laneKind === "column" ? lane.originalColumnId : null;
+      const pagination = columnId ? paginationByColumn?.[columnId] : undefined;
+      return (
+        <BoardLaneView
+          lane={lane}
+          canReorder={enableCardReorder}
+          groupBy={search.groupBy}
+          hasActivePriorityFilters={hasActivePriorityFilters}
+          canMoveColumn={enableColumnDnD}
+          groupedBoardReorderEnabled={groupedBoardReorderEnabled}
+          dragHandleProps={dragHandleProps}
+          availableTags={availableTags}
+          onOpenCard={onOpenCard}
+          onOpenCreateCard={onOpenCreateCard}
+          onAddTag={onAddTag}
+          onDetachTag={onDetachTag}
+          onRenameCardTitle={onRenameCardTitle}
+          onRenameColumn={onRenameColumn}
+          renamePendingColumnId={renamePendingColumnId}
+          onOpenCreateColumnAfter={onOpenCreateColumnAfter}
+          onMoveColumn={enableColumnDnD ? moveColumnProgrammatically : onMoveColumn}
+          onMoveCard={enableCardReorder ? moveCardProgrammatically : onMoveCard}
+          onMovePriorityGroupCard={onMovePriorityGroupCard}
+          dndScopeKey={dndScopeKey}
+          bottomScrollPadding={bottomScrollPadding}
+          hasNextPage={pagination?.hasNextPage ?? false}
+          onLoadMore={pagination?.onLoadMore}
+        />
+      );
+    },
     [
       availableTags,
       bottomScrollPadding,
@@ -189,6 +199,7 @@ export function BoardCanvas({
       onOpenCreateColumnAfter,
       onRenameCardTitle,
       onRenameColumn,
+      paginationByColumn,
       renamePendingColumnId,
       search.groupBy,
     ],
