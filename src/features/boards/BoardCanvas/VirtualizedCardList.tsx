@@ -1,7 +1,7 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { ItemProps } from "react-virtuoso";
 import { Virtuoso } from "react-virtuoso";
 
@@ -47,35 +47,69 @@ const VIRTUOSO_STYLE: CSSProperties = {
 // Virtuoso lays items out by stacking — an item that goes `position: fixed`
 // (which is what `@hello-pangea/dnd` does to the dragged Draggable on drag
 // start) collapses its slot to height 0, and every item below it snaps
-// upward in a single un-animated reflow. This wrapper, lifted from
-// Virtuoso's official `@hello-pangea/dnd` recipe, remembers the last
-// non-zero rendered height of each item so the slot stays put while the
+// upward in a single un-animated reflow. This wrapper preserves each item's
+// last rendered height as a `min-height` so the slot stays put while the
 // inner content is removed from flow.
+//
+// We measure the *inner card child* with our own `ResizeObserver` instead of
+// reading Virtuoso's `data-known-size`. Two reasons:
+//
+//   1. The child's measurement is independent of the wrapper's `min-height`.
+//      If we used `data-known-size` (which is Virtuoso's measurement of *this*
+//      wrapper), a `min-height` floor would feed back into the next
+//      measurement and lock the wrapper at whatever size it happened to hit
+//      first — even when the underlying content shrinks. Concretely: when the
+//      card description textarea grows on focus and clamps back on blur, the
+//      wrapper would stay stuck at the focused (taller) size and leave a gap
+//      below the card.
+//   2. During drag, `@hello-pangea/dnd` inlines explicit width/height on the
+//      lifted card and switches it to `position: fixed`. The element's own
+//      box-size doesn't change, so our observer doesn't fire — the retained
+//      `childHeight` (and therefore the wrapper's `min-height`) stays at the
+//      pre-drag value, which is exactly what keeps the slot from collapsing.
 //
 // `display: flow-root` establishes a new block formatting context so the
 // inner card shell's `marginBottom` (which provides the inter-card gap) is
-// contained inside this wrapper's measured `getBoundingClientRect()` height
-// — i.e. Virtuoso's `data-known-size` includes the gap, and our retained
-// `min-height` does too. We deliberately keep that gap on the Draggable
-// shell as `marginBottom` (instead of moving it into the wrapper) so
-// `@hello-pangea/dnd`'s sibling-displacement math, which sums each
-// Draggable's border-box height **plus** computed margins, shifts the
-// neighbouring card by the full slot distance when this card lifts out.
+// contained inside this wrapper. We add the same `marginBottom` to our
+// retained measurement so the slot keeps the inter-card gap when the card
+// lifts out of flow during a drag. The gap stays on the Draggable shell as
+// `marginBottom` (instead of moving onto the wrapper) so
+// `@hello-pangea/dnd`'s sibling-displacement math — which sums each
+// Draggable's border-box height **plus** computed margins — shifts the
+// neighbouring card by the full slot distance.
 function HeightPreservingItem({ children, style, item: _item, ...rest }: ItemProps<CardItem>) {
-  const knownSize = rest["data-known-size"];
-  const [size, setSize] = useState(0);
-  useEffect(() => {
-    if (typeof knownSize === "number" && knownSize > 0) {
-      setSize(knownSize);
-    }
-  }, [knownSize]);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [childHeight, setChildHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const child = wrapper.firstElementChild;
+    if (!(child instanceof HTMLElement)) return;
+
+    const measure = () => {
+      const margin = parseFloat(getComputedStyle(child).marginBottom) || 0;
+      const total = child.offsetHeight + margin;
+      if (total > 0) {
+        setChildHeight((prev) => (prev === total ? prev : total));
+      }
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(child);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div
       {...rest}
+      ref={wrapperRef}
       style={{
         ...style,
         display: "flow-root",
-        minHeight: size > 0 ? `${size}px` : undefined,
+        minHeight: childHeight > 0 ? `${childHeight}px` : undefined,
       }}
     >
       {children}
