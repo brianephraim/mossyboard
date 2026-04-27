@@ -1,18 +1,20 @@
 import type { ReactNode } from "react";
 import { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useLinkProps, useNavigate } from "@tanstack/react-router";
-import { Button } from "@tamagui/button";
-import { Stack, Text, useMedia } from "@tamagui/core";
+import { useNavigate } from "@tanstack/react-router";
+import { Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
-import mossyboardIconUrl from "../../assets/branding/mossyboard-icon.png";
 import { useAuthSession, useRequiresEmailVerification } from "../../auth/session";
-import { AccountSignOutControl } from "../../features/auth/AccountSignOutControl";
-import { VerificationSidebarCallout } from "../../features/auth/VerificationSidebarCallout";
 import { FormRoot, FormTextField } from "../../form";
 import { PrettyModalWrap } from "../../Modal/PrettyModalWrap";
 import { trpc } from "../../trpc/client";
+import {
+  BoardAccountPanel,
+  BoardBrandHeader,
+  BoardMobileMenuContent,
+  BoardNavigationList,
+} from "./BoardMobileMenuContent";
 import {
   BoardActionButton,
   BoardLiveRegion,
@@ -38,116 +40,6 @@ type BoardShellProps = {
   overlay?: ReactNode;
   onOpenInDrawer?: (boardId: string) => void;
 };
-
-type BoardRailBoardRowProps = {
-  boardId: string;
-  name: string;
-  columnCount: number;
-  cardCount: number;
-  isCurrent: boolean;
-  onOpenInDrawer?: (boardId: string) => void;
-};
-
-function BoardRailBoardRow({
-  boardId,
-  name,
-  columnCount: _columnCount,
-  cardCount,
-  isCurrent,
-  onOpenInDrawer,
-}: Readonly<BoardRailBoardRowProps>) {
-  const media = useMedia();
-  const linkProps = useLinkProps({
-    to: "/boards/$boardId",
-    params: { boardId },
-    search: {
-      view: "board",
-      groupBy: "column",
-      card: undefined,
-      priority: undefined,
-      tags: undefined,
-      drawer: undefined,
-    },
-  });
-
-  const showDrawerButton = !media.maxMd && onOpenInDrawer && !isCurrent;
-
-  return (
-    <XStack
-      position="relative"
-      alignItems="center"
-      gap="$3"
-      paddingHorizontal="$3"
-      paddingVertical="$3"
-      borderRadius="$8"
-      backgroundColor={isCurrent ? "$boardSidebarRowBg" : "transparent"}
-      borderWidth={1}
-      borderColor={isCurrent ? "$boardSidebarRowBorder" : "transparent"}
-      hoverStyle={{
-        backgroundColor: isCurrent ? "$boardSidebarRowBg" : "$boardSidebarRowHoverBg",
-      }}
-    >
-      <Stack
-        {...(linkProps as Record<string, unknown>)}
-        tag="a"
-        position="absolute"
-        inset={0}
-        borderRadius="$8"
-        zIndex={1}
-        aria-label={`Open ${name}`}
-      />
-      <XStack
-        width={4}
-        alignSelf="stretch"
-        borderRadius="$8"
-        backgroundColor={isCurrent ? "$boardSidebarGlow" : "transparent"}
-        marginRight="$2"
-        pointerEvents="none"
-      />
-      <YStack flex={1} gap="$1" minWidth={0} pointerEvents="none">
-        <Text fontWeight="700" color="$boardSidebarText" numberOfLines={1}>
-          {name}
-        </Text>
-        <XStack alignItems="center" justifyContent="space-between" gap="$3">
-          <Text color="$boardSidebarMuted" fontSize="$2" numberOfLines={1}>
-            {cardCount} cards
-          </Text>
-          {showDrawerButton ? (
-            <Stack position="relative" zIndex={2} pointerEvents="auto" flexShrink={0}>
-              <Button
-                chromeless
-                unstyled
-                tag="button"
-                padding={0}
-                height="auto"
-                backgroundColor="transparent"
-                borderWidth={0}
-                cursor="pointer"
-                hoverStyle={{ backgroundColor: "transparent", opacity: 0.85 }}
-                pressStyle={{ backgroundColor: "transparent" }}
-                focusStyle={{
-                  outlineWidth: 2,
-                  outlineStyle: "solid",
-                  outlineColor: "$boardSidebarGlow",
-                }}
-                onPress={() => onOpenInDrawer?.(boardId)}
-              >
-                <Text
-                  color="$boardSidebarMuted"
-                  fontSize="$2"
-                  fontWeight="500"
-                  textDecorationLine="underline"
-                >
-                  Open in drawer
-                </Text>
-              </Button>
-            </Stack>
-          ) : null}
-        </XStack>
-      </YStack>
-    </XStack>
-  );
-}
 
 export function BoardShell({
   currentBoardId,
@@ -212,6 +104,9 @@ export function BoardShell({
 
   const boardList = boardsQuery.data?.boards ?? [];
   const desktopRailHeight = "calc(100vh - 4 * var(--c-space-4) - 2px)";
+  const showVerificationCallout = Boolean(
+    session.user && !session.user.emailVerified && !requiresEmailVerification,
+  );
   const boardRail = (
     <BoardSurface
       padding="$4"
@@ -226,29 +121,7 @@ export function BoardShell({
     >
       <YStack gap="$4" flex={1} minHeight={0}>
         <YStack gap="$3">
-          <XStack alignItems="center" gap="$3">
-            <Stack
-              width={48}
-              height={48}
-              borderRadius={9999}
-              backgroundColor="rgba(197, 235, 134, 0.18)"
-              backgroundImage={`url(${mossyboardIconUrl})`}
-              backgroundSize="cover"
-              backgroundPosition="center"
-              backgroundRepeat="no-repeat"
-              alignItems="center"
-              justifyContent="center"
-              aria-hidden
-            ></Stack>
-            <YStack gap="$1">
-              <Text fontSize="$9" fontWeight="800" color="$boardSidebarText">
-                Mossyboard
-              </Text>
-              <Text fontSize="$3" color="$boardSidebarMuted">
-                Steady, green, and focused.
-              </Text>
-            </YStack>
-          </XStack>
+          <BoardBrandHeader />
 
           <BoardActionButton tone="accent" onPress={() => setCreateBoardOpen(true)}>
             + New board
@@ -264,82 +137,26 @@ export function BoardShell({
         </YStack>
 
         <YStack flex={1} minHeight={0} overflow="scroll" paddingRight="$1" paddingBottom="$2">
-          {boardsQuery.isLoading && boardList.length === 0 ? (
-            <Text color="$boardSidebarMuted">Loading boards…</Text>
-          ) : boardsQuery.isError && boardList.length === 0 ? (
-            <YStack gap="$2">
-              <Text color="$boardDangerText">Could not load your boards.</Text>
-              <BoardActionButton
-                color="$boardSidebarText"
-                backgroundColor="rgba(255, 255, 255, 0.04)"
-                borderColor="$boardSidebarBorder"
-                hoverStyle={{ backgroundColor: "$boardSidebarRowBg" }}
-                pressStyle={{ backgroundColor: "$boardSidebarRowBg" }}
-                onPress={() => void boardsQuery.refetch()}
-              >
-                Retry
-              </BoardActionButton>
-            </YStack>
-          ) : boardList.length === 0 ? (
-            <Text color="$boardSidebarMuted">No boards yet. Create one to get moving.</Text>
-          ) : (
-            <YStack gap="$2">
-              {boardList.map((board) => (
-                <BoardRailBoardRow
-                  key={board.id}
-                  boardId={board.id}
-                  name={board.name}
-                  columnCount={board.columnCount}
-                  cardCount={board.cardCount}
-                  isCurrent={board.id === currentBoardId}
-                  onOpenInDrawer={onOpenInDrawer}
-                />
-              ))}
-            </YStack>
-          )}
+          <BoardNavigationList
+            boards={boardList}
+            currentBoardId={currentBoardId}
+            isLoading={boardsQuery.isLoading}
+            isError={boardsQuery.isError}
+            onRetry={() => void boardsQuery.refetch()}
+            onOpenInDrawer={onOpenInDrawer}
+            showHeading={false}
+          />
         </YStack>
 
         <YStack flexShrink={0} gap="$3">
-          <BoardSurface
-            padding="$4"
-            backgroundColor="$boardSidebarPanelSurface"
-            backgroundImage="linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.08) 100%)"
-            borderColor="$boardSidebarPanelBorder"
-            boxShadow="none"
-          >
-            <YStack gap="$3">
-              {session.user && !session.user.emailVerified && !requiresEmailVerification ? (
-                <VerificationSidebarCallout userEmail={session.user.email} />
-              ) : null}
-              <YStack gap="$1">
-                <Text fontWeight="700" color="$boardSidebarText" numberOfLines={1}>
-                  {session.user?.email ?? "Signed in"}
-                </Text>
-                <Text color="$boardSidebarMuted">
-                  {session.user?.emailVerified ? "Verified account" : "Verification pending"}
-                </Text>
-              </YStack>
-              <AccountSignOutControl
-                buttonTone="default"
-                buttonProps={{
-                  color: "$boardSidebarText",
-                  backgroundColor: "rgba(255, 255, 255, 0.04)",
-                  borderColor: "$boardSidebarBorder",
-                  hoverStyle: {
-                    backgroundColor: "$boardSidebarRowBg",
-                  },
-                  pressStyle: {
-                    backgroundColor: "$boardSidebarRowBg",
-                    opacity: 0.92,
-                  },
-                }}
-                errorColor="$boardDangerBg"
-                onSignedOut={() => {
-                  setShellAnnouncement("Signed out.");
-                }}
-              />
-            </YStack>
-          </BoardSurface>
+          <BoardAccountPanel
+            userEmail={session.user?.email}
+            emailVerified={Boolean(session.user?.emailVerified)}
+            showVerificationCallout={showVerificationCallout}
+            onSignedOut={() => {
+              setShellAnnouncement("Signed out.");
+            }}
+          />
         </YStack>
       </YStack>
     </BoardSurface>
@@ -402,25 +219,48 @@ export function BoardShell({
       <PrettyModalWrap
         open={mobileRailOpen}
         onOpenChange={setMobileRailOpen}
-        title="Menu"
-        description="Boards, account, and sidebar actions."
+        title={
+          media.maxMd ? <BoardBrandHeader titleSize="$8" subtitleSize="$2" iconSize={44} /> : "Menu"
+        }
+        description={media.maxMd ? undefined : "Boards, account, and sidebar actions."}
+        chromeTone={media.maxMd ? "sidebar" : "default"}
         footer={
-          <BoardActionButton tone="ghost" onPress={() => setMobileRailOpen(false)}>
-            Close
-          </BoardActionButton>
+          media.maxMd ? undefined : (
+            <BoardActionButton tone="ghost" onPress={() => setMobileRailOpen(false)}>
+              Close
+            </BoardActionButton>
+          )
         }
       >
-        <YStack maxHeight="70vh" overflow="scroll" gap="$4">
-          {headerActions || (media.maxMd && mobileMenuContent) ? (
-            <YStack padding="$4" gap="$3">
-              {headerActions ? <YStack gap="$2">{headerActions}</YStack> : null}
-              {media.maxMd && mobileMenuContent ? (
-                <YStack gap="$2">{mobileMenuContent}</YStack>
-              ) : null}
-            </YStack>
-          ) : null}
-          {media.maxMd ? boardRail : null}
-        </YStack>
+        {media.maxMd ? (
+          <BoardMobileMenuContent
+            headerActions={headerActions}
+            boardControls={mobileMenuContent}
+            boards={boardList}
+            currentBoardId={currentBoardId}
+            isLoadingBoards={boardsQuery.isLoading}
+            isBoardListError={boardsQuery.isError}
+            onRetryBoards={() => void boardsQuery.refetch()}
+            onCreateBoard={() => {
+              setCreateBoardOpen(true);
+            }}
+            onOpenInDrawer={onOpenInDrawer}
+            userEmail={session.user?.email}
+            emailVerified={Boolean(session.user?.emailVerified)}
+            showVerificationCallout={showVerificationCallout}
+            onSignedOut={() => {
+              setShellAnnouncement("Signed out.");
+            }}
+          />
+        ) : (
+          <YStack maxHeight="70vh" overflow="scroll" gap="$4">
+            {headerActions ? (
+              <YStack padding="$4" gap="$2">
+                {headerActions}
+              </YStack>
+            ) : null}
+          </YStack>
+        )}
       </PrettyModalWrap>
 
       <PrettyModalWrap

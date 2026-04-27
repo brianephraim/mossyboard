@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 import { Dialog } from "@tamagui/dialog";
 import { Text, useMedia } from "@tamagui/core";
 import { Button } from "@tamagui/button";
@@ -7,8 +7,8 @@ import { XStack, YStack } from "@tamagui/stacks";
 type PrettyModalWrapProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  title: string;
-  description?: string;
+  title: ReactNode;
+  description?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
   fullScreenOnMobile?: boolean;
@@ -16,6 +16,7 @@ type PrettyModalWrapProps = {
   closeLabel?: string;
   desktopPlacement?: "center" | "side";
   desktopWidth?: number;
+  chromeTone?: "default" | "sidebar";
 };
 
 export function PrettyModalWrap({
@@ -30,12 +31,43 @@ export function PrettyModalWrap({
   closeLabel = "Close",
   desktopPlacement = "center",
   desktopWidth,
+  chromeTone = "default",
 }: Readonly<PrettyModalWrapProps>) {
   const media = useMedia();
   const [didHydrate, setDidHydrate] = useState(false);
   const fullScreen = fullScreenOnMobile && media.maxMd;
   const showAsSidePanel = !fullScreen && desktopPlacement === "side";
   const resolvedDesktopWidth = desktopWidth ?? (showAsSidePanel ? 560 : 720);
+  const palette = (
+    chromeTone === "sidebar"
+      ? {
+          contentBackgroundColor: "$boardSidebarSurface",
+          contentBackgroundImage:
+            "linear-gradient(180deg, var(--c-color-boardSidebarSurface) 0%, var(--c-color-boardSidebarSurfaceBottom) 100%)",
+          borderColor: "$boardSidebarBorder",
+          titleColor: "$boardSidebarText",
+          descriptionColor: "$boardSidebarMuted",
+          closeColor: "$boardSidebarText",
+          contentPadding: "$4",
+        }
+      : {
+          contentBackgroundColor: "$color1",
+          contentBackgroundImage: undefined,
+          borderColor: "$boardShellBorder",
+          titleColor: "$boardHeading",
+          descriptionColor: "$boardTextMuted",
+          closeColor: "$boardTextMuted",
+          contentPadding: "$5",
+        }
+  ) satisfies {
+    contentBackgroundColor: ComponentProps<typeof YStack>["backgroundColor"];
+    contentBackgroundImage: ComponentProps<typeof YStack>["backgroundImage"];
+    borderColor: ComponentProps<typeof YStack>["borderColor"];
+    titleColor: ComponentProps<typeof Text>["color"];
+    descriptionColor: ComponentProps<typeof Text>["color"];
+    closeColor: ComponentProps<typeof Button>["color"];
+    contentPadding: ComponentProps<typeof YStack>["padding"];
+  };
 
   useEffect(() => {
     setDidHydrate(true);
@@ -57,14 +89,15 @@ export function PrettyModalWrap({
             animation="quick"
             enterStyle={{ opacity: 0, y: 12, scale: 0.98 }}
             exitStyle={{ opacity: 0, y: 12, scale: 0.98 }}
-            backgroundColor="$color1"
-            borderColor="$boardShellBorder"
+            backgroundColor={palette.contentBackgroundColor}
+            backgroundImage={palette.contentBackgroundImage}
+            borderColor={palette.borderColor}
             borderRadius={fullScreen || showAsSidePanel ? 0 : "$10"}
             width={fullScreen ? "100%" : resolvedDesktopWidth}
             maxWidth="92%"
             maxHeight={fullScreen || showAsSidePanel ? "100%" : "92vh"}
             height={fullScreen || showAsSidePanel ? "100%" : "auto"}
-            padding="$5"
+            padding={palette.contentPadding}
             gap="$4"
             position={showAsSidePanel ? "absolute" : "relative"}
             top={showAsSidePanel ? 0 : undefined}
@@ -96,15 +129,23 @@ export function PrettyModalWrap({
               >
                 <YStack gap="$2" flex={1} minWidth={0}>
                   <Dialog.Title unstyled>
-                    <Text fontSize="$8" fontWeight="700" color="$boardHeading">
-                      {title}
-                    </Text>
+                    {typeof title === "string" ? (
+                      <Text fontSize="$8" fontWeight="700" color={palette.titleColor}>
+                        {title}
+                      </Text>
+                    ) : (
+                      title
+                    )}
                   </Dialog.Title>
                   {description ? (
                     <Dialog.Description unstyled>
-                      <Text color="$boardTextMuted" lineHeight="$4">
-                        {description}
-                      </Text>
+                      {typeof description === "string" ? (
+                        <Text color={palette.descriptionColor} lineHeight="$4">
+                          {description}
+                        </Text>
+                      ) : (
+                        description
+                      )}
                     </Dialog.Description>
                   ) : null}
                 </YStack>
@@ -113,7 +154,7 @@ export function PrettyModalWrap({
                     size="$3"
                     chromeless
                     backgroundColor="transparent"
-                    color="$boardTextMuted"
+                    color={palette.closeColor}
                     aria-label={closeLabel}
                   >
                     {closeLabel}

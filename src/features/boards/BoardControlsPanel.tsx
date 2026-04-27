@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
@@ -13,6 +13,7 @@ export function BoardControlsPanel({
   onTogglePriority,
   onClearPriority,
   footer,
+  variant = "default",
 }: Readonly<{
   search: BoardDetailSearch;
   onSetView: (view: BoardDetailSearch["view"]) => void;
@@ -20,11 +21,131 @@ export function BoardControlsPanel({
   onTogglePriority: (priority: CardPriority) => void;
   onClearPriority: () => void;
   footer?: ReactNode;
+  variant?: "default" | "menu";
 }>) {
   const media = useMedia();
   const sectionFontSize = media.maxMd ? "$3" : "$4";
   const surfacePadding = media.maxMd ? "$3" : "$4";
   const rowGap = media.maxMd ? "$2" : "$3";
+  const isMenu = variant === "menu";
+  const sectionLabelColor = isMenu ? "$boardSidebarText" : "$boardHeading";
+  const menuGhostButtonProps: Omit<
+    ComponentProps<typeof BoardActionButton>,
+    "children" | "onPress" | "tone"
+  > | null = isMenu
+    ? {
+        color: "$boardSidebarText",
+        backgroundColor: "rgba(255, 255, 255, 0.04)",
+        borderColor: "$boardSidebarBorder",
+        hoverStyle: { backgroundColor: "$boardSidebarRowBg" },
+        pressStyle: { backgroundColor: "$boardSidebarRowBg", opacity: 0.92 },
+      }
+    : null;
+
+  const viewButtons = (
+    <>
+      <BoardActionButton
+        tone={search.view === "board" ? "accent" : "ghost"}
+        {...(search.view === "board" ? undefined : (menuGhostButtonProps ?? undefined))}
+        onPress={() => onSetView("board")}
+      >
+        Board
+      </BoardActionButton>
+      <BoardActionButton
+        tone={search.view === "list" ? "accent" : "ghost"}
+        {...(search.view === "list" ? undefined : (menuGhostButtonProps ?? undefined))}
+        onPress={() => onSetView("list")}
+      >
+        List
+      </BoardActionButton>
+    </>
+  );
+
+  const groupButtons =
+    search.view === "board" ? (
+      <>
+        <BoardActionButton
+          tone={search.groupBy === "column" ? "accent" : "ghost"}
+          {...(search.groupBy === "column" ? undefined : (menuGhostButtonProps ?? undefined))}
+          onPress={() => onSetGroupBy("column")}
+        >
+          User order
+        </BoardActionButton>
+        <BoardActionButton
+          tone={search.groupBy === "priority" ? "accent" : "ghost"}
+          {...(search.groupBy === "priority" ? undefined : (menuGhostButtonProps ?? undefined))}
+          onPress={() => onSetGroupBy("priority")}
+        >
+          Priority
+        </BoardActionButton>
+      </>
+    ) : null;
+
+  const priorityButtons = (
+    <>
+      {(["none", "low", "medium", "high"] as const).map((priority) => {
+        const meta = boardPriorityMeta[priority];
+        const active = search.priority.includes(priority);
+
+        return (
+          <BoardActionButton
+            key={priority}
+            tone={active ? "accent" : "ghost"}
+            {...(active ? undefined : (menuGhostButtonProps ?? undefined))}
+            onPress={() => onTogglePriority(priority)}
+          >
+            {meta.label}
+          </BoardActionButton>
+        );
+      })}
+      {search.priority.length > 0 ? (
+        <BoardActionButton
+          tone="ghost"
+          {...(menuGhostButtonProps ?? undefined)}
+          onPress={onClearPriority}
+        >
+          Clear filters
+        </BoardActionButton>
+      ) : null}
+    </>
+  );
+
+  if (isMenu) {
+    return (
+      <YStack gap="$4">
+        <YStack gap="$2.5">
+          <Text fontSize={sectionFontSize} fontWeight="700" color={sectionLabelColor}>
+            View
+          </Text>
+          <XStack gap={rowGap} flexWrap="wrap" alignItems="center">
+            {viewButtons}
+          </XStack>
+        </YStack>
+
+        {search.view === "board" ? (
+          <YStack gap="$2.5">
+            <Text fontSize={sectionFontSize} fontWeight="700" color={sectionLabelColor}>
+              Group by
+            </Text>
+            <XStack gap={rowGap} flexWrap="wrap" alignItems="center">
+              {groupButtons}
+            </XStack>
+          </YStack>
+        ) : null}
+
+        <YStack gap="$2.5">
+          <Text fontSize={sectionFontSize} fontWeight="700" color={sectionLabelColor}>
+            Priority filter
+          </Text>
+          <XStack gap={media.maxMd ? "$1.5" : "$2"} flexWrap="wrap" alignItems="center">
+            {priorityButtons}
+          </XStack>
+        </YStack>
+
+        {footer ? <YStack>{footer}</YStack> : null}
+      </YStack>
+    );
+  }
 
   return (
     <BoardSurface padding={surfacePadding}>
@@ -33,36 +154,14 @@ export function BoardControlsPanel({
           <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
             View
           </Text>
-          <BoardActionButton
-            tone={search.view === "board" ? "accent" : "ghost"}
-            onPress={() => onSetView("board")}
-          >
-            Board
-          </BoardActionButton>
-          <BoardActionButton
-            tone={search.view === "list" ? "accent" : "ghost"}
-            onPress={() => onSetView("list")}
-          >
-            List
-          </BoardActionButton>
+          {viewButtons}
 
           {search.view === "board" ? (
             <>
               <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
                 Group by
               </Text>
-              <BoardActionButton
-                tone={search.groupBy === "column" ? "accent" : "ghost"}
-                onPress={() => onSetGroupBy("column")}
-              >
-                User order
-              </BoardActionButton>
-              <BoardActionButton
-                tone={search.groupBy === "priority" ? "accent" : "ghost"}
-                onPress={() => onSetGroupBy("priority")}
-              >
-                Priority
-              </BoardActionButton>
+              {groupButtons}
             </>
           ) : null}
         </XStack>
@@ -72,25 +171,7 @@ export function BoardControlsPanel({
             <Text fontSize={sectionFontSize} fontWeight="700" color="$boardHeading">
               Priority filter
             </Text>
-            {(["none", "low", "medium", "high"] as const).map((priority) => {
-              const meta = boardPriorityMeta[priority];
-              const active = search.priority.includes(priority);
-
-              return (
-                <BoardActionButton
-                  key={priority}
-                  tone={active ? "accent" : "ghost"}
-                  onPress={() => onTogglePriority(priority)}
-                >
-                  {meta.label}
-                </BoardActionButton>
-              );
-            })}
-            {search.priority.length > 0 ? (
-              <BoardActionButton tone="ghost" onPress={onClearPriority}>
-                Clear filters
-              </BoardActionButton>
-            ) : null}
+            {priorityButtons}
           </XStack>
         </YStack>
 

@@ -927,12 +927,32 @@ export function BoardDetailScreen({
           )
         }
         headerActions={
-          <XStack gap="$3" flexWrap="wrap">
-            <BoardActionButton tone="ghost" onPress={() => setAddSampleDataOpen(true)}>
+          <XStack gap="$2" flexWrap="wrap">
+            <BoardActionButton
+              tone="ghost"
+              color="$boardSidebarText"
+              backgroundColor="rgba(255, 255, 255, 0.04)"
+              borderColor="$boardSidebarBorder"
+              hoverStyle={{ backgroundColor: "$boardSidebarRowBg" }}
+              pressStyle={{ backgroundColor: "$boardSidebarRowBg", opacity: 0.92 }}
+              onPress={() => setAddSampleDataOpen(true)}
+            >
               Add sample data
             </BoardActionButton>
             <BoardActionButton
               tone={confirmBoardDelete ? "danger" : "ghost"}
+              {...(confirmBoardDelete
+                ? undefined
+                : {
+                    color: "$boardSidebarText",
+                    backgroundColor: "rgba(255, 255, 255, 0.04)",
+                    borderColor: "$boardSidebarBorder",
+                    hoverStyle: { backgroundColor: "$boardSidebarRowBg" },
+                    pressStyle: {
+                      backgroundColor: "$boardSidebarRowBg",
+                      opacity: 0.92,
+                    },
+                  })}
               disabled={deleteBoard.isPending}
               onPress={() => {
                 if (!confirmBoardDelete) {
@@ -949,13 +969,21 @@ export function BoardDetailScreen({
                   ? "Confirm delete board"
                   : "Delete board"}
             </BoardActionButton>
-            <BoardActionButton onPress={() => setBoardSettingsOpen(true)}>
+            <BoardActionButton
+              color="$boardSidebarText"
+              backgroundColor="rgba(255, 255, 255, 0.04)"
+              borderColor="$boardSidebarBorder"
+              hoverStyle={{ backgroundColor: "$boardSidebarRowBg" }}
+              pressStyle={{ backgroundColor: "$boardSidebarRowBg", opacity: 0.92 }}
+              onPress={() => setBoardSettingsOpen(true)}
+            >
               Board settings
             </BoardActionButton>
           </XStack>
         }
         mobileMenuContent={
           <BoardControlsPanel
+            variant="menu"
             search={search}
             onSetView={(view) => {
               updateRouteSearch({ view });

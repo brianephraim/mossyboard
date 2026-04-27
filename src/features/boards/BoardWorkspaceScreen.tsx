@@ -312,8 +312,16 @@ export function BoardWorkspaceScreen({
         title={title}
         contentBottomInsetPx={drawerBoardId ? drawerHeightPx : 0}
         headerActions={
-          <XStack gap="$3" flexWrap="wrap">
-            <BoardActionButton tone="ghost" onPress={() => setAddSampleDataOpen(true)}>
+          <XStack gap="$2" flexWrap="wrap">
+            <BoardActionButton
+              tone="ghost"
+              color="$boardSidebarText"
+              backgroundColor="rgba(255, 255, 255, 0.04)"
+              borderColor="$boardSidebarBorder"
+              hoverStyle={{ backgroundColor: "$boardSidebarRowBg" }}
+              pressStyle={{ backgroundColor: "$boardSidebarRowBg", opacity: 0.92 }}
+              onPress={() => setAddSampleDataOpen(true)}
+            >
               Add sample data
             </BoardActionButton>
             <BoardActionButton tone="danger" onPress={() => setDeleteBoardOpen(true)}>
@@ -323,6 +331,7 @@ export function BoardWorkspaceScreen({
         }
         mobileMenuContent={
           <BoardControlsPanel
+            variant="menu"
             search={search}
             onSetView={(view) => updateRouteSearch({ view })}
             onSetGroupBy={(groupBy) => {
