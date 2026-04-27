@@ -128,7 +128,7 @@ function BoardNavigationRow({
 }
 
 export function BoardBrandHeader({
-  titleSize = 42,
+  titleSize = 36,
   subtitleSize = "$3",
   iconSize = 48,
 }: Readonly<{
@@ -286,6 +286,50 @@ export function BoardAccountPanel({
   );
 }
 
+export function BoardCurrentBoardMenuPanel({
+  headerActions,
+  boardControls,
+}: Readonly<{
+  headerActions?: ReactNode;
+  boardControls?: ReactNode;
+}>) {
+  if (!headerActions && !boardControls) {
+    return null;
+  }
+
+  return (
+    <BoardSurface
+      padding="$4"
+      backgroundColor="$boardSidebarPanelSurface"
+      backgroundImage="linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.08) 100%)"
+      borderColor="$boardSidebarPanelBorder"
+      boxShadow="none"
+    >
+      <YStack gap="$4">
+        <Text
+          textTransform="uppercase"
+          letterSpacing={1.4}
+          fontSize="$2"
+          color="$boardSidebarSubtle"
+        >
+          Current board
+        </Text>
+
+        {headerActions ? (
+          <YStack gap="$2.5">
+            <Text fontSize="$3" fontWeight="700" color="$boardSidebarText">
+              Board actions
+            </Text>
+            {headerActions}
+          </YStack>
+        ) : null}
+
+        {boardControls ? boardControls : null}
+      </YStack>
+    </BoardSurface>
+  );
+}
+
 export function BoardMobileMenuContent({
   headerActions,
   boardControls,
@@ -317,37 +361,7 @@ export function BoardMobileMenuContent({
 }>) {
   return (
     <YStack gap="$4" paddingBottom="$2">
-      {headerActions || boardControls ? (
-        <BoardSurface
-          padding="$4"
-          backgroundColor="$boardSidebarPanelSurface"
-          backgroundImage="linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.08) 100%)"
-          borderColor="$boardSidebarPanelBorder"
-          boxShadow="none"
-        >
-          <YStack gap="$4">
-            <Text
-              textTransform="uppercase"
-              letterSpacing={1.4}
-              fontSize="$2"
-              color="$boardSidebarSubtle"
-            >
-              Current board
-            </Text>
-
-            {headerActions ? (
-              <YStack gap="$2.5">
-                <Text fontSize="$3" fontWeight="700" color="$boardSidebarText">
-                  Board actions
-                </Text>
-                {headerActions}
-              </YStack>
-            ) : null}
-
-            {boardControls ? boardControls : null}
-          </YStack>
-        </BoardSurface>
-      ) : null}
+      <BoardCurrentBoardMenuPanel headerActions={headerActions} boardControls={boardControls} />
 
       <BoardActionButton tone="accent" onPress={onCreateBoard}>
         + New board

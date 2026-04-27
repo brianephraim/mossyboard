@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TamaguiRootProvider } from "../../tamagui/TamaguiRootProvider";
 import { BoardControlsPanel } from "./BoardControlsPanel";
-import { BoardMobileMenuContent } from "./BoardMobileMenuContent";
+import { BoardCurrentBoardMenuPanel, BoardMobileMenuContent } from "./BoardMobileMenuContent";
 import { BoardActionButton } from "./ui";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -111,5 +111,20 @@ describe("BoardMobileMenuContent", () => {
 
     expect(onCreateBoard).toHaveBeenCalledTimes(1);
     expect(onSignedOut).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders the themed current-board section without mobile-only sections", () => {
+    render(
+      <TamaguiRootProvider>
+        <BoardCurrentBoardMenuPanel
+          headerActions={<BoardActionButton tone="ghost">Delete board</BoardActionButton>}
+        />
+      </TamaguiRootProvider>,
+    );
+
+    expect(screen.getByText("Current board")).toBeTruthy();
+    expect(screen.getByText("Board actions")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Delete board" })).toBeTruthy();
+    expect(screen.queryByText(/^Boards$/)).toBeNull();
   });
 });

@@ -165,13 +165,20 @@ export function BoardShell({
   const headerControls = (
     <BoardActionButton
       tone="ghost"
-      aria-label="Open sidebar menu"
+      aria-label={media.maxMd ? "Open sidebar menu" : "Open board menu"}
       onPress={() => setMobileRailOpen(true)}
       paddingHorizontal="$2"
       minWidth={44}
+      color={media.maxMd ? undefined : "$boardHeading"}
     >
-      <Text aria-hidden fontSize="$6" lineHeight="$1">
-        ☰
+      <Text
+        aria-hidden
+        fontSize={media.maxMd ? "$6" : "$8"}
+        lineHeight={media.maxMd ? "$1" : "$2"}
+        fontWeight={media.maxMd ? "400" : "800"}
+        color={media.maxMd ? undefined : "$boardHeading"}
+      >
+        {media.maxMd ? "☰" : "⋮"}
       </Text>
     </BoardActionButton>
   );
@@ -220,17 +227,16 @@ export function BoardShell({
         open={mobileRailOpen}
         onOpenChange={setMobileRailOpen}
         title={
-          media.maxMd ? <BoardBrandHeader titleSize="$8" subtitleSize="$2" iconSize={44} /> : "Menu"
-        }
-        description={media.maxMd ? undefined : "Boards, account, and sidebar actions."}
-        chromeTone={media.maxMd ? "sidebar" : "default"}
-        footer={
-          media.maxMd ? undefined : (
-            <BoardActionButton tone="ghost" onPress={() => setMobileRailOpen(false)}>
-              Close
-            </BoardActionButton>
+          media.maxMd ? (
+            <BoardBrandHeader titleSize="$8" subtitleSize="$2" iconSize={44} />
+          ) : (
+            "Board actions"
           )
         }
+        description={undefined}
+        chromeTone="sidebar"
+        footer={undefined}
+        desktopWidth={media.maxMd ? undefined : 420}
       >
         {media.maxMd ? (
           <BoardMobileMenuContent
@@ -253,12 +259,12 @@ export function BoardShell({
             }}
           />
         ) : (
-          <YStack maxHeight="70vh" overflow="scroll" gap="$4">
+          <YStack maxHeight="70vh" overflow="scroll" gap="$3" paddingBottom="$1">
             {headerActions ? (
-              <YStack padding="$4" gap="$2">
-                {headerActions}
-              </YStack>
-            ) : null}
+              headerActions
+            ) : (
+              <Text color="$boardSidebarMuted">No board actions.</Text>
+            )}
           </YStack>
         )}
       </PrettyModalWrap>
