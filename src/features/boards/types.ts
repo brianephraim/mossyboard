@@ -5,10 +5,42 @@ import type { AppRouter } from "../../server/trpc/router";
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 export type BoardSummary = RouterOutputs["board"]["list"]["boards"][number];
-export type LoadedBoard = RouterOutputs["board"]["getWithColumnsAndCards"]["board"];
-export type LoadedColumn = LoadedBoard["columns"][number];
 export type LoadedBoardStructure = RouterOutputs["board"]["getStructure"]["board"];
 export type LoadedBoardStructureColumn = LoadedBoardStructure["columns"][number];
+
+type ListByColumnItem = RouterOutputs["card"]["listByColumn"]["items"][number];
+
+/**
+ * Synthetic board shape produced by `synthesizeBoardFromStructure`. It mirrors
+ * the legacy `board.getWithColumnsAndCards` response so existing renderers
+ * (`BoardCanvas`, `model.ts`, priority grouping helpers) keep working without
+ * change.
+ */
+export type LoadedBoard = {
+  id: string;
+  name: string;
+  updatedAt: string;
+  columnCount: number;
+  cardCount: number;
+  columns: Array<{
+    id: string;
+    title: string;
+    position: string;
+    version: number;
+    cardCount: number;
+    cards: Array<{
+      id: string;
+      columnId: string;
+      title: string;
+      description: string;
+      priority: ListByColumnItem["priority"];
+      position: string;
+      version: number;
+      tags: ListByColumnItem["tags"];
+    }>;
+  }>;
+};
+export type LoadedColumn = LoadedBoard["columns"][number];
 export type CardSummary = LoadedColumn["cards"][number];
 export type CardDetail = RouterOutputs["card"]["get"]["card"];
 export type CardListItem = RouterOutputs["card"]["listByBoard"]["items"][number];

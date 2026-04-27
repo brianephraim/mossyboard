@@ -22,14 +22,14 @@ describe("card repo", () => {
 
     process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-    const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
-    const { createCard, getCard, listCardsByBoard, softDeleteCard, updateCard } =
+    const { createBoard, getBoardStructure } = await import("../board/repo");
+    const { createCard, getCard, listCardsByBoard, listCardsByColumn, softDeleteCard, updateCard } =
       await import("./repo");
 
     const ownerId = randomUUID();
     const board = await createBoard({ ownerId, name: "Delivery board" });
-    const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
-    const firstColumnId = loadedBoard?.columns[0]?.id;
+    const structure = await getBoardStructure({ ownerId, boardId: board.id });
+    const firstColumnId = structure?.columns[0]?.id;
     assert.ok(firstColumnId, "expected a starter column");
 
     const firstCard = await createCard({
@@ -74,8 +74,12 @@ describe("card repo", () => {
     assert.equal(detail?.columnId, firstColumnId);
     assert.equal(detail?.priority, "high");
 
-    const boardDetail = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
-    const cardSummary = boardDetail?.columns[0]?.cards.find((card) => card.id === secondCard.id);
+    const boardDetail = await listCardsByColumn({
+      ownerId,
+      columnId: firstColumnId,
+      limit: 50,
+    });
+    const cardSummary = boardDetail.items.find((card) => card.id === secondCard.id);
     assert.equal(cardSummary?.priority, "high");
 
     const firstPage = await listCardsByBoard({
@@ -121,10 +125,14 @@ describe("card repo", () => {
     });
     assert.ok(deleted?.deletedAt);
 
-    const reloadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
-    assert.equal(reloadedBoard?.cardCount, 2);
+    const reloaded = await listCardsByColumn({
+      ownerId,
+      columnId: firstColumnId,
+      limit: 50,
+    });
+    assert.equal(reloaded.items.length, 2);
     assert.equal(
-      reloadedBoard?.columns[0]?.cards.find((card) => card.id === firstCard.id),
+      reloaded.items.find((card) => card.id === firstCard.id),
       undefined,
     );
   }, 20000);
@@ -134,14 +142,14 @@ describe("card repo", () => {
 
     process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-    const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
-    const { createCard, moveCard, reorderCard } = await import("./repo");
+    const { createBoard, getBoardStructure } = await import("../board/repo");
+    const { createCard, listCardsByColumn, moveCard, reorderCard } = await import("./repo");
 
     const ownerId = randomUUID();
     const board = await createBoard({ ownerId, name: "Reorder board" });
-    const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
-    const sourceColumnId = loadedBoard?.columns[0]?.id;
-    const targetColumnId = loadedBoard?.columns[1]?.id;
+    const structure = await getBoardStructure({ ownerId, boardId: board.id });
+    const sourceColumnId = structure?.columns[0]?.id;
+    const targetColumnId = structure?.columns[1]?.id;
     assert.ok(sourceColumnId && targetColumnId, "expected starter columns");
 
     const firstCard = await createCard({
@@ -200,17 +208,26 @@ describe("card repo", () => {
       (err: unknown) => (err as { code?: string })?.code === "CONFLICT",
     );
 
-    const reloadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+    const targetCards = await listCardsByColumn({
+      ownerId,
+      columnId: targetColumnId,
+      limit: 50,
+    });
     assert.deepEqual(
-      reloadedBoard?.columns[1]?.cards.map((card) => card.id),
+      targetCards.items.map((card) => card.id),
       [secondCard.id, targetCard.id],
     );
     assert.deepEqual(
-      reloadedBoard?.columns[1]?.cards.map((card) => card.priority),
+      targetCards.items.map((card) => card.priority),
       ["high", "low"],
     );
+    const sourceCards = await listCardsByColumn({
+      ownerId,
+      columnId: sourceColumnId,
+      limit: 50,
+    });
     assert.deepEqual(
-      reloadedBoard?.columns[0]?.cards.map((card) => card.id),
+      sourceCards.items.map((card) => card.id),
       [firstCard.id],
     );
   }, 20000);
@@ -220,14 +237,14 @@ describe("card repo", () => {
 
     process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-    const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+    const { createBoard, getBoardStructure } = await import("../board/repo");
     const { createCard, listCardsByBoard } = await import("./repo");
     const { addTagToCard } = await import("../tag/repo");
 
     const ownerId = randomUUID();
     const board = await createBoard({ ownerId, name: "Tag filter board" });
-    const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
-    const columnId = loadedBoard?.columns[0]?.id;
+    const structure = await getBoardStructure({ ownerId, boardId: board.id });
+    const columnId = structure?.columns[0]?.id;
     assert.ok(columnId, "expected a starter column");
 
     const c1 = await createCard({
@@ -301,13 +318,13 @@ describe("card repo", () => {
 
       process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createBoard, getBoardStructure } = await import("../board/repo");
       const { createCard, listCardsByColumn } = await import("./repo");
 
       const ownerId = randomUUID();
       const board = await createBoard({ ownerId, name: "Column listing board" });
-      const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
-      const columnId = loadedBoard?.columns[0]?.id;
+      const structure = await getBoardStructure({ ownerId, boardId: board.id });
+      const columnId = structure?.columns[0]?.id;
       assert.ok(columnId, "expected a starter column");
 
       const a = await createCard({
@@ -369,13 +386,13 @@ describe("card repo", () => {
 
       process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createBoard, getBoardStructure } = await import("../board/repo");
       const { createCard, listCardsByColumn } = await import("./repo");
 
       const ownerId = randomUUID();
       const board = await createBoard({ ownerId, name: "Cursor pagination board" });
-      const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
-      const columnId = loadedBoard?.columns[0]?.id;
+      const structure = await getBoardStructure({ ownerId, boardId: board.id });
+      const columnId = structure?.columns[0]?.id;
       assert.ok(columnId, "expected a starter column");
 
       const seeded: Array<{ id: string }> = [];
@@ -436,13 +453,13 @@ describe("card repo", () => {
 
       process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createBoard, getBoardStructure } = await import("../board/repo");
       const { createCard, listCardsByColumn } = await import("./repo");
 
       const ownerId = randomUUID();
       const board = await createBoard({ ownerId, name: "Single priority filter board" });
-      const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
-      const columnId = loadedBoard?.columns[0]?.id;
+      const structure = await getBoardStructure({ ownerId, boardId: board.id });
+      const columnId = structure?.columns[0]?.id;
       assert.ok(columnId, "expected a starter column");
 
       const interleaved: Array<{ priority: "high" | "medium" | "low" }> = [
@@ -488,13 +505,13 @@ describe("card repo", () => {
 
       process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createBoard, getBoardStructure } = await import("../board/repo");
       const { createCard, listCardsByColumn } = await import("./repo");
 
       const ownerId = randomUUID();
       const board = await createBoard({ ownerId, name: "Priority list filter board" });
-      const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
-      const columnId = loadedBoard?.columns[0]?.id;
+      const structure = await getBoardStructure({ ownerId, boardId: board.id });
+      const columnId = structure?.columns[0]?.id;
       assert.ok(columnId, "expected a starter column");
 
       const interleaved: Array<{ priority: "high" | "medium" | "low" }> = [
@@ -546,17 +563,17 @@ describe("card repo", () => {
 
       process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createBoard, getBoardStructure } = await import("../board/repo");
       const { createCard, listCardsByColumn } = await import("./repo");
 
       const ownerA = randomUUID();
       const ownerB = randomUUID();
       const board = await createBoard({ ownerId: ownerA, name: "Owner A board" });
-      const loadedBoard = await getBoardWithColumnsAndCards({
+      const structure = await getBoardStructure({
         ownerId: ownerA,
         boardId: board.id,
       });
-      const columnId = loadedBoard?.columns[0]?.id;
+      const columnId = structure?.columns[0]?.id;
       assert.ok(columnId, "expected a starter column");
 
       for (let i = 0; i < 3; i++) {
@@ -580,7 +597,7 @@ describe("card repo", () => {
 
       process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createBoard, getBoardStructure } = await import("../board/repo");
       const { createCard, listCardsByColumn } = await import("./repo");
       const { db } = await import("../db/client");
       const { cards } = await import("../db/schema");
@@ -588,8 +605,8 @@ describe("card repo", () => {
 
       const ownerId = randomUUID();
       const board = await createBoard({ ownerId, name: "Soft delete board" });
-      const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
-      const columnId = loadedBoard?.columns[0]?.id;
+      const structure = await getBoardStructure({ ownerId, boardId: board.id });
+      const columnId = structure?.columns[0]?.id;
       assert.ok(columnId, "expected a starter column");
 
       const seeded: Array<{ id: string }> = [];

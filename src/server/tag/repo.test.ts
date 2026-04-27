@@ -18,10 +18,10 @@ import {
 
 async function seedCard(opts: { ownerId: string; title?: string } = { ownerId: "" }) {
   const ownerId = opts.ownerId || randomUUID();
-  const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+  const { createBoard, getBoardStructure } = await import("../board/repo");
   const { createCard } = await import("../card/repo");
   const board = await createBoard({ ownerId, name: "Tag test board" });
-  const loaded = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+  const loaded = await getBoardStructure({ ownerId, boardId: board.id });
   const columnId = loaded?.columns[0]?.id;
   assert.ok(columnId, "expected starter column");
   const card = await createCard({

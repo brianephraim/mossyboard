@@ -22,7 +22,7 @@ describe("board repo", () => {
 
     process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-    const { createBoard, getBoardWithColumnsAndCards, listBoards } = await import("./repo");
+    const { createBoard, getBoardStructure, listBoards } = await import("./repo");
     const ownerId = randomUUID();
 
     const firstBoard = await createBoard({ ownerId, name: "Sprint planning" });
@@ -36,10 +36,9 @@ describe("board repo", () => {
     assert.equal(summaries[0]?.cardCount, 0);
     assert.equal(summaries[1]?.id, firstBoard.id);
 
-    const loaded = await getBoardWithColumnsAndCards({ ownerId, boardId: firstBoard.id });
+    const loaded = await getBoardStructure({ ownerId, boardId: firstBoard.id });
     assert.ok(loaded, "expected the board to load");
-    assert.equal(loaded?.columnCount, 3);
-    assert.equal(loaded?.cardCount, 0);
+    assert.equal(loaded?.columns.length, 3);
     assert.deepEqual(
       loaded?.columns.map((column) => column.title),
       ["To do", "In progress", "Done"],
@@ -54,7 +53,7 @@ describe("board repo", () => {
     process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
     const { eq } = await import("drizzle-orm");
-    const { createBoard, getBoardWithColumnsAndCards, softDeleteBoard } = await import("./repo");
+    const { createBoard, getBoardStructure, softDeleteBoard } = await import("./repo");
     const { createCard } = await import("../card/repo");
     const { addTagToCard } = await import("../tag/repo");
     const { db } = await import("../db/client");
@@ -62,7 +61,7 @@ describe("board repo", () => {
 
     const ownerId = randomUUID();
     const board = await createBoard({ ownerId, name: "Cascade board" });
-    const loaded = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+    const loaded = await getBoardStructure({ ownerId, boardId: board.id });
     const columnId = loaded?.columns[0]?.id;
     assert.ok(columnId, "expected a starter column");
 
@@ -92,13 +91,12 @@ describe("board repo", () => {
 
       process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-      const { createBoard, getBoardStructure, getBoardWithColumnsAndCards } =
-        await import("./repo");
+      const { createBoard, getBoardStructure } = await import("./repo");
       const { createCard } = await import("../card/repo");
 
       const ownerId = randomUUID();
       const board = await createBoard({ ownerId, name: "Structure board" });
-      const loadedFull = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+      const loadedFull = await getBoardStructure({ ownerId, boardId: board.id });
       assert.ok(loadedFull, "expected the board to load");
       const firstColumnId = loadedFull?.columns[0]?.id;
       const secondColumnId = loadedFull?.columns[1]?.id;

@@ -4,8 +4,8 @@ import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { keyBetween } from "../../lib/ordering/key-between";
 import { db } from "../db/client";
-import { boards, cards, cardTags, columns, type CardPriority } from "../db/schema";
-import { getOwnedBoard, listTagsForCards } from "./repo-shared";
+import { boards, cards, cardTags, columns } from "../db/schema";
+import { getOwnedBoard } from "./repo-shared";
 
 const DEFAULT_COLUMN_TITLES = ["To do", "In progress", "Done"] as const;
 
@@ -15,31 +15,6 @@ export type BoardSummaryRow = {
   updatedAt: Date;
   columnCount: number;
   cardCount: number;
-};
-
-export type LoadedBoardRow = {
-  id: string;
-  name: string;
-  updatedAt: Date;
-  columnCount: number;
-  cardCount: number;
-  columns: Array<{
-    id: string;
-    title: string;
-    position: string;
-    version: number;
-    cardCount: number;
-    cards: Array<{
-      id: string;
-      columnId: string;
-      title: string;
-      description: string;
-      priority: CardPriority;
-      position: string;
-      version: number;
-      tags: Array<{ id: string; name: string; normalizedName: string }>;
-    }>;
-  }>;
 };
 
 export async function listBoards(input: { ownerId: string }): Promise<BoardSummaryRow[]> {
@@ -97,103 +72,6 @@ export async function createBoard(input: {
 
     return createdBoard;
   });
-}
-
-export async function getBoardWithColumnsAndCards(input: {
-  ownerId: string;
-  boardId: string;
-}): Promise<LoadedBoardRow | null> {
-  const [boardRow] = await db
-    .select({
-      id: boards.id,
-      name: boards.name,
-      updatedAt: boards.updatedAt,
-    })
-    .from(boards)
-    .where(
-      and(
-        eq(boards.id, input.boardId),
-        eq(boards.ownerId, input.ownerId),
-        isNull(boards.deletedAt),
-      ),
-    )
-    .limit(1);
-
-  if (!boardRow) {
-    return null;
-  }
-
-  const columnRows = await db
-    .select({
-      id: columns.id,
-      title: columns.title,
-      position: columns.position,
-      version: columns.version,
-    })
-    .from(columns)
-    .where(and(eq(columns.boardId, input.boardId), isNull(columns.deletedAt)))
-    .orderBy(asc(columns.position), asc(columns.id));
-
-  const columnIds = columnRows.map((column) => column.id);
-  const cardRows =
-    columnIds.length === 0
-      ? []
-      : await db
-          .select({
-            id: cards.id,
-            columnId: cards.columnId,
-            title: cards.title,
-            description: cards.description,
-            priority: cards.priority,
-            position: cards.position,
-            version: cards.version,
-          })
-          .from(cards)
-          .where(and(inArray(cards.columnId, columnIds), isNull(cards.deletedAt)))
-          .orderBy(asc(cards.position), asc(cards.id));
-
-  const tagMap = await listTagsForCards(db, {
-    ownerId: input.ownerId,
-    cardIds: cardRows.map((card) => card.id),
-  });
-
-  const cardsByColumn = new Map<string, LoadedBoardRow["columns"][number]["cards"]>();
-
-  for (const card of cardRows) {
-    const list = cardsByColumn.get(card.columnId) ?? [];
-    list.push({
-      id: card.id,
-      columnId: card.columnId,
-      title: card.title,
-      description: card.description,
-      priority: card.priority,
-      position: card.position,
-      version: card.version,
-      tags: tagMap.get(card.id) ?? [],
-    });
-    cardsByColumn.set(card.columnId, list);
-  }
-
-  const loadedColumns = columnRows.map((column) => {
-    const columnCards = cardsByColumn.get(column.id) ?? [];
-    return {
-      id: column.id,
-      title: column.title,
-      position: column.position,
-      version: column.version,
-      cardCount: columnCards.length,
-      cards: columnCards,
-    };
-  });
-
-  return {
-    id: boardRow.id,
-    name: boardRow.name,
-    updatedAt: boardRow.updatedAt,
-    columnCount: loadedColumns.length,
-    cardCount: cardRows.length,
-    columns: loadedColumns,
-  };
 }
 
 export type BoardStructureRow = {
