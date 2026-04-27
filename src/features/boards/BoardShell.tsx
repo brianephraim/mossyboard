@@ -320,6 +320,8 @@ export function BoardShell({
       tone="ghost"
       aria-label="Open sidebar menu"
       onPress={() => setMobileRailOpen(true)}
+      paddingHorizontal="$2"
+      minWidth={44}
     >
       <Text aria-hidden fontSize="$6" lineHeight="$1">
         ☰
