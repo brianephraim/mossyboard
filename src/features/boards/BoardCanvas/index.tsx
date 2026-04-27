@@ -323,6 +323,8 @@ function computeNoticeMessage({
   return null;
 }
 
+const PROGRAMMATIC_SNAP_SETTLE_MS = 220;
+
 function runProgrammaticDrag(
   api: SensorAPI | null,
   draggableId: string,
@@ -348,21 +350,25 @@ function runProgrammaticDrag(
   }
 
   const drag = preDrag.snapLift();
-  if (direction === "up") {
-    drag.moveUp();
-  } else if (direction === "down") {
-    drag.moveDown();
-  } else if (direction === "left") {
-    drag.moveLeft();
-  } else if (direction === "right") {
-    drag.moveRight();
-  }
+  window.requestAnimationFrame(() => {
+    if (direction === "up") {
+      drag.moveUp();
+    } else if (direction === "down") {
+      drag.moveDown();
+    } else if (direction === "left") {
+      drag.moveLeft();
+    } else if (direction === "right") {
+      drag.moveRight();
+    }
 
-  // Give the browser a chance to paint the lifted + moved state before dropping.
-  // Otherwise the drag can complete within a single frame and look like "nothing happened".
-  window.setTimeout(() => {
-    drag.drop({ shouldBlockNextClick: true });
-  }, 120);
+    // Programmatic drags use hello-pangea's SNAP transition for the dragged
+    // item. Let the lifted state paint first, then give that snap transition
+    // time to play before dropping; otherwise the move and drop can collapse
+    // into one burst and the card appears to teleport.
+    window.setTimeout(() => {
+      drag.drop({ shouldBlockNextClick: true });
+    }, PROGRAMMATIC_SNAP_SETTLE_MS);
+  });
 }
 
 // Scroll the column adjacent to the source draggable's column into view, in
