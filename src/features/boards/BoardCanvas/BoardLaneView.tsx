@@ -1,20 +1,19 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
-import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { Stack, Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
 import { BoardActionButton, BoardPill, BoardSurface } from "../ui";
 import type { BoardDetailSearch, BoardLane, CardPriority } from "../types";
 import type { BoardKey } from "../useDualBoardDnd";
-import { scopeId } from "../useDualBoardDnd";
-import { CardInterior } from "./CardInterior";
 import type { CardTagsRowTag } from "./CardTagsRow";
 import { ColumnHeaderWithInlineRename } from "./ColumnHeader";
 import { LaneEmptyState } from "./LaneEmptyState";
 import { StaticLaneCards } from "./StaticLaneCards";
-import { dndCardListStyle, dndCardShellStyle, mergeDraggableStyle } from "./layout";
+import { VirtualizedCardList } from "./VirtualizedCardList";
 
 type Direction = "up" | "down" | "left" | "right";
+
+const noop = () => undefined;
 
 type BoardLaneViewProps = {
   lane: BoardLane;
@@ -52,6 +51,8 @@ type BoardLaneViewProps = {
   ) => void;
   dndScopeKey?: BoardKey;
   bottomScrollPadding?: number;
+  hasNextPage?: boolean;
+  onLoadMore?: () => void;
 };
 
 export function BoardLaneView({
@@ -75,9 +76,10 @@ export function BoardLaneView({
   onMovePriorityGroupCard,
   dndScopeKey,
   bottomScrollPadding,
+  hasNextPage = false,
+  onLoadMore,
 }: Readonly<BoardLaneViewProps>) {
   const isRealColumn = lane.laneKind === "column" && lane.originalColumnId;
-  const scoped = (id: string) => (dndScopeKey ? scopeId(dndScopeKey, id) : id);
 
   return (
     <BoardSurface
@@ -127,75 +129,31 @@ export function BoardLaneView({
         </YStack>
 
         {canReorder && isRealColumn ? (
-          <Droppable droppableId={scoped(isRealColumn)} type="CARD" ignoreContainerClipping>
-            {(provided) => (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  flex: "1 1 auto",
-                  minHeight: 0,
-                }}
-              >
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  style={{
-                    ...dndCardListStyle,
-                    overflowY: "auto",
-                    flex: "1 1 auto",
-                    minHeight: 0,
-                    paddingLeft: "var(--c-space-4)",
-                    paddingRight: "var(--c-space-4)",
-                    paddingTop: "var(--c-space-3)",
-                    paddingBottom: bottomScrollPadding ?? undefined,
-                  }}
-                >
-                  {lane.cards.map((card, index) => (
-                    <Draggable
-                      key={card.id}
-                      draggableId={scoped(card.id)}
-                      index={index}
-                      disableInteractiveElementBlocking
-                    >
-                      {(cardProvided) => {
-                        const { rest: cardDragRest, style: cardDragStyle } = mergeDraggableStyle(
-                          dndCardShellStyle,
-                          cardProvided.draggableProps,
-                        );
-                        return (
-                          <div ref={cardProvided.innerRef} {...cardDragRest} style={cardDragStyle}>
-                            <CardInterior
-                              card={card}
-                              showColumnContext={false}
-                              canMove
-                              dragHandleProps={cardProvided.dragHandleProps}
-                              availableTags={availableTags}
-                              onOpen={() => onOpenCard(card.id)}
-                              onMove={onMoveCard}
-                              onAddTag={onAddTag}
-                              onDetachTag={onDetachTag}
-                              onRenameTitle={onRenameCardTitle}
-                            />
-                          </div>
-                        );
-                      }}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-                <YStack paddingHorizontal="$4" paddingTop="$3" gap="$3">
-                  {lane.cards.length === 0 ? (
-                    <LaneEmptyState
-                      isVisible
-                      isRealColumn={Boolean(isRealColumn)}
-                      isFiltered={hasActivePriorityFilters}
-                    />
-                  ) : null}
-                </YStack>
-              </div>
-            )}
-          </Droppable>
+          <YStack flex={1} minHeight={0}>
+            {lane.cards.length === 0 ? (
+              <YStack paddingHorizontal="$4" paddingTop="$3" gap="$3">
+                <LaneEmptyState
+                  isVisible
+                  isRealColumn={Boolean(isRealColumn)}
+                  isFiltered={hasActivePriorityFilters}
+                />
+              </YStack>
+            ) : null}
+            <VirtualizedCardList
+              columnId={isRealColumn}
+              cards={lane.cards}
+              hasNextPage={hasNextPage}
+              onLoadMore={onLoadMore ?? noop}
+              bottomScrollPadding={bottomScrollPadding}
+              dndScopeKey={dndScopeKey}
+              availableTags={availableTags}
+              onOpenCard={onOpenCard}
+              onMoveCard={onMoveCard}
+              onAddTag={onAddTag}
+              onDetachTag={onDetachTag}
+              onRenameCardTitle={onRenameCardTitle}
+            />
+          </YStack>
         ) : (
           <StaticLaneCards
             lane={lane}

@@ -1,9 +1,57 @@
 import "@testing-library/react";
 import { cleanup } from "@testing-library/react";
-import { afterAll, afterEach } from "vitest";
+import { afterAll, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { Sql } from "postgres";
+import { Fragment, createElement } from "react";
+
+// Stub `react-virtuoso` for jsdom: render all items synchronously and call the
+// rendered Footer (used by `@hello-pangea/dnd`'s `Droppable` placeholder) so
+// drag-and-drop assertions still find the placeholder. We forward `scrollerRef`
+// to a real `div` so `@hello-pangea/dnd` is satisfied that its inner ref
+// resolves to an HTMLElement. Real virtualization is only meaningful in a
+// browser; tests bypass it.
+vi.mock("react-virtuoso", () => {
+  type ItemContent = (index: number, item: unknown) => React.ReactNode;
+  type Components = { Footer?: React.FC };
+  type ScrollerRef = ((ref: HTMLElement | null) => void) | { current: HTMLElement | null };
+  type VirtuosoProps = {
+    data?: unknown[];
+    totalCount?: number;
+    itemContent?: ItemContent;
+    components?: Components;
+    scrollerRef?: ScrollerRef;
+    style?: React.CSSProperties;
+  };
+  const Virtuoso = (props: VirtuosoProps) => {
+    const items = props.data ?? [];
+    const renderedItems = items.map((item, index) =>
+      createElement(
+        Fragment,
+        { key: index },
+        props.itemContent ? props.itemContent(index, item) : null,
+      ),
+    );
+    const Footer = props.components?.Footer;
+    return createElement(
+      "div",
+      {
+        ref: (node: HTMLDivElement | null) => {
+          if (typeof props.scrollerRef === "function") {
+            props.scrollerRef(node);
+          } else if (props.scrollerRef && typeof props.scrollerRef === "object") {
+            props.scrollerRef.current = node;
+          }
+        },
+        style: props.style,
+      },
+      ...renderedItems,
+      Footer ? createElement(Footer) : null,
+    );
+  };
+  return { Virtuoso };
+});
 
 // In Vitest's jsdom environment on Node 24, `Request.signal` can come from a different
 // realm than `globalThis.AbortSignal` (Node/undici vs jsdom). tRPC uses `AbortSignal.any`

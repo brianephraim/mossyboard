@@ -14,7 +14,8 @@ export function useTagMutations({ boardId, onAnnounce }: UseTagMutationsInput) {
     await Promise.all([
       utils.tag.list.invalidate(),
       boardId ? utils.card.listByBoard.invalidate({ boardId }) : Promise.resolve(),
-      boardId ? utils.board.getWithColumnsAndCards.invalidate({ boardId }) : Promise.resolve(),
+      utils.card.listByColumn.invalidate(),
+      boardId ? utils.board.getStructure.invalidate({ boardId }) : Promise.resolve(),
       utils.card.get.invalidate(),
     ]);
   }, [boardId, utils]);

@@ -1,8 +1,8 @@
 import { trpc } from "../../trpc/client";
-import type { LoadedBoard } from "./types";
+import type { LoadedBoardStructure } from "./types";
 
 export type BoardPaneStateLike = {
-  setOptimisticBoard: (b: LoadedBoard | null) => void;
+  setOptimisticStructure: (s: LoadedBoardStructure | null) => void;
   setConflictMessage: (m: string | null) => void;
 };
 
@@ -22,7 +22,7 @@ export type BoardMutations = {
 
 export function useBoardMutations(input: {
   boardId: string | null;
-  boardQuery: ReturnType<typeof trpc.board.getWithColumnsAndCards.useQuery>;
+  structureQuery: ReturnType<typeof trpc.board.getStructure.useQuery>;
   setAnnouncement: (m: string | null) => void;
   state: BoardPaneStateLike;
 }): BoardMutations {
@@ -33,15 +33,18 @@ export function useBoardMutations(input: {
     if (!boardId) {
       return;
     }
-    await input.boardQuery.refetch();
-    await utils.board.list.invalidate();
-    input.state.setOptimisticBoard(null);
+    await Promise.all([
+      input.structureQuery.refetch(),
+      utils.card.listByColumn.invalidate(),
+      utils.board.list.invalidate(),
+    ]);
+    input.state.setOptimisticStructure(null);
   };
 
   const handleMutationError = async (message: string) => {
-    input.state.setOptimisticBoard(null);
+    input.state.setOptimisticStructure(null);
     input.state.setConflictMessage(message);
-    await input.boardQuery.refetch();
+    await Promise.all([input.structureQuery.refetch(), utils.card.listByColumn.invalidate()]);
   };
 
   const createCard = trpc.card.create.useMutation({
@@ -49,9 +52,8 @@ export function useBoardMutations(input: {
       if (!boardId) {
         return;
       }
-      await Promise.all([refreshBoard(), utils.card.listByBoard.invalidate({ boardId })]);
+      await refreshBoard();
       input.setAnnouncement("Card created.");
-      // URL open is handled by caller.
       void cardId;
     },
     onError: async (error) => {
@@ -116,7 +118,7 @@ export function useBoardMutations(input: {
       if (!boardId) {
         return;
       }
-      await Promise.all([refreshBoard(), utils.card.listByBoard.invalidate({ boardId })]);
+      await refreshBoard();
       input.setAnnouncement("Card moved.");
     },
     onError: async () => {
@@ -131,7 +133,7 @@ export function useBoardMutations(input: {
       if (!boardId) {
         return;
       }
-      await Promise.all([refreshBoard(), utils.card.listByBoard.invalidate({ boardId })]);
+      await refreshBoard();
       input.setAnnouncement("Card moved.");
     },
     onError: async () => {
@@ -146,7 +148,7 @@ export function useBoardMutations(input: {
       if (!boardId) {
         return;
       }
-      await Promise.all([refreshBoard(), utils.card.listByBoard.invalidate({ boardId })]);
+      await refreshBoard();
       input.setAnnouncement("Card updated.");
     },
     onError: async () => {

@@ -115,6 +115,12 @@ export const cards = pgTable(
   },
   (t) => ({
     columnPositionIdx: index("cards_column_position_idx").on(t.columnId, t.position),
+    columnPriorityPositionIdx: index("cards_column_priority_position_idx").on(
+      t.columnId,
+      t.priority,
+      t.position,
+      t.id,
+    ),
   }),
 );
 

@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   addSampleDataToBoardForUser,
   createBoardForUser,
-  getBoardWithColumnsAndCardsForUser,
+  getBoardStructureForUser,
   listBoardsForUser,
   renameBoardForUser,
   softDeleteBoardForUser,
@@ -25,8 +25,8 @@ export const boardRouter = t.router({
   create: protectedProcedure.input(createBoardInput).mutation(({ ctx, input }) => {
     return createBoardForUser(ctx.userId, input);
   }),
-  getWithColumnsAndCards: protectedProcedure.input(boardIdInput).query(({ ctx, input }) => {
-    return getBoardWithColumnsAndCardsForUser(ctx.userId, input.boardId);
+  getStructure: protectedProcedure.input(boardIdInput).query(({ ctx, input }) => {
+    return getBoardStructureForUser(ctx.userId, input);
   }),
   rename: protectedProcedure
     .input(

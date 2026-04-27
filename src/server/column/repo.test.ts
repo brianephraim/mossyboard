@@ -22,12 +22,12 @@ describe("column repo", () => {
 
     process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
 
-    const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+    const { createBoard, getBoardStructure } = await import("../board/repo");
     const { createColumn, renameColumn, reorderColumn } = await import("./repo");
 
     const ownerId = randomUUID();
     const board = await createBoard({ ownerId, name: "Workflow board" });
-    const initial = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+    const initial = await getBoardStructure({ ownerId, boardId: board.id });
     const firstColumnId = initial?.columns[0]?.id;
     const secondColumnId = initial?.columns[1]?.id;
     assert.ok(firstColumnId && secondColumnId, "expected starter columns");
@@ -40,7 +40,7 @@ describe("column repo", () => {
     });
     assert.ok(created.id);
 
-    const afterCreate = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+    const afterCreate = await getBoardStructure({ ownerId, boardId: board.id });
     assert.deepEqual(
       afterCreate?.columns.map((column) => column.title),
       ["To do", "QA", "In progress", "Done"],
@@ -76,7 +76,7 @@ describe("column repo", () => {
       (err: unknown) => (err as { code?: string })?.code === "CONFLICT",
     );
 
-    const afterReorder = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+    const afterReorder = await getBoardStructure({ ownerId, boardId: board.id });
     assert.deepEqual(
       afterReorder?.columns.map((column) => column.title),
       ["Review", "To do", "In progress", "Done"],

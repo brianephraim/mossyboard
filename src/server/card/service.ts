@@ -4,6 +4,7 @@ import {
   createCard,
   getCard,
   listCardsByBoard,
+  listCardsByColumn,
   moveCard,
   reorderCard,
   softDeleteCard,
@@ -212,6 +213,29 @@ export async function listCardsByBoardForUser(
           cardId: listed.nextCursor.cardId,
         }
       : null,
+  };
+}
+
+export async function listCardsByColumnForUser(
+  ownerId: string,
+  input: {
+    columnId: string;
+    priority?: CardPriority | CardPriority[];
+    limit: number;
+    cursor?: { position: string; cardId: string } | null;
+  },
+) {
+  const listed = await listCardsByColumn({
+    ownerId,
+    columnId: input.columnId,
+    priority: input.priority,
+    limit: input.limit,
+    cursor: input.cursor ?? null,
+  });
+
+  return {
+    items: listed.items.map(serializeCardListItem),
+    nextCursor: listed.nextCursor,
   };
 }
 

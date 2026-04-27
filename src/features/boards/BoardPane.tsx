@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMedia } from "@tamagui/core";
 import { YStack } from "@tamagui/stacks";
 
@@ -11,14 +12,12 @@ import { trpc } from "../../trpc/client";
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardListMode } from "./BoardListMode";
 import { canReorderBoard, getCardPosition, getColumnPosition, getNeighborIds } from "./model";
-import {
-  getFilteredColumnPlacement,
-  getPriorityGroupPlacement,
-  parsePriorityGroupDroppableId,
-} from "./priorityGrouping";
+import { getCardSlice } from "./columnCards/cardSlice";
+import { patchSliceCache } from "./columnCards/patchCache";
+import { keyBetween } from "../../lib/ordering/key-between";
 import { BoardControlsPanel } from "./BoardControlsPanel";
 import type { CardTagsRowTag } from "./BoardCanvas/CardTagsRow";
-import type { BoardDetailSearch, CardPriority, LoadedBoard } from "./types";
+import type { BoardDetailSearch, CardPriority, LoadedBoard, LoadedBoardStructure } from "./types";
 import { BoardActionButton, BoardInlineNotice, BoardStateCard } from "./ui";
 import type { BoardMutations } from "./useBoardMutations";
 import type { SensorAPI } from "@hello-pangea/dnd";
@@ -30,10 +29,13 @@ type BoardPaneProps = {
   search: BoardDetailSearch;
   role: "main" | "drawer";
   programmaticSensorApiRef?: RefObject<SensorAPI | null>;
-  boardQuery: ReturnType<typeof trpc.board.getWithColumnsAndCards.useQuery>;
+  /** The synthesized board (structure + slice items). Null while loading. */
+  board: LoadedBoard | null;
+  /** Underlying structure query, used to surface errors and a refetch action. */
+  structureQuery: ReturnType<typeof trpc.board.getStructure.useQuery>;
   state: {
-    optimisticBoard: LoadedBoard | null;
-    setOptimisticBoard: (b: LoadedBoard | null) => void;
+    optimisticStructure: LoadedBoardStructure | null;
+    setOptimisticStructure: (s: LoadedBoardStructure | null) => void;
     conflictMessage: string | null;
     setConflictMessage: (m: string | null) => void;
   };
@@ -49,6 +51,9 @@ type BoardPaneProps = {
   onSetGroupBy?: (groupBy: BoardDetailSearch["groupBy"]) => void;
   onTogglePriority?: (priority: CardPriority) => void;
   onClearPriority?: () => void;
+  paginationByColumn?: Readonly<
+    Record<string, { hasNextPage: boolean; onLoadMore: () => void } | undefined>
+  >;
 };
 
 export function BoardPane({
@@ -57,7 +62,8 @@ export function BoardPane({
   search,
   role,
   programmaticSensorApiRef,
-  boardQuery,
+  board,
+  structureQuery,
   state,
   mutations,
   availableTags,
@@ -71,13 +77,13 @@ export function BoardPane({
   onSetGroupBy,
   onTogglePriority,
   onClearPriority,
+  paginationByColumn,
 }: Readonly<BoardPaneProps>) {
   const media = useMedia();
   const dispatch = useAppDispatch();
   const groupedBoardReorderPreference = useAppSelector(selectGroupedBoardReorderEnabled);
+  const queryClient = useQueryClient();
 
-  const board =
-    state.optimisticBoard ?? (boardQuery.data as { board: LoadedBoard } | undefined)?.board ?? null;
   const columnReorderEnabled = canReorderBoard(search);
   const groupedBoardReorderEnabled =
     search.view === "board" &&
@@ -85,11 +91,6 @@ export function BoardPane({
     groupedBoardReorderPreference;
   const priorityGroupReorderEnabled =
     search.view === "board" && search.groupBy === "priority" && groupedBoardReorderEnabled;
-  const filteredColumnReorderEnabled =
-    search.view === "board" &&
-    search.groupBy === "column" &&
-    search.priority.length > 0 &&
-    groupedBoardReorderEnabled;
 
   const listQuery = trpc.card.listByBoard.useInfiniteQuery(
     {
@@ -110,7 +111,6 @@ export function BoardPane({
 
   const refreshBoard = async () => {
     await mutations.refreshBoard();
-    state.setOptimisticBoard(null);
   };
 
   const commitColumnPlacement = async (
@@ -125,21 +125,28 @@ export function BoardPane({
     if (destinationIndex === location.columnIndex) {
       return;
     }
-    const nextBoard = {
-      ...currentBoard,
-      columns: [...currentBoard.columns],
-    };
-    const [moved] = nextBoard.columns.splice(location.columnIndex, 1);
+    const reorderedColumns = [...currentBoard.columns];
+    const [moved] = reorderedColumns.splice(location.columnIndex, 1);
     if (!moved) {
       return;
     }
-    nextBoard.columns.splice(destinationIndex, 0, moved);
-    const movedColumn = nextBoard.columns[destinationIndex];
+    reorderedColumns.splice(destinationIndex, 0, moved);
+    const movedColumn = reorderedColumns[destinationIndex];
     if (!movedColumn) {
       return;
     }
-    const { prevId, nextId } = getNeighborIds(nextBoard.columns, destinationIndex);
-    state.setOptimisticBoard(nextBoard);
+    const { prevId, nextId } = getNeighborIds(reorderedColumns, destinationIndex);
+    state.setOptimisticStructure({
+      id: currentBoard.id,
+      name: currentBoard.name,
+      updatedAt: currentBoard.updatedAt,
+      columns: reorderedColumns.map((column) => ({
+        id: column.id,
+        title: column.title,
+        position: column.position,
+        version: column.version,
+      })),
+    });
     state.setConflictMessage(null);
     await mutations.reorderColumn.mutateAsync({
       columnId: movedColumn.id,
@@ -151,7 +158,7 @@ export function BoardPane({
 
   const commitCardPlacement = async (
     currentBoard: LoadedBoard,
-    input: {
+    placement: {
       cardId: string;
       sourceColumnId: string;
       sourceIndex: number;
@@ -161,168 +168,83 @@ export function BoardPane({
       expectedVersion: number;
     },
   ) => {
-    const currentLocation = getCardPosition(currentBoard, input.cardId);
-    const currentPriority = currentLocation?.card.priority;
+    const currentLocation = getCardPosition(currentBoard, placement.cardId);
+    if (!currentLocation) {
+      return;
+    }
+    const currentPriority = currentLocation.card.priority;
     if (
-      input.sourceColumnId === input.destinationColumnId &&
-      input.sourceIndex === input.destinationIndex &&
-      (!input.destinationPriority || input.destinationPriority === currentPriority)
+      placement.sourceColumnId === placement.destinationColumnId &&
+      placement.sourceIndex === placement.destinationIndex &&
+      (!placement.destinationPriority || placement.destinationPriority === currentPriority)
     ) {
       return;
     }
 
-    const nextColumns = currentBoard.columns.map((column) => ({
-      ...column,
-      cards: [...column.cards],
-    }));
-    const sourceColumn = nextColumns.find((column) => column.id === input.sourceColumnId);
-    const destinationColumn = nextColumns.find((column) => column.id === input.destinationColumnId);
-    if (!sourceColumn || !destinationColumn) {
+    const destinationColumn = currentBoard.columns.find(
+      (column) => column.id === placement.destinationColumnId,
+    );
+    if (!destinationColumn) {
       return;
     }
-    const [movedCard] = sourceColumn.cards.splice(input.sourceIndex, 1);
-    if (!movedCard) {
-      return;
-    }
-    destinationColumn.cards.splice(input.destinationIndex, 0, {
-      ...movedCard,
-      columnId: destinationColumn.id,
-      priority: input.destinationPriority ?? movedCard.priority,
+
+    const cardsWithoutMoved = destinationColumn.cards.filter(
+      (card) => card.id !== placement.cardId,
+    );
+    const prevCard = cardsWithoutMoved[placement.destinationIndex - 1] ?? null;
+    const nextCard = cardsWithoutMoved[placement.destinationIndex] ?? null;
+    const optimisticPosition = keyBetween(prevCard?.position ?? null, nextCard?.position ?? null);
+
+    const sourceSlice = getCardSlice(placement.sourceColumnId, currentPriority, search);
+    const destinationPriority = placement.destinationPriority ?? currentPriority;
+    const destinationSlice = getCardSlice(
+      placement.destinationColumnId,
+      destinationPriority,
+      search,
+    );
+
+    patchSliceCache(queryClient, sourceSlice, {
+      type: "remove",
+      cardId: placement.cardId,
     });
-    const nextBoard = { ...currentBoard, columns: nextColumns };
-    const { prevId, nextId } = getNeighborIds(destinationColumn.cards, input.destinationIndex);
-    state.setOptimisticBoard(nextBoard);
+    patchSliceCache(queryClient, destinationSlice, {
+      type: "insert",
+      card: {
+        id: currentLocation.card.id,
+        columnId: placement.destinationColumnId,
+        title: currentLocation.card.title,
+        description: currentLocation.card.description,
+        priority: destinationPriority,
+        position: optimisticPosition,
+        version: currentLocation.card.version,
+        tags: currentLocation.card.tags,
+      },
+    });
     state.setConflictMessage(null);
 
-    if (input.sourceColumnId === input.destinationColumnId) {
+    if (placement.sourceColumnId === placement.destinationColumnId) {
       await mutations.reorderCard.mutateAsync({
-        cardId: input.cardId,
-        columnId: input.destinationColumnId,
-        priority: input.destinationPriority,
-        prevCardId: prevId,
-        nextCardId: nextId,
-        expectedVersion: input.expectedVersion,
+        cardId: placement.cardId,
+        columnId: placement.destinationColumnId,
+        priority: placement.destinationPriority,
+        prevCardId: prevCard?.id ?? null,
+        nextCardId: nextCard?.id ?? null,
+        expectedVersion: placement.expectedVersion,
       });
       return;
     }
 
     await mutations.moveCard.mutateAsync({
-      cardId: input.cardId,
-      targetColumnId: input.destinationColumnId,
-      priority: input.destinationPriority,
-      prevCardId: prevId,
-      nextCardId: nextId,
-      expectedVersion: input.expectedVersion,
+      cardId: placement.cardId,
+      targetColumnId: placement.destinationColumnId,
+      priority: placement.destinationPriority,
+      prevCardId: prevCard?.id ?? null,
+      nextCardId: nextCard?.id ?? null,
+      expectedVersion: placement.expectedVersion,
     });
   };
 
-  const handleDragEnd = (result: import("@hello-pangea/dnd").DropResult) => {
-    if (!board || !result.destination) {
-      return;
-    }
-    const src = result.source.droppableId;
-    const dst = result.destination.droppableId;
-    const scopedSrc = src.startsWith(`${boardKey}::`) ? src.slice(`${boardKey}::`.length) : src;
-    const scopedDst = dst.startsWith(`${boardKey}::`) ? dst.slice(`${boardKey}::`.length) : dst;
-    const scopedDraggable = result.draggableId.startsWith(`${boardKey}::`)
-      ? result.draggableId.slice(`${boardKey}::`.length)
-      : result.draggableId;
-
-    const sourcePriorityGroup = parsePriorityGroupDroppableId(scopedSrc);
-    const destinationPriorityGroup = parsePriorityGroupDroppableId(scopedDst);
-
-    if (priorityGroupReorderEnabled && sourcePriorityGroup && destinationPriorityGroup) {
-      if (src === dst && result.source.index === result.destination.index) {
-        return;
-      }
-
-      const cardLocation = getCardPosition(board, scopedDraggable);
-      if (!cardLocation) {
-        return;
-      }
-
-      const placement = getPriorityGroupPlacement(board, {
-        cardId: scopedDraggable,
-        columnId: destinationPriorityGroup.columnId,
-        priority: destinationPriorityGroup.priority,
-        destinationIndex: result.destination.index,
-      });
-      if (!placement) {
-        return;
-      }
-
-      void commitCardPlacement(board, {
-        cardId: scopedDraggable,
-        sourceColumnId: cardLocation.column.id,
-        sourceIndex: cardLocation.cardIndex,
-        destinationColumnId: placement.columnId,
-        destinationIndex: placement.destinationIndex,
-        destinationPriority: destinationPriorityGroup.priority,
-        expectedVersion: cardLocation.card.version,
-      });
-      return;
-    }
-
-    if (filteredColumnReorderEnabled && result.type === "CARD") {
-      if (src === dst && result.source.index === result.destination.index) {
-        return;
-      }
-      if (scopedDst === "board-columns") {
-        return;
-      }
-      const cardLocation = getCardPosition(board, scopedDraggable);
-      if (!cardLocation) {
-        return;
-      }
-      const placement = getFilteredColumnPlacement(board, {
-        cardId: scopedDraggable,
-        columnId: scopedDst,
-        priority: search.priority,
-        destinationIndex: result.destination.index,
-      });
-      if (!placement) {
-        return;
-      }
-      void commitCardPlacement(board, {
-        cardId: scopedDraggable,
-        sourceColumnId: cardLocation.column.id,
-        sourceIndex: cardLocation.cardIndex,
-        destinationColumnId: placement.columnId,
-        destinationIndex: placement.destinationIndex,
-        expectedVersion: cardLocation.card.version,
-      });
-      return;
-    }
-
-    if (result.type === "COLUMN") {
-      if (!columnReorderEnabled && !priorityGroupReorderEnabled) {
-        return;
-      }
-      void commitColumnPlacement(board, scopedDraggable, result.destination.index);
-      return;
-    }
-
-    if (!columnReorderEnabled || result.type !== "CARD") {
-      return;
-    }
-    if (scopedDst === "board-columns") {
-      return;
-    }
-    const cardLocation = getCardPosition(board, scopedDraggable);
-    if (!cardLocation) {
-      return;
-    }
-    void commitCardPlacement(board, {
-      cardId: scopedDraggable,
-      sourceColumnId: scopedSrc,
-      sourceIndex: result.source.index,
-      destinationColumnId: scopedDst,
-      destinationIndex: result.destination.index,
-      expectedVersion: cardLocation.card.version,
-    });
-  };
-
-  if (boardQuery.isLoading && !boardQuery.data) {
+  if (structureQuery.isLoading && !structureQuery.data) {
     return (
       <YStack padding="$5" flex={1} minHeight={0}>
         <BoardStateCard
@@ -333,14 +255,16 @@ export function BoardPane({
     );
   }
 
-  if (boardQuery.isError && !boardQuery.data) {
+  if (structureQuery.isError && !structureQuery.data) {
     return (
       <YStack padding="$5" flex={1} minHeight={0}>
         <BoardStateCard
           title="We couldn’t load this board"
-          description={boardQuery.error.message}
+          description={structureQuery.error.message}
           actions={
-            <BoardActionButton onPress={() => void boardQuery.refetch()}>Retry</BoardActionButton>
+            <BoardActionButton onPress={() => void structureQuery.refetch()}>
+              Retry
+            </BoardActionButton>
           }
         />
       </YStack>
@@ -353,18 +277,18 @@ export function BoardPane({
 
   const showInlineBoardControls = role === "main" && !media.maxMd;
   const showTopControls =
-    Boolean(boardQuery.error) || Boolean(state.conflictMessage) || showInlineBoardControls;
+    Boolean(structureQuery.error) || Boolean(state.conflictMessage) || showInlineBoardControls;
 
   return (
     <YStack gap="$0" flex={1} minHeight={0} overflow="hidden">
       {showTopControls ? (
         <YStack padding="$5" paddingBottom="$0" gap="$4" flexShrink={0}>
-          {boardQuery.error ? (
+          {structureQuery.error ? (
             <BoardInlineNotice
               tone="warning"
               message="The latest board refresh failed. You’re still seeing the last loaded board state."
               actions={
-                <BoardActionButton tone="ghost" onPress={() => void boardQuery.refetch()}>
+                <BoardActionButton tone="ghost" onPress={() => void structureQuery.refetch()}>
                   Retry refresh
                 </BoardActionButton>
               }
@@ -410,7 +334,9 @@ export function BoardPane({
             onToggleGroupedBoardReorderEnabled={(enabled) => {
               dispatch(setGroupedBoardReorderEnabled(enabled));
             }}
-            onDragEnd={handleDragEnd}
+            onDragEnd={() => {
+              // DragDropContext lives at BoardWorkspaceScreen and routes through useDualBoardDnd.
+            }}
             onOpenCard={onOpenCard}
             onOpenCreateCard={(columnId) => onOpenCreateCard(boardId, columnId)}
             onRenameCardTitle={async (input) => {
@@ -485,6 +411,7 @@ export function BoardPane({
             availableTags={availableTags}
             onAddTag={onAddTag}
             onDetachTag={onDetachTag}
+            paginationByColumn={paginationByColumn}
           />
         </YStack>
       ) : (

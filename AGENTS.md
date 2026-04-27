@@ -33,6 +33,7 @@
 - Color is never the sole carrier of meaning (pair with text, shape, or iconography). Meet WCAG AA contrast on text and interactive surfaces.
 - Respect `prefers-reduced-motion` for any non-trivial animation or transition.
 - Live regions announce asynchronous state changes that matter (for example, "card moved", "save failed") via `aria-live="polite"` on a dedicated region rather than on the changing content itself.
+- Virtualized columns (board view) only render visible cards into the DOM. Off-screen cards are not reachable by Tab, screen readers, or browser find. The keyboard move-buttons on each card remain the accessible escape hatch — they do not depend on the virtualized DOM.
 
 ## Backend Conventions
 
