@@ -20,11 +20,12 @@ export default defineConfig({
             return "vendor-dnd";
           }
 
-          if (id.includes("react-dom")) {
-            return "vendor-react-dom";
-          }
-
-          if (id.includes("react/") || id.endsWith("react/index.js")) {
+          if (
+            id.includes("react-dom") ||
+            id.includes("react/") ||
+            id.endsWith("react/index.js") ||
+            id.includes("scheduler")
+          ) {
             return "vendor-react";
           }
 
