@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { and, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 
 import {
   cardPriorityValues,
@@ -603,6 +603,87 @@ export async function listCardsByBoard(input: {
             cardId: lastItem.id,
           }
         : null,
+  };
+}
+
+export async function listCardsByColumn(input: {
+  ownerId: string;
+  columnId: string;
+  priority?: CardPriority | CardPriority[];
+  limit: number;
+  cursor?: {
+    position: string;
+    cardId: string;
+  } | null;
+}): Promise<{
+  items: CardListItemRow[];
+  nextCursor: { position: string; cardId: string } | null;
+}> {
+  const ownedColumn = await getOwnedColumn(db, {
+    ownerId: input.ownerId,
+    columnId: input.columnId,
+  });
+  if (!ownedColumn) {
+    throw trpcErrors.notFound("Column not found");
+  }
+
+  const filters = [eq(cards.columnId, ownedColumn.id), isNull(cards.deletedAt)];
+
+  if (input.priority !== undefined) {
+    if (Array.isArray(input.priority)) {
+      if (input.priority.length === 0) {
+        return { items: [], nextCursor: null };
+      }
+      filters.push(inArray(cards.priority, input.priority));
+    } else {
+      filters.push(eq(cards.priority, input.priority));
+    }
+  }
+
+  if (input.cursor) {
+    filters.push(
+      or(
+        sql`${cards.position} > ${input.cursor.position}`,
+        and(eq(cards.position, input.cursor.position), sql`${cards.id} > ${input.cursor.cardId}`),
+      )!,
+    );
+  }
+
+  const rows = await db
+    .select({
+      id: cards.id,
+      columnId: cards.columnId,
+      columnTitle: columns.title,
+      title: cards.title,
+      description: cards.description,
+      priority: cards.priority,
+      position: cards.position,
+      version: cards.version,
+      updatedAt: cards.updatedAt,
+    })
+    .from(cards)
+    .innerJoin(columns, eq(cards.columnId, columns.id))
+    .where(and(...filters))
+    .orderBy(asc(cards.position), asc(cards.id))
+    .limit(input.limit + 1);
+
+  const hasMore = rows.length > input.limit;
+  const baseItems = hasMore ? rows.slice(0, input.limit) : rows;
+  const lastItem = baseItems.at(-1);
+
+  const tagMap = await listTagsForCards(db, {
+    ownerId: input.ownerId,
+    cardIds: baseItems.map((row) => row.id),
+  });
+
+  const items = baseItems.map((row) => ({
+    ...row,
+    tags: tagMap.get(row.id) ?? [],
+  }));
+
+  return {
+    items,
+    nextCursor: hasMore && lastItem ? { position: lastItem.position, cardId: lastItem.id } : null,
   };
 }
 

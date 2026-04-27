@@ -294,4 +294,74 @@ describe("card repo", () => {
     const c3Row = noFilter.items.find((row) => row.id === c3.id);
     assert.deepEqual(c3Row?.tags, []);
   }, 20000);
+
+  describe("listCardsByColumn", () => {
+    it("lists cards in position order across priorities (single page)", async () => {
+      if (!canRun) return;
+
+      process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
+
+      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createCard, listCardsByColumn } = await import("./repo");
+
+      const ownerId = randomUUID();
+      const board = await createBoard({ ownerId, name: "Column listing board" });
+      const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+      const columnId = loadedBoard?.columns[0]?.id;
+      assert.ok(columnId, "expected a starter column");
+
+      const a = await createCard({
+        ownerId,
+        columnId,
+        title: "a",
+        description: "",
+        priority: "low",
+      });
+      const b = await createCard({
+        ownerId,
+        columnId,
+        title: "b",
+        description: "",
+        priority: "low",
+      });
+      const c = await createCard({
+        ownerId,
+        columnId,
+        title: "c",
+        description: "",
+        priority: "low",
+      });
+      const d = await createCard({
+        ownerId,
+        columnId,
+        title: "d",
+        description: "",
+        priority: "high",
+      });
+      const e = await createCard({
+        ownerId,
+        columnId,
+        title: "e",
+        description: "",
+        priority: "high",
+      });
+
+      const listed = await listCardsByColumn({ ownerId, columnId, limit: 10 });
+
+      assert.equal(listed.nextCursor, null);
+      assert.equal(listed.items.length, 5);
+      assert.deepEqual(
+        listed.items.map((item) => item.id),
+        [a.id, b.id, c.id, d.id, e.id],
+      );
+      for (let i = 1; i < listed.items.length; i++) {
+        const prev = listed.items[i - 1]!;
+        const curr = listed.items[i]!;
+        assert.ok(
+          prev.position < curr.position || (prev.position === curr.position && prev.id < curr.id),
+          "expected (position, id) ascending order",
+        );
+      }
+    }, 20000);
+  });
 });
