@@ -9,9 +9,7 @@ describe("BoardListMode", () => {
     cleanup();
   });
 
-  it("renders card metadata and opens the selected card", () => {
-    const onOpenCard = vi.fn();
-
+  it("renders card metadata for the selected card", () => {
     render(
       <TamaguiRootProvider>
         <BoardListMode
@@ -35,7 +33,6 @@ describe("BoardListMode", () => {
           hasNextPage={false}
           onLoadMore={vi.fn()}
           availableTags={[]}
-          onOpenCard={onOpenCard}
           onDeleteCard={vi.fn().mockResolvedValue(undefined)}
           onAddTag={vi.fn().mockResolvedValue(undefined)}
           onDetachTag={vi.fn().mockResolvedValue(undefined)}
@@ -48,10 +45,7 @@ describe("BoardListMode", () => {
     expect(screen.getByText("To do")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Edit priority" })).toBeTruthy();
     expect(screen.getByLabelText("Card description")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Open" }));
-
-    expect(onOpenCard).toHaveBeenCalledWith("card-1");
+    expect(screen.queryByRole("button", { name: "Open" })).toBeNull();
   });
 
   it("keeps pagination and warning states available together", () => {
@@ -80,7 +74,6 @@ describe("BoardListMode", () => {
           hasNextPage
           onLoadMore={onLoadMore}
           availableTags={[]}
-          onOpenCard={vi.fn()}
           onDeleteCard={vi.fn().mockResolvedValue(undefined)}
           onAddTag={vi.fn().mockResolvedValue(undefined)}
           onDetachTag={vi.fn().mockResolvedValue(undefined)}

@@ -24,7 +24,6 @@ type BoardLaneViewProps = {
   groupedBoardReorderEnabled: boolean;
   dragHandleProps?: DraggableProvided["dragHandleProps"];
   availableTags: ReadonlyArray<CardTagsRowTag>;
-  onOpenCard: (cardId: string) => void;
   onDeleteCard: (input: { cardId: string; expectedVersion: number }) => Promise<void>;
   onOpenCreateCard: (columnId: string) => void;
   onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
@@ -65,7 +64,6 @@ export function BoardLaneView({
   groupedBoardReorderEnabled,
   dragHandleProps,
   availableTags,
-  onOpenCard,
   onDeleteCard,
   onOpenCreateCard,
   onAddTag,
@@ -145,7 +143,6 @@ export function BoardLaneView({
               bottomScrollPadding={bottomScrollPadding}
               dndScopeKey={dndScopeKey}
               availableTags={availableTags}
-              onOpenCard={onOpenCard}
               onDeleteCard={onDeleteCard}
               onMoveCard={onMoveCard}
               onAddTag={onAddTag}
@@ -160,7 +157,6 @@ export function BoardLaneView({
             hasActivePriorityFilters={hasActivePriorityFilters}
             groupedBoardReorderEnabled={groupedBoardReorderEnabled}
             availableTags={availableTags}
-            onOpenCard={onOpenCard}
             onDeleteCard={onDeleteCard}
             onMoveCard={onMoveCard}
             onMovePriorityGroupCard={onMovePriorityGroupCard}

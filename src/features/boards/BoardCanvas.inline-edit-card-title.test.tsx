@@ -59,7 +59,6 @@ describe("BoardCanvas inline card title edit", () => {
           groupedBoardReorderEnabled={false}
           onToggleGroupedBoardReorderEnabled={vi.fn()}
           onDragEnd={vi.fn()}
-          onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
           onDeleteCard={vi.fn().mockResolvedValue(undefined)}
           onRenameCardTitle={onRenameCardTitle}
@@ -104,7 +103,6 @@ describe("BoardCanvas inline card title edit", () => {
           groupedBoardReorderEnabled={false}
           onToggleGroupedBoardReorderEnabled={vi.fn()}
           onDragEnd={vi.fn()}
-          onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
           onDeleteCard={vi.fn().mockResolvedValue(undefined)}
           onRenameCardTitle={onRenameCardTitle}
@@ -142,9 +140,7 @@ describe("BoardCanvas inline card title edit", () => {
     });
   });
 
-  it("Open still works: clicking Open calls onOpenCard and does not focus the title input", () => {
-    const onOpenCard = vi.fn();
-
+  it("no Open button is rendered on cards", () => {
     render(
       <TamaguiRootProvider>
         <BoardCanvas
@@ -154,7 +150,6 @@ describe("BoardCanvas inline card title edit", () => {
           groupedBoardReorderEnabled={false}
           onToggleGroupedBoardReorderEnabled={vi.fn()}
           onDragEnd={vi.fn()}
-          onOpenCard={onOpenCard}
           onOpenCreateCard={vi.fn()}
           onDeleteCard={vi.fn().mockResolvedValue(undefined)}
           onRenameCardTitle={vi.fn().mockResolvedValue(undefined)}
@@ -171,13 +166,6 @@ describe("BoardCanvas inline card title edit", () => {
       </TamaguiRootProvider>,
     );
 
-    const titleInput = screen.getByRole("textbox", { name: /card title/i });
-    expect(document.activeElement).not.toBe(titleInput);
-
-    const openButton = screen.getByRole("button", { name: /^open$/i });
-    fireEvent.click(openButton);
-
-    expect(onOpenCard).toHaveBeenCalledWith("card-1");
-    expect(document.activeElement).not.toBe(titleInput);
+    expect(screen.queryByRole("button", { name: /^open$/i })).toBeNull();
   });
 });

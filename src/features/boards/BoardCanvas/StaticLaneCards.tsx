@@ -26,7 +26,6 @@ type StaticLaneCardsProps = {
   hasActivePriorityFilters: boolean;
   groupedBoardReorderEnabled: boolean;
   availableTags: ReadonlyArray<CardTagsRowTag>;
-  onOpenCard: (cardId: string) => void;
   onDeleteCard: (input: { cardId: string; expectedVersion: number }) => Promise<void>;
   onMoveCard: (cardId: string, direction: Direction) => void;
   onMovePriorityGroupCard: (
@@ -53,7 +52,6 @@ export function StaticLaneCards({
   hasActivePriorityFilters,
   groupedBoardReorderEnabled,
   availableTags,
-  onOpenCard,
   onDeleteCard,
   onMoveCard,
   onMovePriorityGroupCard,
@@ -86,7 +84,6 @@ export function StaticLaneCards({
             showDivider={index > 0}
             canReorder={groupedBoardReorderEnabled}
             availableTags={availableTags}
-            onOpenCard={onOpenCard}
             onDeleteCard={onDeleteCard}
             onMoveCard={onMoveCard}
             onMovePriorityGroupCard={onMovePriorityGroupCard}
@@ -123,7 +120,6 @@ export function StaticLaneCards({
           showColumnContext={false}
           canMove={false}
           availableTags={availableTags}
-          onOpen={() => onOpenCard(card.id)}
           onDelete={() => onDeleteCard({ cardId: card.id, expectedVersion: card.version })}
           onMove={onMoveCard}
           onAddTag={onAddTag}
@@ -146,7 +142,6 @@ function PriorityGroupSection({
   showDivider,
   canReorder,
   availableTags,
-  onOpenCard,
   onDeleteCard,
   onMoveCard,
   onMovePriorityGroupCard,
@@ -161,7 +156,6 @@ function PriorityGroupSection({
   showDivider: boolean;
   canReorder: boolean;
   availableTags: ReadonlyArray<CardTagsRowTag>;
-  onOpenCard: (cardId: string) => void;
   onDeleteCard: StaticLaneCardsProps["onDeleteCard"];
   onMoveCard: (cardId: string, direction: Direction) => void;
   onMovePriorityGroupCard: (
@@ -245,7 +239,6 @@ function PriorityGroupSection({
                           moveDirections={["up", "down"]}
                           dragHandleProps={cardProvided.dragHandleProps}
                           availableTags={availableTags}
-                          onOpen={() => onOpenCard(card.id)}
                           onDelete={() =>
                             onDeleteCard({ cardId: card.id, expectedVersion: card.version })
                           }
@@ -279,7 +272,6 @@ function PriorityGroupSection({
               showColumnContext={false}
               canMove={false}
               availableTags={availableTags}
-              onOpen={() => onOpenCard(card.id)}
               onDelete={() => onDeleteCard({ cardId: card.id, expectedVersion: card.version })}
               onMove={onMoveCard}
               onAddTag={onAddTag}

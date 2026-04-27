@@ -28,7 +28,6 @@ type CardInteriorProps = {
   moveDirections?: Array<Direction>;
   dragHandleProps?: DraggableProvided["dragHandleProps"];
   availableTags: ReadonlyArray<CardTagsRowTag>;
-  onOpen: () => void;
   onDelete: () => void | Promise<void>;
   onMove: (cardId: string, direction: Direction) => void;
   onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
@@ -50,7 +49,6 @@ const CardInteriorImpl = ({
   moveDirections = ["up", "down", "left", "right"],
   dragHandleProps,
   availableTags,
-  onOpen,
   onDelete,
   onMove,
   onAddTag,
@@ -290,9 +288,6 @@ const CardInteriorImpl = ({
         </YStack>
 
         <XStack gap="$2" flexWrap="wrap" alignItems="center">
-          <BoardActionButton tone="ghost" onPress={onOpen}>
-            Open
-          </BoardActionButton>
           <BoardActionButton
             tone={confirmDelete ? "danger" : "ghost"}
             disabled={isDeleting}
@@ -348,7 +343,6 @@ const CardPreviewImpl = ({
   showColumnContext,
   canMove,
   availableTags,
-  onOpen,
   onDelete,
   onMove,
   onAddTag,
@@ -359,7 +353,6 @@ const CardPreviewImpl = ({
   showColumnContext: boolean;
   canMove: boolean;
   availableTags: ReadonlyArray<CardTagsRowTag>;
-  onOpen: () => void;
   onDelete: () => void | Promise<void>;
   onMove: (cardId: string, direction: Direction) => void;
   onAddTag: CardInteriorProps["onAddTag"];
@@ -373,7 +366,6 @@ const CardPreviewImpl = ({
         showColumnContext={showColumnContext}
         canMove={canMove}
         availableTags={availableTags}
-        onOpen={onOpen}
         onDelete={onDelete}
         onMove={onMove}
         onAddTag={onAddTag}

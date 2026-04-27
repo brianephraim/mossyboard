@@ -13,7 +13,6 @@ type BoardListModeProps = Readonly<{
   hasNextPage: boolean;
   onLoadMore: () => void;
   availableTags: ReadonlyArray<CardTagsRowTag>;
-  onOpenCard: (cardId: string) => void;
   onDeleteCard: (input: { cardId: string; expectedVersion: number }) => Promise<void>;
   onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
   onDetachTag: (input: { cardId: string; tagId: string }) => Promise<void>;
@@ -34,7 +33,6 @@ export function BoardListMode({
   hasNextPage,
   onLoadMore,
   availableTags,
-  onOpenCard,
   onDeleteCard,
   onAddTag,
   onDetachTag,
@@ -86,7 +84,6 @@ export function BoardListMode({
             showColumnContext
             canMove={false}
             availableTags={availableTags}
-            onOpen={() => onOpenCard(card.id)}
             onDelete={() => onDeleteCard({ cardId: card.id, expectedVersion: card.version })}
             onMove={() => {
               // List view doesn't support moving cards (keyboard or drag). Board view owns reordering.

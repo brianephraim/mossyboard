@@ -43,7 +43,6 @@ type BoardPaneProps = {
   availableTags: ReadonlyArray<CardTagsRowTag>;
   onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
   onDetachTag: (input: { cardId: string; tagId: string }) => Promise<void>;
-  onOpenCard: (cardId: string) => void;
   onOpenCreateCard: (boardId: string, columnId: string) => void;
   onOpenCreateColumn: (boardId: string, afterColumnId: string | null) => void;
   bottomScrollPadding?: number;
@@ -69,7 +68,6 @@ export function BoardPane({
   availableTags,
   onAddTag,
   onDetachTag,
-  onOpenCard,
   onOpenCreateCard,
   onOpenCreateColumn,
   bottomScrollPadding,
@@ -337,7 +335,6 @@ export function BoardPane({
             onDragEnd={() => {
               // DragDropContext lives at BoardWorkspaceScreen and routes through useDualBoardDnd.
             }}
-            onOpenCard={onOpenCard}
             onDeleteCard={async (input) => {
               await mutations.softDeleteCard.mutateAsync(input);
             }}
@@ -436,7 +433,6 @@ export function BoardPane({
               void listQuery.fetchNextPage();
             }}
             availableTags={availableTags}
-            onOpenCard={onOpenCard}
             onDeleteCard={async (input) => {
               await mutations.softDeleteCard.mutateAsync(input);
             }}

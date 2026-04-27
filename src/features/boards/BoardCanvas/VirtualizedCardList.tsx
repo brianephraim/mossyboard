@@ -25,7 +25,6 @@ type Props = {
   bottomScrollPadding?: number;
   dndScopeKey?: BoardKey;
   availableTags: ReadonlyArray<CardTagsRowTag>;
-  onOpenCard: (cardId: string) => void;
   onDeleteCard: (input: { cardId: string; expectedVersion: number }) => Promise<void>;
   onMoveCard: (cardId: string, direction: Direction) => void;
   onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
@@ -138,7 +137,6 @@ export function VirtualizedCardList({
   bottomScrollPadding,
   dndScopeKey,
   availableTags,
-  onOpenCard,
   onDeleteCard,
   onMoveCard,
   onAddTag,
@@ -186,7 +184,6 @@ export function VirtualizedCardList({
             canMove
             dragHandleProps={provided.dragHandleProps}
             availableTags={availableTags}
-            onOpen={() => onOpenCard(card.id)}
             onDelete={() => onDeleteCard({ cardId: card.id, expectedVersion: card.version })}
             onMove={onMoveCard}
             onAddTag={onAddTag}
@@ -238,7 +235,6 @@ export function VirtualizedCardList({
                       canMove
                       dragHandleProps={cardProvided.dragHandleProps}
                       availableTags={availableTags}
-                      onOpen={() => onOpenCard(card.id)}
                       onDelete={() =>
                         onDeleteCard({ cardId: card.id, expectedVersion: card.version })
                       }

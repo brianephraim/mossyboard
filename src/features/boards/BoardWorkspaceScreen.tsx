@@ -544,7 +544,6 @@ export function BoardWorkspaceScreen({
               availableTags={availableTags}
               onAddTag={mainTagMutations.addTag}
               onDetachTag={mainTagMutations.detachTag}
-              onOpenCard={(cardId) => updateRouteSearch({ card: cardId })}
               onOpenCreateCard={(targetBoardId, columnId) =>
                 setCreateCardTarget({ boardId: targetBoardId, columnId })
               }
@@ -629,7 +628,6 @@ export function BoardWorkspaceScreen({
                   availableTags={availableTags}
                   onAddTag={drawerTagMutations.addTag}
                   onDetachTag={drawerTagMutations.detachTag}
-                  onOpenCard={(cardId) => updateRouteSearch({ card: cardId })}
                   onOpenCreateCard={(targetBoardId, columnId) =>
                     setCreateCardTarget({ boardId: targetBoardId, columnId })
                   }
