@@ -1,8 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 
 import type { ColumnCardsSlice } from "./keys";
 import type { ColumnCardItem } from "./useColumnCards";
 import { useColumnCards } from "./useColumnCards";
+
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 export type SlicePagination = {
   hasNextPage: boolean;
@@ -33,7 +35,12 @@ export function SliceHydrator({
 }>) {
   const { items, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useColumnCards(slice);
-  useEffect(() => {
+  // Use a layout effect for items so that when an optimistic patch updates the
+  // query cache (e.g. on drag-and-drop drop), the parent state setter fires
+  // synchronously before paint. Otherwise @hello-pangea/dnd finishes its drop
+  // animation before the parent re-renders the new card order, causing a
+  // visible "snap back to original then snap to new" flicker.
+  useIsomorphicLayoutEffect(() => {
     onItemsChange(slice.columnId, sliceKey, items, { isLoading, error });
   }, [slice.columnId, sliceKey, items, isLoading, error, onItemsChange]);
   useEffect(() => {

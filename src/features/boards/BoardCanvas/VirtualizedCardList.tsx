@@ -1,6 +1,8 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useState } from "react";
+import type { ItemProps } from "react-virtuoso";
 import { Virtuoso } from "react-virtuoso";
 
 import type { BoardLane, CardPriority } from "../types";
@@ -41,6 +43,45 @@ const VIRTUOSO_STYLE: CSSProperties = {
   flex: "1 1 auto",
   minHeight: 0,
 };
+
+// Virtuoso lays items out by stacking — an item that goes `position: fixed`
+// (which is what `@hello-pangea/dnd` does to the dragged Draggable on drag
+// start) collapses its slot to height 0, and every item below it snaps
+// upward in a single un-animated reflow. This wrapper, lifted from
+// Virtuoso's official `@hello-pangea/dnd` recipe, remembers the last
+// non-zero rendered height of each item so the slot stays put while the
+// inner content is removed from flow.
+//
+// `display: flow-root` establishes a new block formatting context so the
+// inner card shell's `marginBottom` (which provides the inter-card gap) is
+// contained inside this wrapper's measured `getBoundingClientRect()` height
+// — i.e. Virtuoso's `data-known-size` includes the gap, and our retained
+// `min-height` does too. We deliberately keep that gap on the Draggable
+// shell as `marginBottom` (instead of moving it into the wrapper) so
+// `@hello-pangea/dnd`'s sibling-displacement math, which sums each
+// Draggable's border-box height **plus** computed margins, shifts the
+// neighbouring card by the full slot distance when this card lifts out.
+function HeightPreservingItem({ children, style, item: _item, ...rest }: ItemProps<CardItem>) {
+  const knownSize = rest["data-known-size"];
+  const [size, setSize] = useState(0);
+  useEffect(() => {
+    if (typeof knownSize === "number" && knownSize > 0) {
+      setSize(knownSize);
+    }
+  }, [knownSize]);
+  return (
+    <div
+      {...rest}
+      style={{
+        ...style,
+        display: "flow-root",
+        minHeight: size > 0 ? `${size}px` : undefined,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function VirtualizedCardList({
   columnId,
@@ -140,6 +181,7 @@ export function VirtualizedCardList({
               </Draggable>
             )}
             components={{
+              Item: HeightPreservingItem,
               Footer: () => (provided.placeholder ?? null) as ReactNode,
             }}
           />
