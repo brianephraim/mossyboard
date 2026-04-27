@@ -46,4 +46,28 @@ const result = spawnSync("npx", ["drizzle-kit", "migrate"], {
   env: process.env,
 });
 
+// `drizzle-kit migrate` swallows the underlying Postgres error: its spinner
+// overwrites stderr on the same line and the CLI exits with a bare non-zero
+// code. When that happens against a local database, re-run the same migration
+// step via the postgres-js migrator so the developer can actually see what
+// failed (e.g. a duplicate index, a hash mismatch, or a connection problem).
+if (result.status !== 0 && isLocal) {
+  console.error("");
+  console.error("drizzle-kit migrate exited non-zero. Re-running inline to surface the error...");
+  console.error("");
+  const { default: postgres } = await import("postgres");
+  const { drizzle } = await import("drizzle-orm/postgres-js");
+  const { migrate } = await import("drizzle-orm/postgres-js/migrator");
+  const sql = postgres(databaseUrl, { max: 1, prepare: false });
+  try {
+    await migrate(drizzle(sql), { migrationsFolder: "./drizzle/pg" });
+    console.error("Inline migrator succeeded; treating drizzle-kit failure as transient.");
+  } catch (err) {
+    console.error(err);
+    process.exit(result.status ?? 1);
+  } finally {
+    await sql.end({ timeout: 2 });
+  }
+}
+
 process.exit(result.status ?? 1);
