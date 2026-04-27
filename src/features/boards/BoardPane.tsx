@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Text, useMedia } from "@tamagui/core";
+import { useMedia } from "@tamagui/core";
 import { YStack } from "@tamagui/stacks";
 
 import {
@@ -9,6 +9,7 @@ import {
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { trpc } from "../../trpc/client";
 import { BoardCanvas } from "./BoardCanvas";
+import { BoardListMode } from "./BoardListMode";
 import { canReorderBoard, getCardPosition, getColumnPosition, getNeighborIds } from "./model";
 import {
   getFilteredColumnPlacement,
@@ -489,7 +490,7 @@ export function BoardPane({
       ) : (
         <YStack
           padding="$5"
-          paddingTop="$0"
+          paddingTop="$4"
           paddingBottom="$5"
           flex={1}
           minHeight={0}
@@ -514,80 +515,6 @@ export function BoardPane({
           />
         </YStack>
       )}
-    </YStack>
-  );
-}
-
-function BoardListMode({
-  listItems,
-  isLoading,
-  isLoadingMore,
-  errorMessage,
-  hasNextPage,
-  onLoadMore,
-  onOpenCard,
-}: Readonly<{
-  listItems: Array<{
-    id: string;
-    title: string;
-    description: string;
-    priority: CardPriority;
-    columnTitle: string;
-  }>;
-  isLoading: boolean;
-  isLoadingMore: boolean;
-  errorMessage: string | null;
-  hasNextPage: boolean;
-  onLoadMore: () => void;
-  onOpenCard: (cardId: string) => void;
-}>) {
-  if (isLoading) {
-    return (
-      <BoardStateCard
-        title="Loading matching cards"
-        description="We’re building the flat list view for the current board filters."
-      />
-    );
-  }
-
-  if (errorMessage && listItems.length === 0) {
-    return (
-      <BoardStateCard title="We couldn’t load the matching cards" description={errorMessage} />
-    );
-  }
-
-  if (listItems.length === 0) {
-    return (
-      <BoardStateCard
-        title="No matching cards"
-        description="Adjust the active priority filters or switch back to board view to continue."
-      />
-    );
-  }
-
-  return (
-    <YStack gap="$3">
-      {errorMessage ? <BoardInlineNotice tone="warning" message={errorMessage} /> : null}
-      {listItems.map((card) => (
-        <YStack key={card.id} gap="$2">
-          <Text fontWeight="700" color="$boardHeading">
-            {card.title}
-          </Text>
-          <Text color="$boardTextMuted">{card.columnTitle}</Text>
-          <Text color="$boardTextMuted">
-            {card.description || "No description yet. Open the card to add more detail."}
-          </Text>
-          <BoardActionButton tone="ghost" onPress={() => onOpenCard(card.id)}>
-            Open card
-          </BoardActionButton>
-        </YStack>
-      ))}
-
-      {hasNextPage ? (
-        <BoardActionButton tone="accent" onPress={onLoadMore}>
-          {isLoadingMore ? "Loading more…" : "Load more"}
-        </BoardActionButton>
-      ) : null}
     </YStack>
   );
 }

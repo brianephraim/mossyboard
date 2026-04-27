@@ -16,6 +16,7 @@ import { trpc } from "../../trpc/client";
 import { BoardShell } from "./BoardShell";
 import { BoardControlsPanel } from "./BoardControlsPanel";
 import { BoardCanvas } from "./BoardCanvas";
+import { BoardListMode } from "./BoardListMode";
 import { CardDetailSurface } from "./CardDetailSurface";
 import { EditableBoardTitle } from "./EditableBoardTitle";
 import {
@@ -41,7 +42,6 @@ import {
   BoardLiveRegion,
   BoardStateCard,
   BoardSurface,
-  PriorityPill,
 } from "./ui";
 import { useTagMutations } from "./useTagMutations";
 
@@ -883,7 +883,7 @@ export function BoardDetailScreen({
             />
           </YStack>
         ) : (
-          <YStack padding="$5" paddingTop="$0" flex={1} minHeight={0} overflow="scroll">
+          <YStack padding="$5" paddingTop="$4" flex={1} minHeight={0} overflow="scroll">
             <BoardListMode
               listItems={listItems}
               isLoading={listQuery.isLoading && !listQuery.data}
@@ -1306,87 +1306,6 @@ export function BoardDetailScreen({
         </FormRoot>
       </PrettyModalWrap>
     </>
-  );
-}
-
-function BoardListMode({
-  listItems,
-  isLoading,
-  isLoadingMore,
-  errorMessage,
-  hasNextPage,
-  onLoadMore,
-  onOpenCard,
-}: Readonly<{
-  listItems: Array<{
-    id: string;
-    title: string;
-    description: string;
-    priority: CardPriority;
-    columnTitle: string;
-  }>;
-  isLoading: boolean;
-  isLoadingMore: boolean;
-  errorMessage: string | null;
-  hasNextPage: boolean;
-  onLoadMore: () => void;
-  onOpenCard: (cardId: string) => void;
-}>) {
-  if (isLoading) {
-    return (
-      <BoardStateCard
-        title="Loading matching cards"
-        description="We’re building the flat list view for the current board filters."
-      />
-    );
-  }
-
-  if (errorMessage && listItems.length === 0) {
-    return (
-      <BoardStateCard title="We couldn’t load the matching cards" description={errorMessage} />
-    );
-  }
-
-  if (listItems.length === 0) {
-    return (
-      <BoardStateCard
-        title="No matching cards"
-        description="Adjust the active priority filters or switch back to board view to continue."
-      />
-    );
-  }
-
-  return (
-    <YStack gap="$3">
-      {errorMessage ? <BoardInlineNotice tone="warning" message={errorMessage} /> : null}
-      {listItems.map((card) => (
-        <BoardSurface key={card.id} padding="$4">
-          <YStack gap="$3">
-            <XStack alignItems="center" justifyContent="space-between" gap="$3" flexWrap="wrap">
-              <YStack gap="$1" flex={1}>
-                <Text fontWeight="700" color="$boardHeading">
-                  {card.title}
-                </Text>
-                <Text color="$boardTextMuted">{card.columnTitle}</Text>
-              </YStack>
-              <PriorityPill priority={card.priority} />
-            </XStack>
-            <Text color="$boardTextMuted">
-              {card.description || "No description yet. Open the card to add more detail."}
-            </Text>
-            <BoardActionButton tone="ghost" onPress={() => onOpenCard(card.id)}>
-              Open card
-            </BoardActionButton>
-          </YStack>
-        </BoardSurface>
-      ))}
-
-      {hasNextPage ? (
-        <BoardActionButton tone="accent" onPress={onLoadMore}>
-          {isLoadingMore ? "Loading more…" : "Load more"}
-        </BoardActionButton>
-      ) : null}
-    </YStack>
   );
 }
 
