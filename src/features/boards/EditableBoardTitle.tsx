@@ -27,7 +27,7 @@ export function EditableBoardTitle({
             height: "100%",
             color: "$boardHeading",
             fontFamily: "$heading",
-            fontSize: "$10",
+            fontSize: "$9",
             fontWeight: "700",
             borderWidth: 1,
             borderRadius: "$4",

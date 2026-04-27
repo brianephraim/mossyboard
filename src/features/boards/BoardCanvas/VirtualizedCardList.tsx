@@ -1,13 +1,13 @@
 import type { DraggableProvided } from "@hello-pangea/dnd";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ItemProps } from "react-virtuoso";
 import { Virtuoso } from "react-virtuoso";
 
 import type { BoardLane, CardPriority } from "../types";
 import type { BoardKey } from "../useDualBoardDnd";
-import { scopeId } from "../useDualBoardDnd";
+import { parseScopedId, scopeId } from "../useDualBoardDnd";
 import { CardInterior } from "./CardInterior";
 import type { CardTagsRowTag } from "./CardTagsRow";
 import { dndCardListStyle, dndCardShellStyle, mergeDraggableStyle } from "./layout";
@@ -101,6 +101,23 @@ export function VirtualizedCardList({
   const droppableId = scoped(columnId);
   const cardArray = cards as ReadonlyArray<CardItem>;
 
+  // Keep a stable id→card map so `renderClone` can always resolve the dragged
+  // card — including during the drop animation that follows a programmatic
+  // (edge-button) drag. With our synchronous TanStack Query notifier, the
+  // optimistic patch reorders (or, for cross-column moves, removes) the card
+  // from `cardArray` before hello-pangea calls `renderClone(rubric)`. Looking
+  // up by `rubric.source.index` would then return the wrong card or
+  // `undefined`, which is what made the moved card "teleport" into the new
+  // slot instead of riding the drop animation.
+  //
+  // We accumulate (never delete) so a card that was removed from this column
+  // by a cross-column patch is still resolvable while its drop animation
+  // plays out from this Droppable's clone.
+  const cardByIdRef = useRef<Map<string, CardItem>>(new Map());
+  for (const card of cardArray) {
+    cardByIdRef.current.set(card.id, card);
+  }
+
   return (
     <Droppable
       droppableId={droppableId}
@@ -108,7 +125,9 @@ export function VirtualizedCardList({
       mode="virtual"
       ignoreContainerClipping
       renderClone={(provided, _snapshot, rubric) => {
-        const card = cardArray[rubric.source.index];
+        const unscoped = parseScopedId(rubric.draggableId);
+        const cardId = unscoped ? unscoped.id : rubric.draggableId;
+        const card = cardByIdRef.current.get(cardId) ?? cardArray[rubric.source.index];
         if (!card) {
           return <div ref={provided.innerRef} {...provided.draggableProps} />;
         }
