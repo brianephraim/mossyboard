@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import type { ReactNode } from "react";
-import { lazy, Suspense } from "react";
+import { StrictMode, lazy, Suspense } from "react";
 import {
   HeadContent,
   Outlet,
@@ -48,19 +48,21 @@ function RootComponent() {
 
   return (
     <RootDocument>
-      <Providers>
-        <TamaguiRootProvider>
-          <AuthAnnounceProvider>
-            <PortalProvider shouldAddRootHost>
-              {shouldHideScaffoldNav ? null : <AppNav />}
-              <Outlet />
-              <Suspense fallback={null}>
-                <TrpcAuthErrorBridge />
-              </Suspense>
-            </PortalProvider>
-          </AuthAnnounceProvider>
-        </TamaguiRootProvider>
-      </Providers>
+      <StrictMode>
+        <Providers>
+          <TamaguiRootProvider>
+            <AuthAnnounceProvider>
+              <PortalProvider shouldAddRootHost>
+                {shouldHideScaffoldNav ? null : <AppNav />}
+                <Outlet />
+                <Suspense fallback={null}>
+                  <TrpcAuthErrorBridge />
+                </Suspense>
+              </PortalProvider>
+            </AuthAnnounceProvider>
+          </TamaguiRootProvider>
+        </Providers>
+      </StrictMode>
     </RootDocument>
   );
 }

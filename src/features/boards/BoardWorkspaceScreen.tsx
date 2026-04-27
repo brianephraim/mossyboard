@@ -292,14 +292,24 @@ export function BoardWorkspaceScreen({
   const [mainSlicePagination, setMainSlicePagination] = useState<SlicePaginationByColumn>({});
   const [drawerSlicePagination, setDrawerSlicePagination] = useState<SlicePaginationByColumn>({});
 
-  useEffect(() => {
+  // Clear slice state when the pane switches boards. This runs in render (not a
+  // post-paint effect) so the reset happens before child SliceHydrators commit.
+  // Otherwise the clear races: SliceHydrator's useLayoutEffect populates the state
+  // first, then this effect clears it; if the cached query data is byte-identical
+  // (react-query structural sharing keeps the items reference stable), the
+  // SliceHydrator's effect won't refire and the cards stay invisible.
+  const prevMainBoardIdRef = useRef(boardId);
+  if (prevMainBoardIdRef.current !== boardId) {
+    prevMainBoardIdRef.current = boardId;
     setMainSliceItems({});
     setMainSlicePagination({});
-  }, [boardId]);
-  useEffect(() => {
+  }
+  const prevDrawerBoardIdRef = useRef(drawerBoardId);
+  if (prevDrawerBoardIdRef.current !== drawerBoardId) {
+    prevDrawerBoardIdRef.current = drawerBoardId;
     setDrawerSliceItems({});
     setDrawerSlicePagination({});
-  }, [drawerBoardId]);
+  }
 
   const handleMainSliceChange = useCallback(
     (columnId: string, sliceKey: string, items: ColumnCardItem[]) => {
