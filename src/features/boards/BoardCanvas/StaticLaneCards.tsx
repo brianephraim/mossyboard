@@ -185,6 +185,7 @@ function PriorityGroupSection({
         />
         <Text
           tag="h3"
+          fontFamily="$heading"
           fontSize="$2"
           fontWeight="700"
           color="$boardTextMuted"

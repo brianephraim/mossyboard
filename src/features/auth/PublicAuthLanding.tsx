@@ -6,6 +6,7 @@ import { XStack, YStack } from "@tamagui/stacks";
 import mossyboardIconUrl from "../../assets/branding/mossyboard-icon.png";
 import { parseSafeRedirectTo } from "../../auth/searchParams";
 import { useAuthSession, useRequiresEmailVerification } from "../../auth/session";
+import { brandTextFontFamily } from "../../tamagui/fontFamilies";
 import { BoardActionButton, BoardPageChrome, BoardPill, BoardSurface } from "../boards/ui";
 
 type PublicAuthLandingProps = Readonly<{
@@ -106,7 +107,12 @@ export function PublicAuthLanding({ redirectTo }: PublicAuthLandingProps) {
                 aria-hidden
               />
               <YStack gap="$1">
-                <Text fontSize="$10" fontWeight="800" color="$boardHeading">
+                <Text
+                  fontFamily={brandTextFontFamily}
+                  fontSize="$10"
+                  fontWeight="400"
+                  color="$boardHeading"
+                >
                   Mossyboard
                 </Text>
                 <Text fontSize="$4" color="$boardTextMuted">
@@ -117,7 +123,13 @@ export function PublicAuthLanding({ redirectTo }: PublicAuthLandingProps) {
 
             <YStack gap="$3" maxWidth={620}>
               <YStack ref={headingRef} tabIndex={-1} tag="h1">
-                <Text fontSize="$12" fontWeight="800" color="$boardHeading" lineHeight="$11">
+                <Text
+                  fontFamily="$heading"
+                  fontSize="$12"
+                  fontWeight="700"
+                  color="$boardHeading"
+                  lineHeight="$11"
+                >
                   Tidy up the day and keep the board in view.
                 </Text>
               </YStack>
@@ -165,7 +177,13 @@ export function PublicAuthLanding({ redirectTo }: PublicAuthLandingProps) {
               >
                 Start here
               </Text>
-              <Text tag="h2" fontSize="$8" fontWeight="800" color="$boardHeading">
+              <Text
+                tag="h2"
+                fontFamily="$heading"
+                fontSize="$8"
+                fontWeight="700"
+                color="$boardHeading"
+              >
                 Sign in or create your account
               </Text>
               <Text fontSize="$4" lineHeight="$5" color="$boardTextMuted">
@@ -234,7 +252,12 @@ function LandingStatusState({
               aria-hidden
             />
             <YStack gap="$1">
-              <Text fontSize="$9" fontWeight="800" color="$boardHeading">
+              <Text
+                fontFamily={brandTextFontFamily}
+                fontSize="$9"
+                fontWeight="400"
+                color="$boardHeading"
+              >
                 Mossyboard
               </Text>
               <Text color="$boardTextMuted">Steady, green, and focused.</Text>
@@ -242,7 +265,13 @@ function LandingStatusState({
           </XStack>
 
           <YStack gap="$2">
-            <Text tag="h1" fontSize="$8" fontWeight="800" color="$boardHeading">
+            <Text
+              tag="h1"
+              fontFamily="$heading"
+              fontSize="$8"
+              fontWeight="700"
+              color="$boardHeading"
+            >
               {title}
             </Text>
             <Text fontSize="$4" lineHeight="$5" color="$boardTextMuted">

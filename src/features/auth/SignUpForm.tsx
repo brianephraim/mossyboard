@@ -60,8 +60,9 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
         ref={formHeadingRef as RefObject<HTMLSpanElement>}
         tabIndex={-1}
         tag="h2"
+        fontFamily="$heading"
         fontSize="$8"
-        fontWeight="800"
+        fontWeight="700"
         color="$color12"
       >
         Create account

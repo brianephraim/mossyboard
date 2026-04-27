@@ -70,6 +70,12 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en" style={{ margin: 0 }}>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Chewy&family=Inter:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700&display=swap"
+        />
         <HeadContent />
       </head>
       <body style={{ margin: 0, padding: 0 }}>

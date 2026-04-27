@@ -110,7 +110,8 @@ export function BoardLaneView({
                   />
                   <Text
                     tag="h2"
-                    fontWeight="800"
+                    fontFamily="$heading"
+                    fontWeight="700"
                     color="$boardHeading"
                     fontSize="$6"
                     numberOfLines={1}

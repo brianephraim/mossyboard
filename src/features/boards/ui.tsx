@@ -157,8 +157,9 @@ export function BoardSectionHeading({
               {typeof title === "string" ? (
                 <Text
                   tag="h1"
+                  fontFamily="$heading"
                   fontSize="$10"
-                  fontWeight="800"
+                  fontWeight="700"
                   color="$boardHeading"
                   lineHeight="$9"
                   numberOfLines={1}
@@ -173,7 +174,14 @@ export function BoardSectionHeading({
             {actions}
           </XStack>
         ) : typeof title === "string" ? (
-          <Text tag="h1" fontSize="$10" fontWeight="800" color="$boardHeading" lineHeight="$9">
+          <Text
+            tag="h1"
+            fontFamily="$heading"
+            fontSize="$10"
+            fontWeight="700"
+            color="$boardHeading"
+            lineHeight="$9"
+          >
             {title}
           </Text>
         ) : (
@@ -264,7 +272,7 @@ export function BoardStateCard({
     <BoardSurface padding="$6">
       <YStack gap="$4" alignItems="flex-start">
         <YStack gap="$2">
-          <Text tag="h2" fontSize="$8" fontWeight="700" color="$boardHeading">
+          <Text tag="h2" fontFamily="$heading" fontSize="$8" fontWeight="700" color="$boardHeading">
             {title}
           </Text>
           <Text color="$boardTextMuted" fontSize="$5" maxWidth={620}>

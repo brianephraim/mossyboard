@@ -18,6 +18,7 @@ type InlineRenameInputProps = Omit<
 > & {
   // Tamagui style props (web/native unions) aren't always reflected on the
   // `Input` component props type, but they are supported at runtime.
+  fontFamily?: unknown;
   fontSize?: unknown;
   fontWeight?: unknown;
   color?: unknown;

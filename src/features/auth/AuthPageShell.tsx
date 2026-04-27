@@ -6,6 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import mossyboardIconUrl from "../../assets/branding/mossyboard-icon.png";
 import type { AuthMode } from "../../auth/searchParams";
+import { brandTextFontFamily } from "../../tamagui/fontFamilies";
 import { BoardPageChrome, BoardPill, BoardSurface } from "../boards/ui";
 import { AuthModeSwitch } from "./AuthModeSwitch";
 
@@ -101,7 +102,12 @@ export function AuthPageShell({
                 aria-hidden
               />
               <YStack gap="$1">
-                <Text fontSize="$10" fontWeight="800" color="$boardHeading">
+                <Text
+                  fontFamily={brandTextFontFamily}
+                  fontSize="$10"
+                  fontWeight="400"
+                  color="$boardHeading"
+                >
                   Mossyboard
                 </Text>
                 <Text fontSize="$4" color="$boardTextMuted">
@@ -114,7 +120,14 @@ export function AuthPageShell({
               <XStack>
                 <BoardPill>{copy.eyebrow}</BoardPill>
               </XStack>
-              <Text tag="h1" fontSize="$11" fontWeight="800" color="$boardHeading" lineHeight="$10">
+              <Text
+                tag="h1"
+                fontFamily="$heading"
+                fontSize="$11"
+                fontWeight="700"
+                color="$boardHeading"
+                lineHeight="$10"
+              >
                 {copy.title}
               </Text>
               <Text fontSize="$5" lineHeight="$6" color="$boardTextMuted">
@@ -169,7 +182,13 @@ export function AuthPageShell({
               borderRadius="$8"
               display={sessionExpired ? "flex" : "none"}
             >
-              <Text tag="h2" fontSize="$5" fontWeight="800" color="$boardHeading">
+              <Text
+                tag="h2"
+                fontFamily="$heading"
+                fontSize="$5"
+                fontWeight="700"
+                color="$boardHeading"
+              >
                 Your session expired
               </Text>
               <Text color="$boardWarningText">

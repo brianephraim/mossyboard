@@ -1,5 +1,6 @@
 import { createTamagui } from "@tamagui/core";
 import { defaultConfig } from "@tamagui/config/v4";
+import { createFont } from "@tamagui/web";
 
 const baseTokens = defaultConfig.tokens as typeof defaultConfig.tokens & {
   color: Record<string, string>;
@@ -11,13 +12,30 @@ const media = {
   md: { minWidth: 976 },
 } as const;
 
+const bodyFont = createFont({
+  ...defaultConfig.fonts.body,
+  family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+});
+
+const headingFont = createFont({
+  ...defaultConfig.fonts.heading,
+  family:
+    'Quicksand, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+});
+
 const config = createTamagui({
   ...defaultConfig,
+  defaultFont: "body",
   settings: {
     ...defaultConfig.settings,
     // Root route owns `<html>` / `<body>`; keep Tamagui theme class on the provider subtree.
     themeClassNameOnRoot: false,
     onlyAllowShorthands: false,
+  },
+  fonts: {
+    ...defaultConfig.fonts,
+    body: bodyFont,
+    heading: headingFont,
   },
   media,
   tokens: {
