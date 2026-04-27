@@ -80,10 +80,12 @@ function BoardRailBoardRow({
       paddingHorizontal="$3"
       paddingVertical="$3"
       borderRadius="$8"
-      backgroundColor={isCurrent ? "$boardAccentSoft" : "transparent"}
+      backgroundColor={isCurrent ? "$boardSidebarRowBg" : "transparent"}
       borderWidth={1}
-      borderColor={isCurrent ? "$boardAccentWash" : "transparent"}
-      hoverStyle={{ backgroundColor: "$boardAccentWash" }}
+      borderColor={isCurrent ? "$boardSidebarRowBorder" : "transparent"}
+      hoverStyle={{
+        backgroundColor: isCurrent ? "$boardSidebarRowBg" : "$boardSidebarRowHoverBg",
+      }}
     >
       <Stack
         {...(linkProps as Record<string, unknown>)}
@@ -98,16 +100,16 @@ function BoardRailBoardRow({
         width={4}
         alignSelf="stretch"
         borderRadius="$8"
-        backgroundColor={isCurrent ? "$boardAccent" : "transparent"}
+        backgroundColor={isCurrent ? "$boardSidebarGlow" : "transparent"}
         marginRight="$2"
         pointerEvents="none"
       />
       <YStack flex={1} gap="$1" minWidth={0} pointerEvents="none">
-        <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
+        <Text fontWeight="700" color="$boardSidebarText" numberOfLines={1}>
           {name}
         </Text>
         <XStack alignItems="center" justifyContent="space-between" gap="$3">
-          <Text color="$boardTextMuted" fontSize="$2" numberOfLines={1}>
+          <Text color="$boardSidebarMuted" fontSize="$2" numberOfLines={1}>
             {cardCount} cards
           </Text>
           {showDrawerButton ? (
@@ -126,12 +128,12 @@ function BoardRailBoardRow({
                 focusStyle={{
                   outlineWidth: 2,
                   outlineStyle: "solid",
-                  outlineColor: "$boardAccent",
+                  outlineColor: "$boardSidebarGlow",
                 }}
                 onPress={() => onOpenInDrawer?.(boardId)}
               >
                 <Text
-                  color="$boardTextMuted"
+                  color="$boardSidebarMuted"
                   fontSize="$2"
                   fontWeight="500"
                   textDecorationLine="underline"
@@ -217,6 +219,10 @@ export function BoardShell({
       minHeight={0}
       overflow="hidden"
       height={media.maxMd ? "auto" : desktopRailHeight}
+      backgroundColor="$boardSidebarSurface"
+      backgroundImage="linear-gradient(180deg, var(--c-color-boardSidebarSurface) 0%, var(--c-color-boardSidebarSurfaceBottom) 100%)"
+      borderColor="$boardSidebarBorder"
+      boxShadow="rgba(6, 10, 7, 0.36) 0px 24px 72px"
     >
       <YStack gap="$4" flex={1} minHeight={0}>
         <YStack gap="$3">
@@ -225,7 +231,7 @@ export function BoardShell({
               width={48}
               height={48}
               borderRadius={9999}
-              backgroundColor="$boardAccentSoft"
+              backgroundColor="rgba(197, 235, 134, 0.18)"
               backgroundImage={`url(${mossyboardIconUrl})`}
               backgroundSize="cover"
               backgroundPosition="center"
@@ -235,10 +241,10 @@ export function BoardShell({
               aria-hidden
             ></Stack>
             <YStack gap="$1">
-              <Text fontSize="$9" fontWeight="800" color="$boardHeading">
+              <Text fontSize="$9" fontWeight="800" color="$boardSidebarText">
                 Mossyboard
               </Text>
-              <Text fontSize="$3" color="$boardTextMuted">
+              <Text fontSize="$3" color="$boardSidebarMuted">
                 Steady, green, and focused.
               </Text>
             </YStack>
@@ -251,7 +257,7 @@ export function BoardShell({
             textTransform="uppercase"
             letterSpacing={1.4}
             fontSize="$2"
-            color="$boardTextSubtle"
+            color="$boardSidebarSubtle"
           >
             Boards
           </Text>
@@ -259,16 +265,23 @@ export function BoardShell({
 
         <YStack flex={1} minHeight={0} overflow="scroll" paddingRight="$1" paddingBottom="$2">
           {boardsQuery.isLoading && boardList.length === 0 ? (
-            <Text color="$boardTextMuted">Loading boards…</Text>
+            <Text color="$boardSidebarMuted">Loading boards…</Text>
           ) : boardsQuery.isError && boardList.length === 0 ? (
             <YStack gap="$2">
               <Text color="$boardDangerText">Could not load your boards.</Text>
-              <BoardActionButton tone="ghost" onPress={() => void boardsQuery.refetch()}>
+              <BoardActionButton
+                color="$boardSidebarText"
+                backgroundColor="rgba(255, 255, 255, 0.04)"
+                borderColor="$boardSidebarBorder"
+                hoverStyle={{ backgroundColor: "$boardSidebarRowBg" }}
+                pressStyle={{ backgroundColor: "$boardSidebarRowBg" }}
+                onPress={() => void boardsQuery.refetch()}
+              >
                 Retry
               </BoardActionButton>
             </YStack>
           ) : boardList.length === 0 ? (
-            <Text color="$boardTextMuted">No boards yet. Create one to get moving.</Text>
+            <Text color="$boardSidebarMuted">No boards yet. Create one to get moving.</Text>
           ) : (
             <YStack gap="$2">
               {boardList.map((board) => (
@@ -287,20 +300,40 @@ export function BoardShell({
         </YStack>
 
         <YStack flexShrink={0} gap="$3">
-          <BoardSurface padding="$4">
+          <BoardSurface
+            padding="$4"
+            backgroundColor="$boardSidebarPanelSurface"
+            backgroundImage="linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.08) 100%)"
+            borderColor="$boardSidebarPanelBorder"
+            boxShadow="none"
+          >
             <YStack gap="$3">
               {session.user && !session.user.emailVerified && !requiresEmailVerification ? (
                 <VerificationSidebarCallout userEmail={session.user.email} />
               ) : null}
               <YStack gap="$1">
-                <Text fontWeight="700" color="$boardHeading" numberOfLines={1}>
+                <Text fontWeight="700" color="$boardSidebarText" numberOfLines={1}>
                   {session.user?.email ?? "Signed in"}
                 </Text>
-                <Text color="$boardTextMuted">
+                <Text color="$boardSidebarMuted">
                   {session.user?.emailVerified ? "Verified account" : "Verification pending"}
                 </Text>
               </YStack>
               <AccountSignOutControl
+                buttonTone="default"
+                buttonProps={{
+                  color: "$boardSidebarText",
+                  backgroundColor: "rgba(255, 255, 255, 0.04)",
+                  borderColor: "$boardSidebarBorder",
+                  hoverStyle: {
+                    backgroundColor: "$boardSidebarRowBg",
+                  },
+                  pressStyle: {
+                    backgroundColor: "$boardSidebarRowBg",
+                    opacity: 0.92,
+                  },
+                }}
+                errorColor="$boardDangerBg"
                 onSignedOut={() => {
                   setShellAnnouncement("Signed out.");
                 }}
@@ -336,12 +369,14 @@ export function BoardShell({
             padding="$0"
             flex={1}
             overflow="hidden"
+            backgroundColor="$boardPanelSurfaceStrong"
             height={
               media.maxMd
                 ? "auto"
                 : // BoardResponsiveColumns desktop XStack: $4 top+bottom. BoardSurface: 1px border each vertical side.
                   "calc(100vh - 2 * var(--c-space-4) - 2px)"
             }
+            boxShadow="rgba(7, 12, 7, 0.18) 0px 26px 70px"
           >
             <YStack padding="$5" paddingBottom="$0" gap="$5" flexShrink={0}>
               <BoardSectionHeading title={title} subtitle={subtitle} actions={headerControls} />

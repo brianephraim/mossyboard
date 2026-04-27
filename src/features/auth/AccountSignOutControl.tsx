@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Text } from "@tamagui/core";
@@ -11,11 +12,18 @@ type AccountSignOutControlProps = Readonly<{
   onSignedOut?: () => void;
   /** Where to send the user after sign-out. Defaults to `/` per auth UX spec. */
   afterSignOutTo?: "/" | "/auth";
+  /** Optional presentation overrides for contexts like the board sidebar rail. */
+  buttonTone?: ComponentProps<typeof BoardActionButton>["tone"];
+  buttonProps?: Omit<ComponentProps<typeof BoardActionButton>, "children" | "onPress" | "tone">;
+  errorColor?: ComponentProps<typeof Text>["color"];
 }>;
 
 export function AccountSignOutControl({
   onSignedOut,
   afterSignOutTo = "/",
+  buttonTone = "ghost",
+  buttonProps,
+  errorColor = "$red10",
 }: AccountSignOutControlProps) {
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
@@ -24,8 +32,9 @@ export function AccountSignOutControl({
   return (
     <YStack gap="$2" alignItems="flex-start">
       <BoardActionButton
-        tone="ghost"
-        disabled={signingOut}
+        tone={buttonTone}
+        {...buttonProps}
+        disabled={signingOut || buttonProps?.disabled}
         onPress={() => {
           setError(null);
           setSigningOut(true);
@@ -53,7 +62,7 @@ export function AccountSignOutControl({
         {signingOut ? "Signing out…" : "Sign out"}
       </BoardActionButton>
       {error ? (
-        <Text role="alert" color="$red10">
+        <Text role="alert" color={errorColor}>
           {error}
         </Text>
       ) : null}

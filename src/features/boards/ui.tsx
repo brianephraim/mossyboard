@@ -7,8 +7,11 @@ import { XStack, YStack } from "@tamagui/stacks";
 import { boardPriorityMeta } from "./model";
 import type { CardPriority } from "./types";
 
-const pageBackground =
-  "linear-gradient(180deg, var(--c-color-boardPageBg) 0%, rgba(246, 243, 234, 0.96) 45%, rgba(236, 241, 223, 0.82) 100%)";
+const pageBackground = [
+  "radial-gradient(circle at 0% 100%, rgba(133, 168, 89, 0.28) 0%, rgba(133, 168, 89, 0) 28%)",
+  "radial-gradient(circle at 18% 12%, rgba(91, 118, 58, 0.24) 0%, rgba(91, 118, 58, 0) 26%)",
+  "linear-gradient(140deg, var(--c-color-boardBackdropTop) 0%, var(--c-color-boardPageBg) 36%, var(--c-color-boardBackdropBottom) 100%)",
+].join(", ");
 
 export function BoardPageChrome({ children }: Readonly<{ children: ReactNode }>) {
   return (
@@ -31,35 +34,34 @@ function BoardBackdropArt() {
         inset={0}
         start={[0, 0]}
         end={[1, 1]}
-        colors={["rgba(238, 243, 223, 0.95)", "rgba(220, 230, 200, 0.45)"]}
+        colors={["rgba(255, 255, 255, 0.03)", "rgba(0, 0, 0, 0.06)"]}
       />
       <Stack
         position="absolute"
-        left={-120}
-        bottom={-220}
-        width={520}
-        height={520}
-        borderRadius={9999}
-        backgroundColor="rgba(145, 168, 108, 0.12)"
-        transform="rotate(-10deg)"
-      />
-      <Stack
-        position="absolute"
-        right={-80}
+        left={-180}
         bottom={-180}
-        width={460}
-        height={460}
+        width={560}
+        height={560}
         borderRadius={9999}
-        backgroundColor="rgba(132, 161, 92, 0.1)"
+        backgroundColor="rgba(128, 160, 81, 0.18)"
       />
       <Stack
         position="absolute"
-        right={120}
-        top={88}
-        width={240}
-        height={240}
+        left={120}
+        top={-150}
+        width={380}
+        height={380}
         borderRadius={9999}
-        backgroundColor="rgba(231, 237, 215, 0.42)"
+        backgroundColor="rgba(83, 104, 57, 0.18)"
+      />
+      <Stack
+        position="absolute"
+        right={-120}
+        top={120}
+        width={360}
+        height={360}
+        borderRadius={9999}
+        backgroundColor="rgba(77, 95, 55, 0.12)"
       />
     </>
   );
@@ -83,7 +85,7 @@ export function BoardSurface({
       borderRadius="$boardShell"
       padding={padding}
       gap="$4"
-      boxShadow="rgba(89, 103, 62, 0.08) 0px 20px 60px"
+      boxShadow="rgba(18, 27, 16, 0.08) 0px 18px 48px"
       {...props}
     >
       {children}
