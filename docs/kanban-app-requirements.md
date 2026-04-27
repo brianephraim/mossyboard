@@ -1,6 +1,7 @@
 # Kanban Board Product + Backend API
 
 Build a small Kanban board product with:
+
 - A frontend application (React)
 - A backend API server
 
@@ -22,10 +23,12 @@ Your app must support:
 - Mobile responsiveness (usable on smaller screens)
 
 **State management**
+
 - Use an approach suitable for a real product
 - Briefly explain your choice in the README
 
 **UI/UX expectations**
+
 - Clear component structure (Board, Column, Card, Filters, etc.)
 - Good visual hierarchy and spacing
 - Keyboard-friendly modals/forms and focus management
@@ -59,7 +62,6 @@ The server must:
   - Listing cards with filters and pagination
 - Soft delete for cards
 - Basic concurrency safety for reordering operations
-
 
 ---
 

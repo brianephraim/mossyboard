@@ -231,11 +231,12 @@ export function MossyboardBrandMark({
   );
 
   useEffect(() => {
+    const timeouts = floatingCelebrationTimeoutsRef.current;
     return () => {
-      for (const timeoutId of floatingCelebrationTimeoutsRef.current) {
+      for (const timeoutId of timeouts) {
         clearTimeout(timeoutId);
       }
-      floatingCelebrationTimeoutsRef.current.clear();
+      timeouts.clear();
     };
   }, []);
 

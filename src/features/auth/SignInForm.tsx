@@ -133,7 +133,7 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
           gap="$2"
         >
           <Text fontWeight="700" color="$boardDangerText">
-            We couldn't sign you in
+            We couldn&apos;t sign you in
           </Text>
           <Text color="$boardDangerText">{form.formState.errors.root.message}</Text>
         </YStack>

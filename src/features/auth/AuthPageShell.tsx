@@ -84,7 +84,7 @@ export function AuthPageShell({
               Your session expired
             </Text>
             <Text color="$boardWarningText">
-              Sign in again and we'll send you right back to your boards.
+              Sign in again and we&apos;ll send you right back to your boards.
             </Text>
           </YStack>
 

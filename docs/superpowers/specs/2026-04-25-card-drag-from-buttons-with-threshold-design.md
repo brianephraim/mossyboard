@@ -74,4 +74,3 @@ For interior buttons inside the card body (e.g. `Open`), wrap the button with a 
   - `Open` does **not** trigger after the drag
 - Repeat for other interior buttons inside card content (if any).
 - Keyboard: tab to `Open`, press Enter/Space still opens; no drag occurs.
-

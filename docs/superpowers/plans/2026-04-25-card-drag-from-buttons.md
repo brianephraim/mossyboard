@@ -13,6 +13,7 @@
 ### Task 1: Make the full card a drag handle
 
 **Files:**
+
 - Modify: `src/features/boards/BoardCanvas.tsx`
 
 - [ ] **Step 1: Move `dragHandleProps` to the card root**
@@ -30,6 +31,7 @@
 ### Task 2: Format + lint
 
 **Files:**
+
 - Modify: `src/features/boards/BoardCanvas.tsx`
 
 - [ ] **Step 1: Run prettier**
@@ -37,4 +39,3 @@
 
 - [ ] **Step 2: Check lints for edited file**
   - Ensure no new TypeScript/ESLint issues are introduced.
-

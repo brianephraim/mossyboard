@@ -13,6 +13,7 @@
 ### Task 1: Implement edge overlay controls
 
 **Files:**
+
 - Modify: `src/features/boards/BoardCanvas.tsx` (`CardInterior`)
 
 - [ ] **Step 1: Add edge size constant and focus/hover visibility state**
@@ -29,8 +30,8 @@
 ### Task 2: Verify formatting and lints
 
 **Files:**
+
 - Format: `src/features/boards/BoardCanvas.tsx`
 
 - [ ] **Step 1: Run Prettier on modified file**
 - [ ] **Step 2: Check lints for modified file**
-

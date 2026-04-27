@@ -3,7 +3,7 @@ import { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "@tanstack/react-router";
 import { Text, useMedia } from "@tamagui/core";
-import { XStack, YStack } from "@tamagui/stacks";
+import { YStack } from "@tamagui/stacks";
 
 import { useAuthSession, useRequiresEmailVerification } from "../../auth/session";
 import { FormRoot, FormTextField } from "../../form";
