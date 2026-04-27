@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { XStack } from "@tamagui/stacks";
+import { YStack } from "@tamagui/stacks";
 
 import { trpc } from "../../trpc/client";
 import { BoardActionButton, BoardInlineNotice } from "../boards/ui";
@@ -50,10 +50,19 @@ export function VerificationSidebarCallout({ userEmail }: VerificationSidebarCal
       tone="warning"
       message={message}
       actions={
-        <XStack width="100%" justifyContent="center">
+        <YStack width="100%" alignItems="center" paddingHorizontal="$1">
           <BoardActionButton
             tone="ghost"
-            width="auto"
+            alignSelf="center"
+            maxWidth="100%"
+            borderWidth={0}
+            backgroundColor="transparent"
+            paddingHorizontal="$0"
+            paddingVertical="$0"
+            minHeight={0}
+            height="auto"
+            hoverStyle={{ backgroundColor: "transparent", opacity: 0.8 }}
+            pressStyle={{ backgroundColor: "transparent", opacity: 0.7 }}
             disabled={sendVerification.isPending || cooldown > 0}
             onPress={() => {
               void sendVerification.mutateAsync({});
@@ -65,7 +74,7 @@ export function VerificationSidebarCallout({ userEmail }: VerificationSidebarCal
                 ? `Send verification email (${cooldown}s)`
                 : "Send verification email"}
           </BoardActionButton>
-        </XStack>
+        </YStack>
       }
     />
   );
