@@ -22,6 +22,7 @@ type BoardCanvasProps = {
   onToggleGroupedBoardReorderEnabled: (enabled: boolean) => void;
   onDragEnd: (result: DropResult) => void;
   onOpenCard: (cardId: string) => void;
+  onDeleteCard: (input: { cardId: string; expectedVersion: number }) => Promise<void>;
   onOpenCreateCard: (columnId: string) => void;
   onRenameCardTitle: (input: {
     cardId: string;
@@ -64,6 +65,7 @@ export function BoardCanvas({
   onToggleGroupedBoardReorderEnabled: _onToggleGroupedBoardReorderEnabled,
   onDragEnd,
   onOpenCard,
+  onDeleteCard,
   onOpenCreateCard,
   onRenameCardTitle,
   onRenameColumn,
@@ -161,6 +163,7 @@ export function BoardCanvas({
           dragHandleProps={dragHandleProps}
           availableTags={availableTags}
           onOpenCard={onOpenCard}
+          onDeleteCard={onDeleteCard}
           onOpenCreateCard={onOpenCreateCard}
           onAddTag={onAddTag}
           onDetachTag={onDetachTag}
@@ -189,6 +192,7 @@ export function BoardCanvas({
       moveCardProgrammatically,
       moveColumnProgrammatically,
       onAddTag,
+      onDeleteCard,
       onDetachTag,
       onMoveCard,
       onMoveColumn,

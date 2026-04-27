@@ -29,6 +29,7 @@ type CardInteriorProps = {
   dragHandleProps?: DraggableProvided["dragHandleProps"];
   availableTags: ReadonlyArray<CardTagsRowTag>;
   onOpen: () => void;
+  onDelete: () => void | Promise<void>;
   onMove: (cardId: string, direction: Direction) => void;
   onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
   onDetachTag: (input: { cardId: string; tagId: string }) => Promise<void>;
@@ -50,6 +51,7 @@ const CardInteriorImpl = ({
   dragHandleProps,
   availableTags,
   onOpen,
+  onDelete,
   onMove,
   onAddTag,
   onDetachTag,
@@ -61,6 +63,8 @@ const CardInteriorImpl = ({
   const moveControlsVisible = canMove && visible;
   const [descriptionFocused, setDescriptionFocused] = useState(false);
   const [priorityPickerOpen, setPriorityPickerOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const priorityPress = useDragSafePress({
     onActivate: () => setPriorityPickerOpen(true),
   });
@@ -289,6 +293,30 @@ const CardInteriorImpl = ({
           <BoardActionButton tone="ghost" onPress={onOpen}>
             Open
           </BoardActionButton>
+          <BoardActionButton
+            tone={confirmDelete ? "danger" : "ghost"}
+            disabled={isDeleting}
+            onPress={async () => {
+              if (!confirmDelete) {
+                setConfirmDelete(true);
+                return;
+              }
+              setIsDeleting(true);
+              try {
+                await onDelete();
+              } finally {
+                setIsDeleting(false);
+                setConfirmDelete(false);
+              }
+            }}
+            onBlur={() => {
+              if (!isDeleting) {
+                setConfirmDelete(false);
+              }
+            }}
+          >
+            {isDeleting ? "Deleting…" : confirmDelete ? "Confirm delete" : "Delete"}
+          </BoardActionButton>
           {showColumnContext ? <BoardPill>{card.originalColumnTitle}</BoardPill> : null}
         </XStack>
       </YStack>
@@ -321,6 +349,7 @@ const CardPreviewImpl = ({
   canMove,
   availableTags,
   onOpen,
+  onDelete,
   onMove,
   onAddTag,
   onDetachTag,
@@ -331,6 +360,7 @@ const CardPreviewImpl = ({
   canMove: boolean;
   availableTags: ReadonlyArray<CardTagsRowTag>;
   onOpen: () => void;
+  onDelete: () => void | Promise<void>;
   onMove: (cardId: string, direction: Direction) => void;
   onAddTag: CardInteriorProps["onAddTag"];
   onDetachTag: CardInteriorProps["onDetachTag"];
@@ -344,6 +374,7 @@ const CardPreviewImpl = ({
         canMove={canMove}
         availableTags={availableTags}
         onOpen={onOpen}
+        onDelete={onDelete}
         onMove={onMove}
         onAddTag={onAddTag}
         onDetachTag={onDetachTag}

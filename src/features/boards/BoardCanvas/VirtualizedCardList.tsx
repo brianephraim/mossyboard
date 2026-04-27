@@ -26,6 +26,7 @@ type Props = {
   dndScopeKey?: BoardKey;
   availableTags: ReadonlyArray<CardTagsRowTag>;
   onOpenCard: (cardId: string) => void;
+  onDeleteCard: (input: { cardId: string; expectedVersion: number }) => Promise<void>;
   onMoveCard: (cardId: string, direction: Direction) => void;
   onAddTag: (input: { cardId: string; name: string }) => Promise<void>;
   onDetachTag: (input: { cardId: string; tagId: string }) => Promise<void>;
@@ -138,6 +139,7 @@ export function VirtualizedCardList({
   dndScopeKey,
   availableTags,
   onOpenCard,
+  onDeleteCard,
   onMoveCard,
   onAddTag,
   onDetachTag,
@@ -185,6 +187,7 @@ export function VirtualizedCardList({
             dragHandleProps={provided.dragHandleProps}
             availableTags={availableTags}
             onOpen={() => onOpenCard(card.id)}
+            onDelete={() => onDeleteCard({ cardId: card.id, expectedVersion: card.version })}
             onMove={onMoveCard}
             onAddTag={onAddTag}
             onDetachTag={onDetachTag}
@@ -236,6 +239,9 @@ export function VirtualizedCardList({
                       dragHandleProps={cardProvided.dragHandleProps}
                       availableTags={availableTags}
                       onOpen={() => onOpenCard(card.id)}
+                      onDelete={() =>
+                        onDeleteCard({ cardId: card.id, expectedVersion: card.version })
+                      }
                       onMove={onMoveCard}
                       onAddTag={onAddTag}
                       onDetachTag={onDetachTag}

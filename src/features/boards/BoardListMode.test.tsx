@@ -22,6 +22,7 @@ describe("BoardListMode", () => {
               description: "",
               priority: "high",
               columnTitle: "To do",
+              version: 0,
             },
           ]}
           isLoading={false}
@@ -30,6 +31,7 @@ describe("BoardListMode", () => {
           hasNextPage={false}
           onLoadMore={vi.fn()}
           onOpenCard={onOpenCard}
+          onDeleteCard={vi.fn().mockResolvedValue(undefined)}
         />
       </TamaguiRootProvider>,
     );
@@ -57,6 +59,7 @@ describe("BoardListMode", () => {
               description: "Waiting on updated mocks.",
               priority: "medium",
               columnTitle: "In progress",
+              version: 0,
             },
           ]}
           isLoading={false}
@@ -65,6 +68,7 @@ describe("BoardListMode", () => {
           hasNextPage
           onLoadMore={onLoadMore}
           onOpenCard={vi.fn()}
+          onDeleteCard={vi.fn().mockResolvedValue(undefined)}
         />
       </TamaguiRootProvider>,
     );

@@ -18,6 +18,7 @@ export type BoardMutations = {
   reorderCard: ReturnType<typeof trpc.card.reorder.useMutation>;
   moveCard: ReturnType<typeof trpc.card.move.useMutation>;
   updateCard: ReturnType<typeof trpc.card.update.useMutation>;
+  softDeleteCard: ReturnType<typeof trpc.card.softDelete.useMutation>;
 };
 
 export function useBoardMutations(input: {
@@ -158,6 +159,19 @@ export function useBoardMutations(input: {
     },
   });
 
+  const softDeleteCard = trpc.card.softDelete.useMutation({
+    onSuccess: async () => {
+      if (!boardId) {
+        return;
+      }
+      await refreshBoard();
+      input.setAnnouncement("Card deleted.");
+    },
+    onError: async (error) => {
+      await handleMutationError(error.message);
+    },
+  });
+
   return {
     refreshBoard,
     handleMutationError,
@@ -170,5 +184,6 @@ export function useBoardMutations(input: {
     reorderCard,
     moveCard,
     updateCard,
+    softDeleteCard,
   };
 }

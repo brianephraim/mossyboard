@@ -338,6 +338,9 @@ export function BoardPane({
               // DragDropContext lives at BoardWorkspaceScreen and routes through useDualBoardDnd.
             }}
             onOpenCard={onOpenCard}
+            onDeleteCard={async (input) => {
+              await mutations.softDeleteCard.mutateAsync(input);
+            }}
             onOpenCreateCard={(columnId) => onOpenCreateCard(boardId, columnId)}
             onRenameCardTitle={async (input) => {
               await mutations.updateCard.mutateAsync({
@@ -430,6 +433,7 @@ export function BoardPane({
               description: card.description,
               priority: card.priority,
               columnTitle: card.columnTitle,
+              version: card.version,
             }))}
             isLoading={listQuery.isLoading && !listQuery.data}
             isLoadingMore={listQuery.isFetchingNextPage}
@@ -439,6 +443,9 @@ export function BoardPane({
               void listQuery.fetchNextPage();
             }}
             onOpenCard={onOpenCard}
+            onDeleteCard={async (input) => {
+              await mutations.softDeleteCard.mutateAsync(input);
+            }}
           />
         </YStack>
       )}
