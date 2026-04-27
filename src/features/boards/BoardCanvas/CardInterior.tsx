@@ -273,12 +273,17 @@ const CardInteriorImpl = ({
           )}
         />
 
-        <CardTagsRow
-          attachedTags={card.tags}
-          availableTags={availableTags}
-          onAddTag={(name) => onAddTag({ cardId: card.id, name })}
-          onDetachTag={(tagId) => onDetachTag({ cardId: card.id, tagId })}
-        />
+        <YStack gap="$2">
+          <Text fontSize="$2" fontWeight="700" color="$boardHeading">
+            Tags:
+          </Text>
+          <CardTagsRow
+            attachedTags={card.tags}
+            availableTags={availableTags}
+            onAddTag={(name) => onAddTag({ cardId: card.id, name })}
+            onDetachTag={(tagId) => onDetachTag({ cardId: card.id, tagId })}
+          />
+        </YStack>
 
         <XStack gap="$2" flexWrap="wrap" alignItems="center">
           <BoardActionButton tone="ghost" onPress={onOpen}>
