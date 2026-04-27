@@ -95,4 +95,50 @@ describe("card router", () => {
       (err: unknown) => (err as { code?: string })?.code === "BAD_REQUEST",
     );
   });
+
+  it("validates listByColumn input shape (uuid, priority, limit bounds)", async () => {
+    const { adminAuth } = await import("../auth/admin");
+    const verifyIdTokenMock = vi.mocked(adminAuth.verifyIdToken);
+    verifyIdTokenMock.mockResolvedValue({ uid: "u_123" } as Awaited<
+      ReturnType<typeof adminAuth.verifyIdToken>
+    >);
+
+    const { appRouter } = await import("../trpc/router");
+    const caller = appRouter.createCaller({
+      requestId: "r",
+      authHeader: "Bearer good",
+      userId: null,
+      userEmail: null,
+    });
+
+    const validColumnId = "00000000-0000-4000-8000-000000000007";
+
+    await assert.rejects(
+      () =>
+        caller.card.listByColumn({
+          columnId: "not-a-uuid",
+          limit: 50,
+        }),
+      (err: unknown) => (err as { code?: string })?.code === "BAD_REQUEST",
+    );
+
+    await assert.rejects(
+      () =>
+        caller.card.listByColumn({
+          columnId: validColumnId,
+          limit: 50,
+          priority: "urgent" as never,
+        }),
+      (err: unknown) => (err as { code?: string })?.code === "BAD_REQUEST",
+    );
+
+    await assert.rejects(
+      () =>
+        caller.card.listByColumn({
+          columnId: validColumnId,
+          limit: 9999,
+        }),
+      (err: unknown) => (err as { code?: string })?.code === "BAD_REQUEST",
+    );
+  });
 });

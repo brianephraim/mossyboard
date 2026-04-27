@@ -5,6 +5,7 @@ import {
   createCardForUser,
   getCardForUser,
   listCardsByBoardForUser,
+  listCardsByColumnForUser,
   moveCardForUser,
   reorderCardForUser,
   softDeleteCardForUser,
@@ -125,5 +126,25 @@ export const cardRouter = t.router({
     )
     .query(({ ctx, input }) => {
       return listCardsByBoardForUser(ctx.userId, input);
+    }),
+  listByColumn: protectedProcedure
+    .input(
+      z.object({
+        columnId: columnIdSchema,
+        priority: z
+          .union([cardPrioritySchema, z.array(cardPrioritySchema).min(1).max(4)])
+          .optional(),
+        limit: z.number().int().min(1).max(100).default(50),
+        cursor: z
+          .object({
+            position: z.string().min(1),
+            cardId: cardIdSchema,
+          })
+          .nullable()
+          .optional(),
+      }),
+    )
+    .query(({ ctx, input }) => {
+      return listCardsByColumnForUser(ctx.userId, input);
     }),
 });
