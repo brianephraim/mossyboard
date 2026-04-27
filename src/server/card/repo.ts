@@ -111,10 +111,49 @@ function encodePositionKey(input: bigint): string {
   return digits.join("");
 }
 
-async function rebalancePositionsForColumn(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  input: { columnId: string },
-) {
+type RepoTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Fractional ordering keys exhaust precision after enough sibling-relative inserts at the same end
+// of a column (each `keyBetween` call halves the remaining gap). When that happens,
+// `resolveOrderedPosition` surfaces a CONFLICT with this exact message; the seed-data path
+// (`addSampleCardsToBoard`) and the user-facing create / move / reorder paths recover by
+// rebalancing the column and retrying the resolve once.
+const POSITION_EXHAUSTION_MESSAGE = "Unable to resolve an ordered position";
+
+function isPositionExhaustionError(err: unknown): boolean {
+  return err instanceof Error && err.message === POSITION_EXHAUSTION_MESSAGE;
+}
+
+async function resolveCardOrderedPositionWithRebalance(
+  tx: RepoTx,
+  input: {
+    columnId: string;
+    prevId?: string | null;
+    nextId?: string | null;
+    excludedId?: string | null;
+  },
+): Promise<string> {
+  const { columnId, ...positionInput } = input;
+  const ordered = await listActiveCardsForColumn(tx, { columnId });
+  try {
+    return resolveOrderedPosition(ordered, {
+      ...positionInput,
+      entityLabel: "Card",
+    });
+  } catch (err) {
+    if (!isPositionExhaustionError(err)) {
+      throw err;
+    }
+    await rebalancePositionsForColumn(tx, { columnId });
+    const reordered = await listActiveCardsForColumn(tx, { columnId });
+    return resolveOrderedPosition(reordered, {
+      ...positionInput,
+      entityLabel: "Card",
+    });
+  }
+}
+
+async function rebalancePositionsForColumn(tx: RepoTx, input: { columnId: string }) {
   const ordered = await tx
     .select({ id: cards.id })
     .from(cards)
@@ -244,24 +283,21 @@ export async function createCard(input: {
   prevCardId?: string | null;
   nextCardId?: string | null;
 }): Promise<{ id: string }> {
-  const targetColumn = await getOwnedColumn(db, {
-    ownerId: input.ownerId,
-    columnId: input.columnId,
-  });
-  if (!targetColumn) {
-    throw trpcErrors.notFound("Column not found");
-  }
-
-  const orderedCards = await listActiveCardsForColumn(db, {
-    columnId: targetColumn.id,
-  });
-  const position = resolveOrderedPosition(orderedCards, {
-    prevId: input.prevCardId,
-    nextId: input.nextCardId,
-    entityLabel: "Card",
-  });
-
   return db.transaction(async (tx) => {
+    const targetColumn = await getOwnedColumn(tx, {
+      ownerId: input.ownerId,
+      columnId: input.columnId,
+    });
+    if (!targetColumn) {
+      throw trpcErrors.notFound("Column not found");
+    }
+
+    const position = await resolveCardOrderedPositionWithRebalance(tx, {
+      columnId: targetColumn.id,
+      prevId: input.prevCardId,
+      nextId: input.nextCardId,
+    });
+
     const now = new Date();
     const cardId = randomUUID();
     const [created] = await tx
@@ -722,14 +758,11 @@ async function placeCard(input: {
       throw trpcErrors.notFound("Column not found");
     }
 
-    const orderedCards = await listActiveCardsForColumn(tx, {
+    const position = await resolveCardOrderedPositionWithRebalance(tx, {
       columnId: targetColumn.id,
-    });
-    const position = resolveOrderedPosition(orderedCards, {
       prevId: input.prevCardId,
       nextId: input.nextCardId,
       excludedId: lockedCard.id,
-      entityLabel: "Card",
     });
 
     const now = new Date();

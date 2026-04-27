@@ -633,4 +633,114 @@ describe("card repo", () => {
       );
     }, 20000);
   });
+
+  describe("position-key exhaustion fallback", () => {
+    // Fractional ordering uses a 16-digit base-10 key (max 10^16 - 1). Each append-at-end halves
+    // the gap between the last card and MAX, so a column eventually reaches a state where no
+    // midpoint exists between the last card and MAX (or between the first card and 0). Simulate
+    // that by pinning a single card's position to a value with no room above it, then verify the
+    // user-facing create / move / reorder paths recover by rebalancing the column.
+    const NEAR_MAX_POSITION = "9999999999999998";
+
+    it("createCard rebalances and succeeds when the tail of the column is exhausted", async () => {
+      if (!canRun) return;
+
+      process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
+
+      const { createBoard, getBoardStructure } = await import("../board/repo");
+      const { createCard, listCardsByColumn } = await import("./repo");
+      const { db } = await import("../db/client");
+      const { cards } = await import("../db/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const ownerId = randomUUID();
+      const board = await createBoard({ ownerId, name: "Exhausted column - create" });
+      const structure = await getBoardStructure({ ownerId, boardId: board.id });
+      const columnId = structure?.columns[0]?.id;
+      assert.ok(columnId, "expected a starter column");
+
+      const existing = await createCard({
+        ownerId,
+        columnId,
+        title: "existing",
+        description: "",
+        priority: "none",
+      });
+      await db.update(cards).set({ position: NEAR_MAX_POSITION }).where(eq(cards.id, existing.id));
+
+      const appended = await createCard({
+        ownerId,
+        columnId,
+        title: "appended after rebalance",
+        description: "",
+        priority: "none",
+      });
+
+      const listed = await listCardsByColumn({ ownerId, columnId, limit: 10 });
+      assert.deepEqual(
+        listed.items.map((row) => row.id),
+        [existing.id, appended.id],
+      );
+      const [firstRow, secondRow] = listed.items;
+      assert.ok(firstRow && secondRow, "expected both rows present");
+      assert.ok(
+        firstRow.position < secondRow.position,
+        "expected appended card to sort after the existing card after rebalance",
+      );
+      assert.notEqual(
+        firstRow.position,
+        NEAR_MAX_POSITION,
+        "expected rebalance to redistribute the existing card's position",
+      );
+    }, 20000);
+
+    it("reorderCard rebalances and succeeds when neighbor positions leave no midpoint", async () => {
+      if (!canRun) return;
+
+      process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
+
+      const { createBoard, getBoardStructure } = await import("../board/repo");
+      const { createCard, listCardsByColumn, reorderCard } = await import("./repo");
+      const { db } = await import("../db/client");
+      const { cards } = await import("../db/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const ownerId = randomUUID();
+      const board = await createBoard({ ownerId, name: "Exhausted column - reorder" });
+      const structure = await getBoardStructure({ ownerId, boardId: board.id });
+      const columnId = structure?.columns[0]?.id;
+      assert.ok(columnId, "expected a starter column");
+
+      const head = await createCard({
+        ownerId,
+        columnId,
+        title: "head",
+        description: "",
+        priority: "none",
+      });
+      const tail = await createCard({
+        ownerId,
+        columnId,
+        title: "tail",
+        description: "",
+        priority: "none",
+      });
+      await db.update(cards).set({ position: NEAR_MAX_POSITION }).where(eq(cards.id, tail.id));
+
+      const moved = await reorderCard({
+        ownerId,
+        cardId: head.id,
+        columnId,
+        prevCardId: tail.id,
+        expectedVersion: 0,
+      });
+      assert.ok(moved, "expected reorderCard to succeed via rebalance");
+
+      const listed = await listCardsByColumn({ ownerId, columnId, limit: 10 });
+      assert.deepEqual(
+        listed.items.map((row) => row.id),
+        [tail.id, head.id],
+      );
+    }, 20000);
+  });
 });
