@@ -63,5 +63,9 @@ describe("board router", () => {
       () => caller.board.softDelete({ boardId: "not-a-uuid" }),
       (err: unknown) => (err as { code?: string })?.code === "BAD_REQUEST",
     );
+    await assert.rejects(
+      () => caller.board.getStructure({ boardId: "not-a-uuid" }),
+      (err: unknown) => (err as { code?: string })?.code === "BAD_REQUEST",
+    );
   });
 });

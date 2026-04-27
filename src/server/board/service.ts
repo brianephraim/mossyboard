@@ -1,10 +1,12 @@
 import { trpcErrors } from "../trpc/init";
 import {
   createBoard,
+  getBoardStructure,
   getBoardWithColumnsAndCards,
   listBoards,
   renameBoard,
   softDeleteBoard,
+  type BoardStructureRow,
   type BoardSummaryRow,
   type LoadedBoardRow,
 } from "./repo";
@@ -37,6 +39,15 @@ export async function getBoardWithColumnsAndCardsForUser(ownerId: string, boardI
   }
 
   return { board: serializeLoadedBoard(loaded) };
+}
+
+export async function getBoardStructureForUser(ownerId: string, input: { boardId: string }) {
+  const structure = await getBoardStructure({ ownerId, boardId: input.boardId });
+  if (!structure) {
+    throw trpcErrors.notFound("Board not found");
+  }
+
+  return { board: serializeBoardStructure(structure) };
 }
 
 export async function renameBoardForUser(
@@ -102,6 +113,15 @@ function serializeLoadedBoard(row: LoadedBoardRow) {
     updatedAt: row.updatedAt.toISOString(),
     columnCount: row.columnCount,
     cardCount: row.cardCount,
+    columns: row.columns,
+  };
+}
+
+function serializeBoardStructure(row: BoardStructureRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    updatedAt: row.updatedAt.toISOString(),
     columns: row.columns,
   };
 }

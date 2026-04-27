@@ -196,6 +196,61 @@ export async function getBoardWithColumnsAndCards(input: {
   };
 }
 
+export type BoardStructureRow = {
+  id: string;
+  name: string;
+  updatedAt: Date;
+  columns: Array<{
+    id: string;
+    title: string;
+    position: string;
+    version: number;
+  }>;
+};
+
+export async function getBoardStructure(input: {
+  ownerId: string;
+  boardId: string;
+}): Promise<BoardStructureRow | null> {
+  const [boardRow] = await db
+    .select({
+      id: boards.id,
+      name: boards.name,
+      updatedAt: boards.updatedAt,
+    })
+    .from(boards)
+    .where(
+      and(
+        eq(boards.id, input.boardId),
+        eq(boards.ownerId, input.ownerId),
+        isNull(boards.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!boardRow) {
+    return null;
+  }
+
+  const columnRows = await db
+    .select({
+      id: columns.id,
+      title: columns.title,
+      position: columns.position,
+      version: columns.version,
+    })
+    .from(columns)
+    .where(and(eq(columns.boardId, input.boardId), isNull(columns.deletedAt)))
+    .orderBy(asc(columns.position), asc(columns.id));
+
+  return {
+    id: boardRow.id,
+    name: boardRow.name,
+    updatedAt: boardRow.updatedAt,
+    columns: columnRows,
+  };
+}
+
 function buildStarterColumns(boardId: string, now: Date) {
   const positions: string[] = [];
   let previous: string | null = null;
