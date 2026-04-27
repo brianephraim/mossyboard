@@ -129,16 +129,12 @@ export function BoardLaneView({
         </YStack>
 
         {canReorder && isRealColumn ? (
-          <YStack flex={1} minHeight={0}>
-            {lane.cards.length === 0 ? (
-              <YStack paddingHorizontal="$4" paddingTop="$3" gap="$3">
-                <LaneEmptyState
-                  isVisible
-                  isRealColumn={Boolean(isRealColumn)}
-                  isFiltered={hasActivePriorityFilters}
-                />
-              </YStack>
-            ) : null}
+          <YStack flex={1} minHeight={0} position="relative">
+            <LaneEmptyState
+              isVisible={lane.cards.length === 0}
+              isRealColumn={Boolean(isRealColumn)}
+              isFiltered={hasActivePriorityFilters}
+            />
             <VirtualizedCardList
               columnId={isRealColumn}
               cards={lane.cards}

@@ -14,7 +14,17 @@ export function LaneEmptyState({
   }
 
   return (
-    <Text color="$boardTextMuted" fontSize="$3">
+    <Text
+      position="absolute"
+      top={0}
+      left={0}
+      right={0}
+      paddingTop="$3"
+      paddingHorizontal="$4"
+      pointerEvents="none"
+      color="$boardTextMuted"
+      fontSize="$3"
+    >
       {isFiltered
         ? "No cards in this column match the active priority filter."
         : isRealColumn

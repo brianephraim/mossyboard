@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BoardCanvas } from "./BoardCanvas";
@@ -127,9 +127,7 @@ describe("BoardCanvas priority grouping", () => {
     assert.ok(within(inProgressColumn).getByRole("heading", { name: "No priority" }));
   });
 
-  it("renders the priority-mode reorder opt-in checkbox", () => {
-    const onToggleGroupedBoardReorderEnabled = vi.fn();
-
+  it("does not expose the priority-mode reorder opt-in checkbox", () => {
     render(
       <TamaguiRootProvider>
         <BoardCanvas
@@ -137,7 +135,7 @@ describe("BoardCanvas priority grouping", () => {
           search={priorityGroupedSearch}
           canReorder={false}
           groupedBoardReorderEnabled={false}
-          onToggleGroupedBoardReorderEnabled={onToggleGroupedBoardReorderEnabled}
+          onToggleGroupedBoardReorderEnabled={vi.fn()}
           onDragEnd={vi.fn()}
           onOpenCard={vi.fn()}
           onOpenCreateCard={vi.fn()}
@@ -155,12 +153,11 @@ describe("BoardCanvas priority grouping", () => {
       </TamaguiRootProvider>,
     );
 
-    const checkbox = screen.getByRole("checkbox", {
-      name: /allow re-ordering in this view, which will impact the user order/i,
-    });
-    fireEvent.click(checkbox);
-
-    expect(onToggleGroupedBoardReorderEnabled).toHaveBeenCalledWith(true);
+    expect(
+      screen.queryByRole("checkbox", {
+        name: /allow re-ordering in this view, which will impact the user order/i,
+      }),
+    ).toBeNull();
   });
 
   it("shows column move controls when grouped reorder is enabled", () => {
@@ -223,11 +220,11 @@ describe("BoardCanvas priority grouping", () => {
         /Priority-filtered columns are display-only by default\. Visible cards keep their saved user order underneath/i,
       ),
     );
-    assert.ok(
-      screen.getByRole("checkbox", {
+    expect(
+      screen.queryByRole("checkbox", {
         name: /allow re-ordering in this view, which will impact the user order/i,
       }),
-    );
+    ).toBeNull();
   });
 
   it("enables card move controls without enabling column move controls in filtered column mode", () => {

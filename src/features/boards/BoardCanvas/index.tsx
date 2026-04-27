@@ -11,7 +11,6 @@ import { scopeId } from "../useDualBoardDnd";
 import { BoardColumnsLayout } from "./BoardColumnsLayout";
 import { BoardLaneView } from "./BoardLaneView";
 import type { CardTagsRowTag } from "./CardTagsRow";
-import { PriorityGroupReorderToggle } from "./PriorityGroupReorderToggle";
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -62,7 +61,7 @@ export function BoardCanvas({
   search,
   canReorder,
   groupedBoardReorderEnabled,
-  onToggleGroupedBoardReorderEnabled,
+  onToggleGroupedBoardReorderEnabled: _onToggleGroupedBoardReorderEnabled,
   onDragEnd,
   onOpenCard,
   onOpenCreateCard,
@@ -254,14 +253,6 @@ export function BoardCanvas({
               showGroupedBoardReorderNotice && groupedBoardReorderEnabled ? "success" : "warning"
             }
             message={noticeMessage}
-            actions={
-              showGroupedBoardReorderNotice ? (
-                <PriorityGroupReorderToggle
-                  checked={groupedBoardReorderEnabled}
-                  onCheckedChange={onToggleGroupedBoardReorderEnabled}
-                />
-              ) : undefined
-            }
           />
         </YStack>
       ) : null}

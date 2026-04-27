@@ -72,6 +72,7 @@ export function StaticLaneCards({
         flex={1}
         minHeight={0}
         overflow="scroll"
+        position="relative"
         paddingHorizontal="$4"
         paddingTop="$3"
       >
@@ -108,6 +109,7 @@ export function StaticLaneCards({
       flex={1}
       minHeight={0}
       overflow="scroll"
+      position="relative"
       paddingHorizontal="$4"
       paddingTop="$3"
     >
