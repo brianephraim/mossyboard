@@ -1,19 +1,17 @@
 import type { DropResult } from "@hello-pangea/dnd";
+import type { QueryClient } from "@tanstack/react-query";
 
+import { keyBetween } from "../../lib/ordering/key-between";
 import { trpc } from "../../trpc/client";
-import {
-  getCardPosition,
-  getColumnPosition,
-  getNeighborIds,
-  reorderBoardCards,
-  reorderBoardColumns,
-} from "./model";
+import { getCardSlice } from "./columnCards/cardSlice";
+import { patchSliceCache } from "./columnCards/patchCache";
+import { getCardPosition, getColumnPosition, getNeighborIds } from "./model";
 import {
   getFilteredColumnPlacement,
   getPriorityGroupPlacement,
   parsePriorityGroupDroppableId,
 } from "./priorityGrouping";
-import type { BoardDetailSearch, CardPriority, LoadedBoard } from "./types";
+import type { BoardDetailSearch, CardPriority, LoadedBoard, LoadedBoardStructure } from "./types";
 import type { BoardMutations } from "./useBoardMutations";
 
 export type BoardKey = "main" | "drawer";
@@ -36,7 +34,7 @@ type Pane = {
   boardId: string;
   board: LoadedBoard | null;
   state: {
-    setOptimisticBoard: (b: LoadedBoard | null) => void;
+    setOptimisticStructure: (s: LoadedBoardStructure | null) => void;
     setConflictMessage: (m: string | null) => void;
   };
   mutations: BoardMutations;
@@ -47,6 +45,7 @@ export function useDualBoardDnd(input: {
   main: Pane;
   drawer: Pane | null;
   utils: ReturnType<typeof trpc.useUtils>;
+  queryClient: QueryClient;
   setAnnouncement: (m: string | null) => void;
 }) {
   const getPane = (key: BoardKey) => {
@@ -59,10 +58,10 @@ export function useDualBoardDnd(input: {
     return null;
   };
 
-  const clearOptimisticBoth = () => {
-    input.main.state.setOptimisticBoard(null);
+  const clearOptimisticStructureBoth = () => {
+    input.main.state.setOptimisticStructure(null);
     if (input.drawer) {
-      input.drawer.state.setOptimisticBoard(null);
+      input.drawer.state.setOptimisticStructure(null);
     }
   };
 
@@ -71,12 +70,6 @@ export function useDualBoardDnd(input: {
       input.main.mutations.refreshBoard(),
       input.drawer ? input.drawer.mutations.refreshBoard() : Promise.resolve(),
     ]);
-  };
-
-  const invalidateListsFor = async (boardIds: string[]) => {
-    await Promise.all(
-      boardIds.map((boardId) => input.utils.card.listByBoard.invalidate({ boardId })),
-    );
   };
 
   const commitColumnPlacement = async (pane: Pane, columnId: string, destinationIndex: number) => {
@@ -91,13 +84,28 @@ export function useDualBoardDnd(input: {
     if (destinationIndex === location.columnIndex) {
       return;
     }
-    const nextBoard = reorderBoardColumns(currentBoard, location.columnIndex, destinationIndex);
-    const movedColumn = nextBoard.columns[destinationIndex];
+    const reorderedColumns = [...currentBoard.columns];
+    const [moved] = reorderedColumns.splice(location.columnIndex, 1);
+    if (!moved) {
+      return;
+    }
+    reorderedColumns.splice(destinationIndex, 0, moved);
+    const movedColumn = reorderedColumns[destinationIndex];
     if (!movedColumn) {
       return;
     }
-    const { prevId, nextId } = getNeighborIds(nextBoard.columns, destinationIndex);
-    pane.state.setOptimisticBoard(nextBoard);
+    const { prevId, nextId } = getNeighborIds(reorderedColumns, destinationIndex);
+    pane.state.setOptimisticStructure({
+      id: currentBoard.id,
+      name: currentBoard.name,
+      updatedAt: currentBoard.updatedAt,
+      columns: reorderedColumns.map((column) => ({
+        id: column.id,
+        title: column.title,
+        position: column.position,
+        version: column.version,
+      })),
+    });
     pane.state.setConflictMessage(null);
     await pane.mutations.reorderColumn.mutateAsync({
       columnId: movedColumn.id,
@@ -110,7 +118,7 @@ export function useDualBoardDnd(input: {
   const commitCardPlacement = async (
     pane: Pane,
     currentBoard: LoadedBoard,
-    inputPlacement: {
+    placement: {
       cardId: string;
       sourceColumnId: string;
       sourceIndex: number;
@@ -120,51 +128,79 @@ export function useDualBoardDnd(input: {
       expectedVersion: number;
     },
   ) => {
-    const currentLocation = getCardPosition(currentBoard, inputPlacement.cardId);
-    const currentPriority = currentLocation?.card.priority;
+    const currentLocation = getCardPosition(currentBoard, placement.cardId);
+    if (!currentLocation) {
+      return;
+    }
+    const currentPriority = currentLocation.card.priority;
     if (
-      inputPlacement.sourceColumnId === inputPlacement.destinationColumnId &&
-      inputPlacement.sourceIndex === inputPlacement.destinationIndex &&
-      (!inputPlacement.destinationPriority ||
-        inputPlacement.destinationPriority === currentPriority)
+      placement.sourceColumnId === placement.destinationColumnId &&
+      placement.sourceIndex === placement.destinationIndex &&
+      (!placement.destinationPriority || placement.destinationPriority === currentPriority)
     ) {
       return;
     }
 
-    const nextBoard = reorderBoardCards(currentBoard, inputPlacement);
-    const destinationColumn = nextBoard.columns.find(
-      (column) => column.id === inputPlacement.destinationColumnId,
+    const destinationColumn = currentBoard.columns.find(
+      (column) => column.id === placement.destinationColumnId,
     );
     if (!destinationColumn) {
       return;
     }
 
-    const { prevId, nextId } = getNeighborIds(
-      destinationColumn.cards,
-      inputPlacement.destinationIndex,
+    const cardsWithoutMoved = destinationColumn.cards.filter(
+      (card) => card.id !== placement.cardId,
     );
-    pane.state.setOptimisticBoard(nextBoard);
+    const prevCard = cardsWithoutMoved[placement.destinationIndex - 1] ?? null;
+    const nextCard = cardsWithoutMoved[placement.destinationIndex] ?? null;
+    const optimisticPosition = keyBetween(prevCard?.position ?? null, nextCard?.position ?? null);
+
+    const sourceSlice = getCardSlice(placement.sourceColumnId, currentPriority, input.search);
+    const destinationPriority = placement.destinationPriority ?? currentPriority;
+    const destinationSlice = getCardSlice(
+      placement.destinationColumnId,
+      destinationPriority,
+      input.search,
+    );
+
+    patchSliceCache(input.queryClient, sourceSlice, {
+      type: "remove",
+      cardId: placement.cardId,
+    });
+    patchSliceCache(input.queryClient, destinationSlice, {
+      type: "insert",
+      card: {
+        id: currentLocation.card.id,
+        columnId: placement.destinationColumnId,
+        title: currentLocation.card.title,
+        description: currentLocation.card.description,
+        priority: destinationPriority,
+        position: optimisticPosition,
+        version: currentLocation.card.version,
+        tags: currentLocation.card.tags,
+      },
+    });
     pane.state.setConflictMessage(null);
 
-    if (inputPlacement.sourceColumnId === inputPlacement.destinationColumnId) {
+    if (placement.sourceColumnId === placement.destinationColumnId) {
       await pane.mutations.reorderCard.mutateAsync({
-        cardId: inputPlacement.cardId,
-        columnId: inputPlacement.destinationColumnId,
-        priority: inputPlacement.destinationPriority,
-        prevCardId: prevId,
-        nextCardId: nextId,
-        expectedVersion: inputPlacement.expectedVersion,
+        cardId: placement.cardId,
+        columnId: placement.destinationColumnId,
+        priority: placement.destinationPriority,
+        prevCardId: prevCard?.id ?? null,
+        nextCardId: nextCard?.id ?? null,
+        expectedVersion: placement.expectedVersion,
       });
       return;
     }
 
     await pane.mutations.moveCard.mutateAsync({
-      cardId: inputPlacement.cardId,
-      targetColumnId: inputPlacement.destinationColumnId,
-      priority: inputPlacement.destinationPriority,
-      prevCardId: prevId,
-      nextCardId: nextId,
-      expectedVersion: inputPlacement.expectedVersion,
+      cardId: placement.cardId,
+      targetColumnId: placement.destinationColumnId,
+      priority: placement.destinationPriority,
+      prevCardId: prevCard?.id ?? null,
+      nextCardId: nextCard?.id ?? null,
+      expectedVersion: placement.expectedVersion,
     });
   };
 
@@ -230,31 +266,46 @@ export function useDualBoardDnd(input: {
       return;
     }
 
-    const fromColumns = from.board.columns.map((column) => ({
-      ...column,
-      cards: column.cards.filter((c) => c.id !== cardId),
-    }));
-    const toColumns = to.board.columns.map((column) => ({ ...column, cards: [...column.cards] }));
     const movedCard = sourceLocation.card;
+    const sourcePriority = movedCard.priority;
+    const finalPriority = destinationPriority ?? sourcePriority;
 
-    const toColumn = toColumns.find((c) => c.id === destinationPlacement.columnId);
-    if (!toColumn) {
-      return;
-    }
+    const destColumnCardsWithoutMoved = destinationColumn.cards.filter((c) => c.id !== cardId);
+    const prevCard =
+      destinationPlacement.prevId !== null
+        ? destColumnCardsWithoutMoved.find((c) => c.id === destinationPlacement.prevId)
+        : null;
+    const nextCard =
+      destinationPlacement.nextId !== null
+        ? destColumnCardsWithoutMoved.find((c) => c.id === destinationPlacement.nextId)
+        : null;
+    const optimisticPosition = keyBetween(prevCard?.position ?? null, nextCard?.position ?? null);
 
-    toColumn.cards.splice(destinationPlacement.destinationIndex, 0, {
-      ...movedCard,
-      columnId: destinationPlacement.columnId,
-      priority: destinationPriority ?? movedCard.priority,
+    const sourceSlice = getCardSlice(sourceLocation.column.id, sourcePriority, input.search);
+    const destinationSlice = getCardSlice(
+      destinationPlacement.columnId,
+      finalPriority,
+      input.search,
+    );
+
+    patchSliceCache(input.queryClient, sourceSlice, { type: "remove", cardId });
+    patchSliceCache(input.queryClient, destinationSlice, {
+      type: "insert",
+      card: {
+        id: movedCard.id,
+        columnId: destinationPlacement.columnId,
+        title: movedCard.title,
+        description: movedCard.description,
+        priority: finalPriority,
+        position: optimisticPosition,
+        version: movedCard.version,
+        tags: movedCard.tags,
+      },
     });
-
-    from.state.setOptimisticBoard({ ...from.board, columns: fromColumns });
-    to.state.setOptimisticBoard({ ...to.board, columns: toColumns });
     from.state.setConflictMessage(null);
     to.state.setConflictMessage(null);
 
     try {
-      await input.main.mutations.moveCard.mutateAsync; // keep TS from narrowing weirdly
       await from.mutations.moveCard.mutateAsync({
         cardId,
         targetColumnId: destinationPlacement.columnId,
@@ -265,13 +316,12 @@ export function useDualBoardDnd(input: {
       });
 
       await Promise.all([
-        invalidateListsFor([from.boardId, to.boardId]),
         input.main.mutations.refreshBoard(),
         input.drawer ? input.drawer.mutations.refreshBoard() : Promise.resolve(),
       ]);
       input.setAnnouncement("Card moved.");
     } catch (error) {
-      clearOptimisticBoth();
+      clearOptimisticStructureBoth();
       const message =
         (error as { message?: string }).message ??
         "We couldn’t move that card because the board changed. Refresh and try again.";
@@ -319,7 +369,7 @@ export function useDualBoardDnd(input: {
     const sourcePriorityGroup = parsePriorityGroupDroppableId(srcDroppable.id);
     const destinationPriorityGroup = parsePriorityGroupDroppableId(dstDroppable.id);
     const priorityGroupReorderEnabled =
-      input.search.view === "board" && input.search.groupBy === "priority" && true;
+      input.search.view === "board" && input.search.groupBy === "priority";
     const filteredColumnReorderEnabled =
       input.search.view === "board" &&
       input.search.groupBy === "column" &&

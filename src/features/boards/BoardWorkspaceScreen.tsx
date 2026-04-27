@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { Sensor, SensorAPI } from "@hello-pangea/dnd";
 import { DragDropContext } from "@hello-pangea/dnd";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
@@ -16,6 +17,9 @@ import { BoardControlsPanel } from "./BoardControlsPanel";
 import { BoardShell } from "./BoardShell";
 import { CardDetailSurface } from "./CardDetailSurface";
 import { EditableBoardTitle } from "./EditableBoardTitle";
+import { PaneCardsHydrator } from "./columnCards/PaneCardsHydrator";
+import { synthesizeBoardFromStructure } from "./columnCards/synthesizeBoard";
+import type { ColumnCardItem } from "./columnCards/useColumnCards";
 import {
   parseBoardDetailSearch,
   serializePriorityFilter,
@@ -23,7 +27,7 @@ import {
   togglePrioritySelection,
   toggleTagSelection,
 } from "./model";
-import type { BoardDetailSearch, LoadedBoard } from "./types";
+import type { BoardDetailSearch, LoadedBoard, LoadedBoardStructure } from "./types";
 import { BoardActionButton, BoardLiveRegion } from "./ui";
 import { useBoardMutations } from "./useBoardMutations";
 import { useDualBoardDnd } from "./useDualBoardDnd";
@@ -55,27 +59,43 @@ type RawBoardDetailSearch = {
 };
 
 type BoardPaneState = {
-  optimisticBoard: LoadedBoard | null;
-  setOptimisticBoard: (b: LoadedBoard | null) => void;
+  optimisticStructure: LoadedBoardStructure | null;
+  setOptimisticStructure: (s: LoadedBoardStructure | null) => void;
   conflictMessage: string | null;
   setConflictMessage: (m: string | null) => void;
 };
 
+type SliceItemsByColumn = Record<string, Record<string, ColumnCardItem[]>>;
+
 function useBoardPaneState(boardId: string) {
-  const [optimisticBoard, setOptimisticBoard] = useState<LoadedBoard | null>(null);
+  const [optimisticStructure, setOptimisticStructure] = useState<LoadedBoardStructure | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setOptimisticBoard(null);
+    setOptimisticStructure(null);
     setConflictMessage(null);
   }, [boardId]);
 
   return {
-    optimisticBoard,
-    setOptimisticBoard,
+    optimisticStructure,
+    setOptimisticStructure,
     conflictMessage,
     setConflictMessage,
   } satisfies BoardPaneState;
+}
+
+function unionSlicesByColumn(sliceItems: SliceItemsByColumn): Record<string, ColumnCardItem[]> {
+  const result: Record<string, ColumnCardItem[]> = {};
+  for (const [columnId, slices] of Object.entries(sliceItems)) {
+    const merged = new Map<string, ColumnCardItem>();
+    for (const items of Object.values(slices)) {
+      for (const item of items) {
+        merged.set(item.id, item);
+      }
+    }
+    result[columnId] = [...merged.values()];
+  }
+  return result;
 }
 
 function resolveDrawerId(input: string | undefined, mainBoardId: string, narrow: boolean) {
@@ -132,6 +152,7 @@ export function BoardWorkspaceScreen({
   const media = useMedia();
   const navigate = useNavigate({ from: "/boards/$boardId" });
   const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const search = parseBoardDetailSearch(rawSearch as Record<string, unknown>);
 
   const drawerBoardId = resolveDrawerId(search.drawer, boardId, media.maxMd);
@@ -185,14 +206,14 @@ export function BoardWorkspaceScreen({
     });
   };
 
-  const mainQuery = trpc.board.getWithColumnsAndCards.useQuery(
+  const mainStructureQuery = trpc.board.getStructure.useQuery(
     { boardId },
     {
       retry: false,
     },
   );
 
-  const drawerQuery = trpc.board.getWithColumnsAndCards.useQuery(
+  const drawerStructureQuery = trpc.board.getStructure.useQuery(
     { boardId: drawerBoardId ?? "" },
     {
       enabled: Boolean(drawerBoardId),
@@ -205,13 +226,13 @@ export function BoardWorkspaceScreen({
 
   const mainMutations = useBoardMutations({
     boardId,
-    boardQuery: mainQuery,
+    structureQuery: mainStructureQuery,
     setAnnouncement,
     state: mainState,
   });
   const drawerMutations = useBoardMutations({
     boardId: drawerBoardId,
-    boardQuery: drawerQuery,
+    structureQuery: drawerStructureQuery,
     setAnnouncement,
     state: drawerState,
   });
@@ -236,8 +257,67 @@ export function BoardWorkspaceScreen({
     };
   }, [sensorApi]);
 
-  const mainBoard = mainState.optimisticBoard ?? mainQuery.data?.board ?? null;
-  const drawerBoard = drawerState.optimisticBoard ?? drawerQuery.data?.board ?? null;
+  const [mainSliceItems, setMainSliceItems] = useState<SliceItemsByColumn>({});
+  const [drawerSliceItems, setDrawerSliceItems] = useState<SliceItemsByColumn>({});
+
+  useEffect(() => {
+    setMainSliceItems({});
+  }, [boardId]);
+  useEffect(() => {
+    setDrawerSliceItems({});
+  }, [drawerBoardId]);
+
+  const handleMainSliceChange = useCallback(
+    (columnId: string, sliceKey: string, items: ColumnCardItem[]) => {
+      setMainSliceItems((prev) => {
+        const colSlices = prev[columnId] ?? {};
+        if (colSlices[sliceKey] === items) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [columnId]: { ...colSlices, [sliceKey]: items },
+        };
+      });
+    },
+    [],
+  );
+  const handleDrawerSliceChange = useCallback(
+    (columnId: string, sliceKey: string, items: ColumnCardItem[]) => {
+      setDrawerSliceItems((prev) => {
+        const colSlices = prev[columnId] ?? {};
+        if (colSlices[sliceKey] === items) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [columnId]: { ...colSlices, [sliceKey]: items },
+        };
+      });
+    },
+    [],
+  );
+
+  const mainCardsByColumn = useMemo(() => unionSlicesByColumn(mainSliceItems), [mainSliceItems]);
+  const drawerCardsByColumn = useMemo(
+    () => unionSlicesByColumn(drawerSliceItems),
+    [drawerSliceItems],
+  );
+
+  const mainStructure: LoadedBoardStructure | null =
+    mainState.optimisticStructure ?? mainStructureQuery.data?.board ?? null;
+  const drawerStructure: LoadedBoardStructure | null =
+    drawerState.optimisticStructure ?? drawerStructureQuery.data?.board ?? null;
+
+  const mainBoard: LoadedBoard | null = useMemo(
+    () => (mainStructure ? synthesizeBoardFromStructure(mainStructure, mainCardsByColumn) : null),
+    [mainStructure, mainCardsByColumn],
+  );
+  const drawerBoard: LoadedBoard | null = useMemo(
+    () =>
+      drawerStructure ? synthesizeBoardFromStructure(drawerStructure, drawerCardsByColumn) : null,
+    [drawerStructure, drawerCardsByColumn],
+  );
 
   const onDragEnd = useDualBoardDnd({
     search,
@@ -258,6 +338,7 @@ export function BoardWorkspaceScreen({
         }
       : null,
     utils,
+    queryClient,
     setAnnouncement,
   });
 
@@ -266,17 +347,17 @@ export function BoardWorkspaceScreen({
   const addSampleData = trpc.board.addSampleData.useMutation({
     onSuccess: async () => {
       await Promise.all([
-        mainQuery.refetch(),
-        drawerBoardId ? drawerQuery.refetch() : Promise.resolve(),
-        utils.card.listByBoard.invalidate({ boardId }),
+        mainStructureQuery.refetch(),
+        drawerBoardId ? drawerStructureQuery.refetch() : Promise.resolve(),
+        utils.card.listByColumn.invalidate(),
       ]);
       setAddSampleDataOpen(false);
       setAnnouncement("Sample cards added.");
     },
     onError: async (error) => {
-      mainState.setOptimisticBoard(null);
+      mainState.setOptimisticStructure(null);
       mainState.setConflictMessage(error.message);
-      await mainQuery.refetch();
+      await mainStructureQuery.refetch();
     },
   });
 
@@ -306,6 +387,20 @@ export function BoardWorkspaceScreen({
   return (
     <DragDropContext onDragEnd={onDragEnd} sensors={[programmaticSensor]}>
       <BoardLiveRegion message={announcement} />
+      {mainStructure ? (
+        <PaneCardsHydrator
+          structure={mainStructure}
+          search={search}
+          onSliceItemsChange={handleMainSliceChange}
+        />
+      ) : null}
+      {drawerStructure ? (
+        <PaneCardsHydrator
+          structure={drawerStructure}
+          search={search}
+          onSliceItemsChange={handleDrawerSliceChange}
+        />
+      ) : null}
       <BoardShell
         currentBoardId={boardId}
         onOpenInDrawer={(id) => updateRouteSearch({ drawer: id })}
@@ -345,7 +440,8 @@ export function BoardWorkspaceScreen({
               boardId={boardId}
               search={search}
               programmaticSensorApiRef={sensorApi}
-              boardQuery={mainQuery}
+              board={mainBoard}
+              structureQuery={mainStructureQuery}
               state={mainState}
               mutations={mainMutations}
               availableTags={availableTags}
@@ -376,7 +472,7 @@ export function BoardWorkspaceScreen({
           drawerBoardId ? (
             <BoardDrawer
               boardId={drawerBoardId}
-              boardName={drawerQuery.data?.board?.name ?? null}
+              boardName={drawerStructureQuery.data?.board?.name ?? null}
               onClose={() => updateRouteSearch({ drawer: undefined })}
               onPromote={() => {
                 void navigate({
@@ -405,7 +501,7 @@ export function BoardWorkspaceScreen({
               }}
               onClearTags={() => updateRouteSearch({ tags: undefined })}
             >
-              {drawerQuery.isError && !drawerQuery.data ? (
+              {drawerStructureQuery.isError && !drawerStructureQuery.data ? (
                 <YStack padding="$4" gap="$3">
                   <Text color="$boardDangerText">Could not load drawer board.</Text>
                   <BoardActionButton
@@ -414,7 +510,10 @@ export function BoardWorkspaceScreen({
                   >
                     Close
                   </BoardActionButton>
-                  <BoardActionButton tone="ghost" onPress={() => void drawerQuery.refetch()}>
+                  <BoardActionButton
+                    tone="ghost"
+                    onPress={() => void drawerStructureQuery.refetch()}
+                  >
                     Retry
                   </BoardActionButton>
                 </YStack>
@@ -425,7 +524,8 @@ export function BoardWorkspaceScreen({
                   boardId={drawerBoardId}
                   search={search}
                   programmaticSensorApiRef={sensorApi}
-                  boardQuery={drawerQuery}
+                  board={drawerBoard}
+                  structureQuery={drawerStructureQuery}
                   state={drawerState}
                   mutations={drawerMutations}
                   availableTags={availableTags}
@@ -460,8 +560,9 @@ export function BoardWorkspaceScreen({
         }}
         onBoardChanged={async () => {
           await Promise.all([
-            mainQuery.refetch(),
-            drawerBoardId ? drawerQuery.refetch() : Promise.resolve(),
+            mainStructureQuery.refetch(),
+            drawerBoardId ? drawerStructureQuery.refetch() : Promise.resolve(),
+            utils.card.listByColumn.invalidate(),
           ]);
         }}
         onAnnounce={setAnnouncement}
