@@ -1,0 +1,1 @@
+CREATE INDEX "cards_column_priority_position_idx" ON "cards" USING btree ("column_id","priority","position","id");
