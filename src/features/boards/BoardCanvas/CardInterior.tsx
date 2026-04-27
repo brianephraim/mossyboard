@@ -62,7 +62,28 @@ const CardInteriorImpl = ({
   const [descriptionFocused, setDescriptionFocused] = useState(false);
   const [priorityPickerOpen, setPriorityPickerOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmCountdown, setConfirmCountdown] = useState(3);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!confirmDelete) {
+      setConfirmCountdown(3);
+      return;
+    }
+    setConfirmCountdown(3);
+    const interval = setInterval(() => {
+      setConfirmCountdown((current) => {
+        const next = current - 1;
+        if (next <= 0) {
+          clearInterval(interval);
+          setConfirmDelete(false);
+          return 3;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [confirmDelete]);
   const priorityPress = useDragSafePress({
     onActivate: () => setPriorityPickerOpen(true),
   });
@@ -288,8 +309,28 @@ const CardInteriorImpl = ({
         </YStack>
 
         <XStack gap="$2" flexWrap="wrap" alignItems="center">
+          {showColumnContext ? <BoardPill>{card.originalColumnTitle}</BoardPill> : null}
           <BoardActionButton
-            tone={confirmDelete ? "danger" : "ghost"}
+            marginLeft="auto"
+            size="$1"
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+            minHeight={0}
+            height="auto"
+            fontSize="$2"
+            opacity={confirmDelete ? 1 : 0.5}
+            backgroundColor={confirmDelete ? "#800020" : "transparent"}
+            color={confirmDelete ? "white" : "#800020"}
+            borderColor="#800020"
+            hoverStyle={{
+              opacity: 1,
+              backgroundColor: confirmDelete ? "#5e0019" : "rgba(128, 0, 32, 0.08)",
+            }}
+            pressStyle={{
+              opacity: 1,
+              backgroundColor: confirmDelete ? "#4a0014" : "rgba(128, 0, 32, 0.16)",
+            }}
+            focusStyle={{ opacity: 1 }}
             disabled={isDeleting}
             onPress={async () => {
               if (!confirmDelete) {
@@ -310,9 +351,12 @@ const CardInteriorImpl = ({
               }
             }}
           >
-            {isDeleting ? "Deleting…" : confirmDelete ? "Confirm delete" : "Delete"}
+            {isDeleting
+              ? "Deleting…"
+              : confirmDelete
+                ? `${confirmCountdown}… Confirm delete`
+                : "Delete"}
           </BoardActionButton>
-          {showColumnContext ? <BoardPill>{card.originalColumnTitle}</BoardPill> : null}
         </XStack>
       </YStack>
     </div>
