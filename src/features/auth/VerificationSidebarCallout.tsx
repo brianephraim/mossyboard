@@ -51,6 +51,7 @@ export function VerificationSidebarCallout() {
             paddingVertical="$0"
             minHeight={0}
             height="auto"
+            fontSize="$2"
             hoverStyle={{ backgroundColor: "transparent", opacity: 0.8 }}
             pressStyle={{ backgroundColor: "transparent", opacity: 0.7 }}
             disabled={sendVerification.isPending || cooldown > 0}
