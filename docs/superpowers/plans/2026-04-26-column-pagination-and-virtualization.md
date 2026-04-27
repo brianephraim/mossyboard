@@ -1,6 +1,6 @@
 # Column Pagination & DnD Virtualization Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Paginate kanban columns at 50 cards per page with infinite scroll, virtualize the card list for `@hello-pangea/dnd`, and split data into per-(column × priority) queries when grouped by priority. tRPC's `httpBatchLink` collapses the parallel queries into one HTTP request per board load.
 
@@ -38,7 +38,7 @@ Each PR is independently mergeable and reviewable. PR 2 is the largest.
 - Modify: `src/server/db/schema.ts` (the `cards` table indexes block)
 - Generate: `drizzle/pg/0007_<auto-name>.sql`
 
-- [ ] **Step 1: Add the index in schema**
+- [x] **Step 1: Add the index in schema**
 
 In `src/server/db/schema.ts`, find the `cards` table indexes block:
 
@@ -62,26 +62,26 @@ Replace with:
 }),
 ```
 
-- [ ] **Step 2: Generate migration**
+- [x] **Step 2: Generate migration**
 
 Run: `npm run db:generate`
 Expected: a new file `drizzle/pg/0007_<random-name>.sql` containing `CREATE INDEX "cards_column_priority_position_idx" ON "cards" ("column_id","priority","position","id");`
 
-- [ ] **Step 3: Apply migration**
+- [x] **Step 3: Apply migration**
 
 Run: `npm run db:migrate`
 Expected: migration applied, no errors.
 
-- [ ] **Step 4: Verify schema and migration are in sync**
+- [x] **Step 4: Verify schema and migration are in sync**
 
 Run: `npm run db:generate`
 Expected: "No schema changes, nothing to migrate" (or equivalent — meaning the generated migration captured everything).
 
-- [ ] **Step 5: Format**
+- [x] **Step 5: Format**
 
 Run: `npx prettier --write src/server/db/schema.ts`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/server/db/schema.ts drizzle/pg/0007_*.sql drizzle/pg/meta
@@ -95,7 +95,7 @@ git commit -m "feat(db): add (column_id, priority, position, id) composite index
 - Modify: `src/server/card/repo.test.ts`
 - Modify: `src/server/card/repo.ts`
 
-- [ ] **Step 1: Write a failing test for the basic happy path**
+- [x] **Step 1: Write a failing test for the basic happy path**
 
 Open `src/server/card/repo.test.ts` and add a new `describe` block (place it after the existing `describe("listCardsByBoard"...)` block, mirroring its style). Use the existing test helpers — read the file first to see how `migrateTestDb`, `seedBoardWithColumns`, etc. are wired. The test should:
 
@@ -107,12 +107,12 @@ Open `src/server/card/repo.test.ts` and add a new `describe` block (place it aft
 
 Use the same `assert.deepStrictEqual` / `assert.equal` style already in the file. Do not introduce new test helpers — reuse what's there.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npm run test -- src/server/card/repo.test.ts`
 Expected: FAIL with `listCardsByColumn is not a function` (or import error).
 
-- [ ] **Step 3: Implement the minimal `listCardsByColumn` function**
+- [x] **Step 3: Implement the minimal `listCardsByColumn` function**
 
 In `src/server/card/repo.ts`, add (after `listCardsByBoard`):
 
@@ -201,16 +201,16 @@ export async function listCardsByColumn(input: {
 
 Note: `getOwnedColumn` and `listTagsForCards` are already imported at the top of `repo.ts`. `or`, `asc`, `eq`, `inArray`, `isNull`, `and`, `sql` are already imported from `drizzle-orm`.
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npm run test -- src/server/card/repo.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Format**
+- [x] **Step 5: Format**
 
 Run: `npx prettier --write src/server/card/repo.ts src/server/card/repo.test.ts`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/server/card/repo.ts src/server/card/repo.test.ts
@@ -223,7 +223,7 @@ git commit -m "feat(card): add listCardsByColumn repo with happy path test"
 
 - Modify: `src/server/card/repo.test.ts`
 
-- [ ] **Step 1: Write a failing test for cursor pagination**
+- [x] **Step 1: Write a failing test for cursor pagination**
 
 Add a test that:
 
@@ -232,12 +232,12 @@ Add a test that:
 3. Calls `listCardsByColumn({ ownerId, columnId, limit: 3, cursor: <result1.nextCursor> })`. Asserts items.length === 3 and these are cards 4–6 in position order, `nextCursor` is the sixth card's `(position, id)`.
 4. Calls `listCardsByColumn({ ownerId, columnId, limit: 3, cursor: <result2.nextCursor> })`. Asserts items.length === 1 and `nextCursor` is `null`.
 
-- [ ] **Step 2: Run to verify it passes**
+- [x] **Step 2: Run to verify it passes**
 
 Run: `npm run test -- src/server/card/repo.test.ts`
 Expected: PASS (cursor logic is in place from Task 1.2).
 
-- [ ] **Step 3: Write a failing test for single-priority filter**
+- [x] **Step 3: Write a failing test for single-priority filter**
 
 Add a test that:
 
@@ -245,12 +245,12 @@ Add a test that:
 2. Calls `listCardsByColumn({ ownerId, columnId, priority: "high", limit: 10 })`.
 3. Asserts only the 2 `"high"` cards are returned, in `(position, id)` order.
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `npm run test -- src/server/card/repo.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Write a failing test for priority list filter**
+- [x] **Step 5: Write a failing test for priority list filter**
 
 Add a test that:
 
@@ -260,12 +260,12 @@ Add a test that:
 
 Also add a test that calls with `priority: []` and asserts `{ items: [], nextCursor: null }` without making a DB query (we early-return).
 
-- [ ] **Step 6: Run to verify it passes**
+- [x] **Step 6: Run to verify it passes**
 
 Run: `npm run test -- src/server/card/repo.test.ts`
 Expected: PASS.
 
-- [ ] **Step 7: Write a failing test for owner scoping**
+- [x] **Step 7: Write a failing test for owner scoping**
 
 Add a test that:
 
@@ -275,12 +275,12 @@ Add a test that:
 
 Use existing `await assert.rejects(...)` pattern from `router.test.ts` (line 30+ of that file).
 
-- [ ] **Step 8: Run to verify it passes**
+- [x] **Step 8: Run to verify it passes**
 
 Run: `npm run test -- src/server/card/repo.test.ts`
 Expected: PASS.
 
-- [ ] **Step 9: Write a failing test for soft-delete exclusion**
+- [x] **Step 9: Write a failing test for soft-delete exclusion**
 
 Add a test that:
 
@@ -289,12 +289,12 @@ Add a test that:
 3. Calls `listCardsByColumn({ ownerId, columnId, limit: 10 })`.
 4. Asserts 2 cards are returned, deleted card is absent.
 
-- [ ] **Step 10: Run to verify it passes**
+- [x] **Step 10: Run to verify it passes**
 
 Run: `npm run test -- src/server/card/repo.test.ts`
 Expected: PASS.
 
-- [ ] **Step 11: Format and commit**
+- [x] **Step 11: Format and commit**
 
 ```bash
 npx prettier --write src/server/card/repo.test.ts
@@ -308,7 +308,7 @@ git commit -m "test(card): cover listCardsByColumn cursor, priority filter, owne
 
 - Modify: `src/server/card/service.ts`
 
-- [ ] **Step 1: Write the service wrapper**
+- [x] **Step 1: Write the service wrapper**
 
 In `src/server/card/service.ts`, add at the top of the imports list:
 
@@ -356,11 +356,11 @@ export async function listCardsByColumnForUser(
 
 `serializeCardListItem` already exists at the bottom of the file — reuse it.
 
-- [ ] **Step 2: Format**
+- [x] **Step 2: Format**
 
 Run: `npx prettier --write src/server/card/service.ts`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/server/card/service.ts
@@ -374,7 +374,7 @@ git commit -m "feat(card): add listCardsByColumnForUser service wrapper"
 - Modify: `src/server/trpc/routers/card.ts`
 - Modify: `src/server/card/router.test.ts`
 
-- [ ] **Step 1: Write a failing input-validation test**
+- [x] **Step 1: Write a failing input-validation test**
 
 In `src/server/card/router.test.ts`, add a new `it(...)` block (modeled on the existing one). It should:
 
@@ -384,12 +384,12 @@ In `src/server/card/router.test.ts`, add a new `it(...)` block (modeled on the e
 4. Assert `caller.card.listByColumn({ columnId: <valid-uuid>, limit: 50, priority: "urgent" as never })` rejects with `BAD_REQUEST`.
 5. Assert `caller.card.listByColumn({ columnId: <valid-uuid>, limit: 9999 })` rejects with `BAD_REQUEST`.
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `npm run test -- src/server/card/router.test.ts`
 Expected: FAIL with `caller.card.listByColumn is not a function`.
 
-- [ ] **Step 3: Add the tRPC procedure**
+- [x] **Step 3: Add the tRPC procedure**
 
 In `src/server/trpc/routers/card.ts`:
 
@@ -433,21 +433,21 @@ listByColumn: protectedProcedure
   }),
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npm run test -- src/server/card/router.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Run the full test suite**
+- [x] **Step 5: Run the full test suite**
 
 Run: `npm run test`
 Expected: all green. The new endpoint is additive; nothing else should break.
 
-- [ ] **Step 6: Format**
+- [x] **Step 6: Format**
 
 Run: `npx prettier --write src/server/trpc/routers/card.ts src/server/card/router.test.ts`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/server/trpc/routers/card.ts src/server/card/router.test.ts
@@ -456,7 +456,7 @@ git commit -m "feat(trpc): expose card.listByColumn with cursor + priority valid
 
 ## Task 1.6: PR 1 wrap-up
 
-- [ ] **Step 1: Verify nothing else regressed**
+- [x] **Step 1: Verify nothing else regressed**
 
 Run: `npm run test`
 Expected: full suite passes.
@@ -497,7 +497,7 @@ After PR merges, capture the head commit hash and output: `Opened PR: <full-comm
 - Modify: `src/server/trpc/routers/board.ts`
 - Modify: `src/server/board/router.test.ts`
 
-- [ ] **Step 1: Write a failing repo test for `getBoardStructure`**
+- [x] **Step 1: Write a failing repo test for `getBoardStructure`**
 
 In `src/server/board/repo.test.ts`, add a `describe("getBoardStructure", () => { ... })` block with a test that:
 
@@ -508,12 +508,12 @@ In `src/server/board/repo.test.ts`, add a `describe("getBoardStructure", () => {
 
 Add a second test that returns `null` for a board owned by someone else.
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `npm run test -- src/server/board/repo.test.ts`
 Expected: FAIL with `getBoardStructure is not a function`.
 
-- [ ] **Step 3: Implement `getBoardStructure`**
+- [x] **Step 3: Implement `getBoardStructure`**
 
 In `src/server/board/repo.ts`, add (after `getBoardWithColumnsAndCards`):
 
@@ -574,16 +574,16 @@ export async function getBoardStructure(input: {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npm run test -- src/server/board/repo.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Add service wrapper**
+- [x] **Step 5: Add service wrapper**
 
 Open `src/server/board/service.ts` (read it first to see the existing wrapper pattern). Add `getBoardStructureForUser` mirroring the existing `getBoardWithColumnsAndCardsForUser`. The service should serialize `updatedAt` to ISO string for the wire.
 
-- [ ] **Step 6: Add tRPC procedure with input-validation test**
+- [x] **Step 6: Add tRPC procedure with input-validation test**
 
 In `src/server/board/router.test.ts`, add a test that asserts `caller.board.getStructure({ boardId: "not-a-uuid" })` rejects with `BAD_REQUEST`.
 
@@ -599,12 +599,12 @@ getStructure: protectedProcedure
 
 Add the import.
 
-- [ ] **Step 7: Run all server tests**
+- [x] **Step 7: Run all server tests**
 
 Run: `npm run test -- src/server/`
 Expected: PASS.
 
-- [ ] **Step 8: Format and commit**
+- [x] **Step 8: Format and commit**
 
 ```bash
 npx prettier --write src/server/board/repo.ts src/server/board/repo.test.ts src/server/board/service.ts src/server/trpc/routers/board.ts src/server/board/router.test.ts
@@ -620,7 +620,7 @@ git commit -m "feat(board): add getStructure endpoint returning columns without 
 - Create: `src/features/boards/columnCards/keys.test.ts`
 - Create: `src/features/boards/columnCards/useColumnCards.ts`
 
-- [ ] **Step 1: Write the failing key-derivation test**
+- [x] **Step 1: Write the failing key-derivation test**
 
 Create `src/features/boards/columnCards/keys.test.ts`:
 
@@ -680,12 +680,12 @@ describe("describeColumnSlice", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `npm run test -- src/features/boards/columnCards/keys.test.ts`
 Expected: FAIL — file does not exist.
 
-- [ ] **Step 3: Implement `keys.ts`**
+- [x] **Step 3: Implement `keys.ts`**
 
 Create `src/features/boards/columnCards/keys.ts`:
 
@@ -735,12 +735,12 @@ export function sliceQueryInput(slice: ColumnCardsSlice): {
 
 Note: `limit: 100` is intentional for PR 2 — we want behavior parity with today (load everything for typical boards). PR 3 drops this to 50.
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npm run test -- src/features/boards/columnCards/keys.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Implement `useColumnCards` hook**
+- [x] **Step 5: Implement `useColumnCards` hook**
 
 Create `src/features/boards/columnCards/useColumnCards.ts`:
 
@@ -796,7 +796,7 @@ export function useColumnCards(slice: ColumnCardsSlice) {
 }
 ```
 
-- [ ] **Step 6: Format and commit**
+- [x] **Step 6: Format and commit**
 
 ```bash
 npx prettier --write src/features/boards/columnCards/
@@ -811,7 +811,7 @@ git commit -m "feat(boards): add column slice key model and useColumnCards hook"
 - Create: `src/features/boards/columnCards/patchCache.ts`
 - Create: `src/features/boards/columnCards/patchCache.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/features/boards/columnCards/patchCache.test.ts`:
 
@@ -878,12 +878,12 @@ describe("applyMutation", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `npm run test -- src/features/boards/columnCards/patchCache.test.ts`
 Expected: FAIL — file does not exist.
 
-- [ ] **Step 3: Implement `patchCache.ts`**
+- [x] **Step 3: Implement `patchCache.ts`**
 
 Create `src/features/boards/columnCards/patchCache.ts`:
 
@@ -964,12 +964,12 @@ export function patchSliceCache(
 
 Note on imports: `getQueryKey` from `@trpc/react-query` is the canonical way to derive query keys for cache patches. If your tRPC client uses a different helper, swap accordingly — verify by reading how `utils.card.listByBoard.invalidate({ boardId })` is currently wired in `BoardDetailScreen.tsx:184`.
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npm run test -- src/features/boards/columnCards/patchCache.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Format and commit**
+- [x] **Step 5: Format and commit**
 
 ```bash
 npx prettier --write src/features/boards/columnCards/
@@ -990,7 +990,7 @@ git commit -m "feat(boards): add cache-patch helpers for per-column queries"
 
 This is the largest single task in the plan. It's a coordinated swap; we cannot do it incrementally without leaving the app broken. Steps go: tests first for new behavior, then the swap, then verify the whole suite passes.
 
-- [ ] **Step 1: Read existing tests that exercise the board snapshot**
+- [x] **Step 1: Read existing tests that exercise the board snapshot**
 
 ```bash
 ls src/features/boards/BoardCanvas.*.test.tsx
@@ -998,7 +998,7 @@ ls src/features/boards/BoardCanvas.*.test.tsx
 
 These tests render `BoardCanvas` directly with a `LoadedBoard` mock. They will continue to work if we keep `BoardCanvas` accepting cards via props for testing — but production wiring (`BoardDetailScreen`) will source those cards from queries. Plan accordingly: `BoardLaneView` keeps accepting `cards: ColumnCardItem[]` as a prop, and `BoardDetailScreen` injects it from `useColumnCards`.
 
-- [ ] **Step 2: Update `LoadedBoard` type in `types.ts`**
+- [x] **Step 2: Update `LoadedBoard` type in `types.ts`**
 
 Find the `LoadedBoard` type. Make `cards` on a column **no longer required** (or split into `LoadedBoardStructure` vs `LoadedBoard` — pick whichever creates less churn). The cleanest approach:
 
@@ -1023,7 +1023,7 @@ export type LoadedBoardStructure = {
 
 Keep `LoadedBoard` as-is for tests / legacy callers. Add `LoadedBoardStructure` for the new production path.
 
-- [ ] **Step 3: Refactor `BoardLaneView` to source cards from `useColumnCards`**
+- [x] **Step 3: Refactor `BoardLaneView` to source cards from `useColumnCards`**
 
 In `BoardLaneView.tsx`, replace `lane.cards` reads with the slice query. Because the existing tests pass `lane.cards` as a literal, gate the swap with a prop:
 
@@ -1038,11 +1038,11 @@ type BoardLaneViewProps = {
 
 Strip out everything that read `lane.cards.length`, `lane.cards.map(...)`, etc., and replace with the new `cards` prop. The lane's `title` and `helperText` stay on `lane` (those come from structure).
 
-- [ ] **Step 4: Refactor `StaticLaneCards` similarly**
+- [x] **Step 4: Refactor `StaticLaneCards` similarly**
 
 `StaticLaneCards` reads `lane.cards` — same swap. Take `cards: ColumnCardItem[]` as a prop. The grouping logic (`groupListItemsByPriority`) stays, but it operates on the prop now.
 
-- [ ] **Step 5: In `BoardDetailScreen`, swap data fetching**
+- [x] **Step 5: In `BoardDetailScreen`, swap data fetching**
 
 Replace:
 
@@ -1091,7 +1091,7 @@ function BoardCanvasContainer({ structure, search, ...rest }: ...) {
 
 The exact wiring depends on how much churn you want in `BoardCanvas` — there's room to either pass a `renderColumnCards` callback or inline the slice rendering inside `BoardLaneView`. Pick the smaller change.
 
-- [ ] **Step 6: Rewrite optimistic drag updates to use `patchSliceCache`**
+- [x] **Step 6: Rewrite optimistic drag updates to use `patchSliceCache`**
 
 In `BoardDetailScreen`'s `commitCardPlacement`, replace the `setOptimisticBoard(reorderBoardCards(...))` call with two `patchSliceCache(...)` calls (source and destination slices). For same-column reorders, both calls hit the same slice.
 
@@ -1119,7 +1119,7 @@ await Promise.all([
 
 `utils.card.listByColumn.invalidate` with a partial input should match all cursors for that column — verify by checking the tRPC v11 docs for `invalidate` partial-input behavior; if it doesn't, invalidate at the broader `utils.card.listByColumn.invalidate()` level.
 
-- [ ] **Step 7: Remove `getWithColumnsAndCards` callsite**
+- [x] **Step 7: Remove `getWithColumnsAndCards` callsite**
 
 Search the repo:
 
@@ -1129,12 +1129,12 @@ rg "getWithColumnsAndCards" src/
 
 Remove only the **frontend** callsite. Leave the server endpoint in place for now — we'll delete it in Task 2.6 once we're confident nothing else uses it.
 
-- [ ] **Step 8: Run frontend tests**
+- [x] **Step 8: Run frontend tests**
 
 Run: `npm run test -- src/features/boards/`
 Expected: existing `BoardCanvas.*.test.tsx` tests should still pass because they render `BoardCanvas` directly with the legacy `LoadedBoard` shape (cards baked in). If anything fails, the test was reaching past `BoardCanvas` into wiring — adjust the test to inject `cards` directly via the new prop.
 
-- [ ] **Step 9: Run the full suite**
+- [x] **Step 9: Run the full suite**
 
 Run: `npm run test`
 Expected: all green.
@@ -1155,7 +1155,7 @@ In a browser at the dev URL:
 
 State explicitly in your task summary which scenarios you exercised and which you couldn't.
 
-- [ ] **Step 11: Format and commit**
+- [x] **Step 11: Format and commit**
 
 ```bash
 npx prettier --write src/features/boards/
@@ -1170,22 +1170,22 @@ git commit -m "refactor(boards): replace board snapshot with per-droppable infin
 - Modify: `src/features/boards/model.ts`
 - Modify: `src/features/boards/model.test.ts`
 
-- [ ] **Step 1: Find dead code**
+- [x] **Step 1: Find dead code**
 
 Run: `rg "reorderBoardCards|reorderBoardColumns|getCardPosition|getColumnPosition" src/features/boards/`
 
 For each helper, check whether it's still used after Task 2.4. Anything used only by the removed `commitCardPlacement` / `setOptimisticBoard` paths is dead.
 
-- [ ] **Step 2: Delete dead helpers and their tests**
+- [x] **Step 2: Delete dead helpers and their tests**
 
 Remove the unused functions from `model.ts` and the corresponding tests from `model.test.ts`. Keep helpers that are still used (e.g., `parseBoardDetailSearch`, `boardPriorityMeta`, `togglePrioritySelection` — those are presentation logic, not snapshot manipulation).
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run: `npm run test -- src/features/boards/`
 Expected: PASS.
 
-- [ ] **Step 4: Format and commit**
+- [x] **Step 4: Format and commit**
 
 ```bash
 npx prettier --write src/features/boards/model.ts src/features/boards/model.test.ts
@@ -1203,21 +1203,21 @@ git commit -m "refactor(boards): remove dead board-snapshot reorder helpers"
 - Modify: `src/server/board/repo.test.ts`
 - Modify: `src/server/board/router.test.ts`
 
-- [ ] **Step 1: Confirm no callers**
+- [x] **Step 1: Confirm no callers**
 
 Run: `rg "getWithColumnsAndCards|getBoardWithColumnsAndCards" src/`
 Expected: no matches in `src/features/`, `src/routes/`, or anywhere outside the server file you're about to delete from.
 
-- [ ] **Step 2: Remove the procedure, service, repo function, and their tests**
+- [x] **Step 2: Remove the procedure, service, repo function, and their tests**
 
 Delete `getBoardWithColumnsAndCards` from `repo.ts`, `getBoardWithColumnsAndCardsForUser` from `service.ts`, the `getWithColumnsAndCards` procedure from the router, and the corresponding tests.
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run: `npm run test`
 Expected: PASS.
 
-- [ ] **Step 4: Format and commit**
+- [x] **Step 4: Format and commit**
 
 ```bash
 npx prettier --write src/server/board/ src/server/trpc/routers/board.ts
@@ -1227,7 +1227,7 @@ git commit -m "chore(board): remove unused getWithColumnsAndCards endpoint"
 
 ## Task 2.7: PR 2 wrap-up
 
-- [ ] **Step 1: Full test pass**
+- [x] **Step 1: Full test pass**
 
 Run: `npm run test`
 Expected: green.
@@ -1274,17 +1274,17 @@ After PR merges, output the head commit hash: `Opened PR: <full-commit-hash>`.
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
-- [ ] **Step 1: Install**
+- [x] **Step 1: Install**
 
 Run: `npm install react-virtuoso`
 Expected: latest 4.x version installed.
 
-- [ ] **Step 2: Verify install**
+- [x] **Step 2: Verify install**
 
 Run: `npm ls react-virtuoso`
 Expected: shows the installed version, no peer-dep warnings.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add package.json package-lock.json
@@ -1298,25 +1298,25 @@ git commit -m "chore: add react-virtuoso for column virtualization"
 - Modify: `src/features/boards/columnCards/keys.ts`
 - Modify: `src/features/boards/columnCards/keys.test.ts`
 
-- [ ] **Step 1: Update the test**
+- [x] **Step 1: Update the test**
 
 In `keys.test.ts`, add an assertion that `sliceQueryInput({ columnId: "col", mode: "all" }).limit === 50`.
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `npm run test -- src/features/boards/columnCards/keys.test.ts`
 Expected: FAIL — limit is currently 100.
 
-- [ ] **Step 3: Change the literal in `keys.ts`**
+- [x] **Step 3: Change the literal in `keys.ts`**
 
 Replace `limit: 100` with `limit: 50` in all three branches of `sliceQueryInput`.
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `npm run test -- src/features/boards/columnCards/keys.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Format and commit**
+- [x] **Step 5: Format and commit**
 
 ```bash
 npx prettier --write src/features/boards/columnCards/
@@ -1331,7 +1331,7 @@ git commit -m "feat(boards): drop column page size to 50"
 - Modify: `src/features/boards/BoardCanvas/BoardLaneView.tsx`
 - Create: `src/features/boards/BoardCanvas/VirtualizedCardList.tsx`
 
-- [ ] **Step 1: Extract the virtualized card list into its own component**
+- [x] **Step 1: Extract the virtualized card list into its own component**
 
 Create `src/features/boards/BoardCanvas/VirtualizedCardList.tsx`. The component owns:
 
@@ -1442,7 +1442,7 @@ Two non-obvious bits:
 - `scrollerRef={provided.innerRef}` — gives `@hello-pangea/dnd` the actual scrollable container so it can detect scroll position during drag.
 - `increaseViewportBy={400}` — this is the overscan the dnd virtual-list docs require. Without overscan the library can't detect items just past the visible window.
 
-- [ ] **Step 2: Use the new component in `BoardLaneView`**
+- [x] **Step 2: Use the new component in `BoardLaneView`**
 
 In `BoardLaneView.tsx`, replace the `lane.cards.map(...)` block (the one inside the `<Droppable>` for the canReorder + isRealColumn branch) with a `<VirtualizedCardList>` instance, passing `cards`, `hasNextPage`, `onLoadMore` from props.
 
@@ -1462,7 +1462,7 @@ npm run dev
 
 State explicitly in the task summary which scenarios you exercised.
 
-- [ ] **Step 4: Run unit tests**
+- [x] **Step 4: Run unit tests**
 
 Run: `npm run test -- src/features/boards/`
 Expected: existing `BoardCanvas.*.test.tsx` tests pass. Some may need adjustment if they rendered the old non-virtualized list and asserted on `lane.cards` rendering — update them to render with the new component or to mock Virtuoso via `vi.mock("react-virtuoso", ...)`.
@@ -1479,7 +1479,7 @@ vi.mock("react-virtuoso", () => ({
 
 This bypasses virtualization in tests (renders all items synchronously), which is what you want for assertion-style tests. **Do not** use this mock in browser/E2E — only in jsdom unit tests.
 
-- [ ] **Step 5: Format and commit**
+- [x] **Step 5: Format and commit**
 
 ```bash
 npx prettier --write src/features/boards/
@@ -1493,7 +1493,7 @@ git commit -m "feat(boards): virtualize column card lists with react-virtuoso + 
 
 - Modify: `AGENTS.md` (the "Accessibility" section)
 
-- [ ] **Step 1: Add a note**
+- [x] **Step 1: Add a note**
 
 Append to the Accessibility section:
 
@@ -1501,7 +1501,7 @@ Append to the Accessibility section:
 - Virtualized columns (board view) only render visible cards into the DOM. Off-screen cards are not reachable by Tab, screen readers, or browser find. The keyboard move-buttons on each card remain the accessible escape hatch — they do not depend on the virtualized DOM.
 ```
 
-- [ ] **Step 2: Format and commit**
+- [x] **Step 2: Format and commit**
 
 ```bash
 npx prettier --write AGENTS.md
@@ -1511,7 +1511,7 @@ git commit -m "docs: note virtualization a11y caveat for board columns"
 
 ## Task 3.5: PR 3 wrap-up
 
-- [ ] **Step 1: Full test pass**
+- [x] **Step 1: Full test pass**
 
 Run: `npm run test`
 Expected: green.
