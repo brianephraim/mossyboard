@@ -104,7 +104,7 @@ Four layers, one responsibility each:
 
 1. **The URL (view state)** — _the URL is itself a primary state container, not a side effect of state held elsewhere_. On `/boards/$boardId`, search params drive `view` (`board`/`list`), `groupBy` (`column`/`priority`), `priority` and `tags` filters, the open `card` detail panel, and `drawer` state. Routes use TanStack Router's `validateSearch` so consumers read typed params via `Route.useSearch()`. Refresh, back/forward, and link-sharing all just work.
 2. **TanStack Query (server state)** — caching, background refetch, invalidation. Query keys come from tRPC procedure paths via `@trpc/react-query`; no hand-authored constants.
-3. **Redux Toolkit (shared client state)** — the small set of toggles that don't belong in the URL (`groupedBoardReorderEnabled`, counter-page checkbox). Slices in `src/store/`.
+3. **Redux Toolkit (shared client state)** — the small set of toggles that don't belong in the URL (`groupedBoardReorderEnabled`). Slices in `src/store/`.
 4. **React component state** — open/closed menus, hover, drag, in-progress form values.
 
 **Why this split.** Most "client state" people instinctively reach for Redux for is actually view state that should survive a refresh — which means the URL, not memory. Putting filters, grouping, view mode, and the open card in the URL is what makes the app linkable and the back button meaningful. Query owns remote data; Redux is reserved for the residue.
