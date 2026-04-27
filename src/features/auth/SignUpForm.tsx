@@ -8,6 +8,7 @@ import { YStack } from "@tamagui/stacks";
 
 import { signUpWithEmail } from "../../auth/client";
 import { FormRoot, FormTextField } from "../../form";
+import { BoardActionButton } from "../boards/ui";
 import { useAuthAnnounceOptional } from "./AuthAnnounceContext";
 import { mapSignUpError } from "./firebase-auth-errors";
 
@@ -66,7 +67,10 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
         Create account
       </Text>
 
-      <Text color="$color11">Use your email and password to create a Kanban account.</Text>
+      <Text color="$boardTextMuted" lineHeight="$5">
+        Create your Mossyboard login and start organizing work in a board space that stays calm and
+        readable.
+      </Text>
 
       <YStack gap="$3">
         <FormTextField<SignUpValues, "email">
@@ -95,7 +99,8 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
           inputMode="email"
           autoCapitalize="none"
           autoComplete="email"
-          defaultBorderColor="$borderColor"
+          backgroundColor="$boardPanelSurfaceStrong"
+          defaultBorderColor="$boardShellBorder"
         />
 
         <FormTextField<SignUpValues, "password">
@@ -110,7 +115,8 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
           labelProps={{ fontWeight: "600", color: "$color12" }}
           type="password"
           autoComplete="new-password"
-          defaultBorderColor="$borderColor"
+          backgroundColor="$boardPanelSurfaceStrong"
+          defaultBorderColor="$boardShellBorder"
         />
       </YStack>
 
@@ -118,32 +124,31 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
         <YStack
           ref={formErrorRef}
           borderWidth={1}
-          borderColor="$red8"
-          backgroundColor="$red2"
+          borderColor="rgba(161, 64, 47, 0.18)"
+          backgroundColor="$boardDangerBg"
           padding="$3"
-          borderRadius="$4"
+          borderRadius="$8"
           gap="$2"
           tabIndex={-1}
         >
-          <Text fontWeight="700" color="$red11">
+          <Text fontWeight="700" color="$boardDangerText">
             Could not create account
           </Text>
-          <Text color="$red11">{form.formState.errors.root.message}</Text>
+          <Text color="$boardDangerText">{form.formState.errors.root.message}</Text>
         </YStack>
       ) : null}
 
-      <Button
+      <BoardActionButton
+        width="100%"
+        type="submit"
+        tone="accent"
         disabled={form.formState.isSubmitting}
-        backgroundColor="$blue10"
-        pressStyle={{ backgroundColor: "$blue11" }}
-        color="$color1"
       >
         {form.formState.isSubmitting ? "Creating account..." : "Create account"}
-      </Button>
+      </BoardActionButton>
 
-      <Text fontSize="$2" color="$color10">
-        By creating an account, you agree to the current terms and privacy policy once those pages
-        are added.
+      <Text fontSize="$2" color="$boardTextSubtle">
+        Dedicated terms and privacy pages are still being added for this build.
       </Text>
 
       <Button
@@ -159,8 +164,8 @@ export function SignUpForm({ redirectTo, formHeadingRef }: SignUpFormProps) {
           });
         }}
       >
-        <Text color="$blue10" textDecorationLine="underline">
-          Sign in instead
+        <Text color="$boardAccent" textDecorationLine="underline">
+          Already have an account? Sign in.
         </Text>
       </Button>
     </FormRoot>

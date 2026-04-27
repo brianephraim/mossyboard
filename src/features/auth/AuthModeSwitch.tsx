@@ -41,8 +41,11 @@ export function AuthModeSwitch({
   if (mode === "reset") {
     return (
       <YStack gap="$2" width="100%">
-        <Text fontSize="$3" fontWeight="600" color="$color11">
+        <Text fontSize="$3" fontWeight="700" color="$boardHeading">
           Password reset
+        </Text>
+        <Text color="$boardTextMuted">
+          Remembered it? You can head back to the regular sign-in form.
         </Text>
         <Button
           chromeless
@@ -57,7 +60,7 @@ export function AuthModeSwitch({
             });
           }}
         >
-          <Text color="$blue10" textDecorationLine="underline">
+          <Text color="$boardAccent" textDecorationLine="underline">
             Back to sign in
           </Text>
         </Button>
@@ -85,28 +88,44 @@ export function AuthModeSwitch({
       activationMode="manual"
       width="100%"
     >
-      <Tabs.List loop={false} gap="$2" backgroundColor="transparent" borderWidth={0} padding={0}>
+      <Tabs.List
+        loop={false}
+        gap="$1"
+        backgroundColor="$boardAccentWash"
+        borderWidth={1}
+        borderColor="$boardShellBorder"
+        borderRadius="$boardPill"
+        padding="$1"
+      >
         <Tabs.Tab
           value="signin"
           flex={1}
-          borderRadius="$6"
+          borderRadius="$boardPill"
           borderWidth={1}
-          borderColor={tabValue === "signin" ? "$borderColorFocus" : "$borderColor"}
-          backgroundColor={tabValue === "signin" ? "$backgroundFocus" : "$background"}
+          borderColor={tabValue === "signin" ? "$boardShellBorder" : "transparent"}
+          backgroundColor={tabValue === "signin" ? "$boardPanelSurfaceStrong" : "transparent"}
+          hoverStyle={{ backgroundColor: "$boardPanelSurfaceStrong" }}
         >
-          <Text fontWeight="700" color="$color12">
+          <Text
+            fontWeight="700"
+            color={tabValue === "signin" ? "$boardHeading" : "$boardTextMuted"}
+          >
             Sign in
           </Text>
         </Tabs.Tab>
         <Tabs.Tab
           value="signup"
           flex={1}
-          borderRadius="$6"
+          borderRadius="$boardPill"
           borderWidth={1}
-          borderColor={tabValue === "signup" ? "$borderColorFocus" : "$borderColor"}
-          backgroundColor={tabValue === "signup" ? "$backgroundFocus" : "$background"}
+          borderColor={tabValue === "signup" ? "$boardShellBorder" : "transparent"}
+          backgroundColor={tabValue === "signup" ? "$boardPanelSurfaceStrong" : "transparent"}
+          hoverStyle={{ backgroundColor: "$boardPanelSurfaceStrong" }}
         >
-          <Text fontWeight="700" color="$color12">
+          <Text
+            fontWeight="700"
+            color={tabValue === "signup" ? "$boardHeading" : "$boardTextMuted"}
+          >
             Create account
           </Text>
         </Tabs.Tab>

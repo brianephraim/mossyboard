@@ -8,6 +8,7 @@ import { YStack } from "@tamagui/stacks";
 
 import { FormRoot, FormTextField } from "../../form";
 import { trpc } from "../../trpc/client";
+import { BoardActionButton } from "../boards/ui";
 import { mapPasswordResetSendError } from "./firebase-auth-errors";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -95,7 +96,10 @@ export function ResetPasswordForm({ redirectTo, formHeadingRef }: ResetPasswordF
         Reset password
       </Text>
 
-      <Text color="$color11">Enter your email and we&apos;ll send a password reset link.</Text>
+      <Text color="$boardTextMuted" lineHeight="$5">
+        Enter the email tied to your Mossyboard account and we&apos;ll send a fresh password reset
+        link.
+      </Text>
 
       <FormTextField<ResetValues, "email">
         name="email"
@@ -123,23 +127,24 @@ export function ResetPasswordForm({ redirectTo, formHeadingRef }: ResetPasswordF
         inputMode="email"
         autoCapitalize="none"
         autoComplete="email"
-        defaultBorderColor="$borderColor"
+        backgroundColor="$boardPanelSurfaceStrong"
+        defaultBorderColor="$boardShellBorder"
         additionalDescribedBy={sendSucceeded ? "reset-success" : undefined}
       />
 
       {form.formState.errors.root ? (
         <YStack
           borderWidth={1}
-          borderColor="$red8"
-          backgroundColor="$red2"
+          borderColor="rgba(161, 64, 47, 0.18)"
+          backgroundColor="$boardDangerBg"
           padding="$3"
-          borderRadius="$4"
+          borderRadius="$8"
           gap="$2"
         >
-          <Text fontWeight="700" color="$red11">
+          <Text fontWeight="700" color="$boardDangerText">
             Request failed
           </Text>
-          <Text color="$red11">{form.formState.errors.root.message}</Text>
+          <Text color="$boardDangerText">{form.formState.errors.root.message}</Text>
         </YStack>
       ) : null}
 
@@ -148,29 +153,31 @@ export function ResetPasswordForm({ redirectTo, formHeadingRef }: ResetPasswordF
           ref={successRef}
           tabIndex={-1}
           borderWidth={1}
-          borderColor="$green8"
-          backgroundColor="$green2"
+          borderColor="rgba(47, 110, 61, 0.18)"
+          backgroundColor="$boardSuccessBg"
           padding="$3"
-          borderRadius="$4"
+          borderRadius="$8"
           gap="$2"
         >
-          <Text id="reset-success" fontWeight="700" color="$green11">
-            Password reset email sent. Check your inbox for the reset link.
+          <Text id="reset-success" fontWeight="700" color="$boardSuccessText">
+            Password reset email sent. Check your inbox for a reset link from Mossyboard.
           </Text>
           {cooldown > 0 ? (
-            <Text color="$green11">You can request another email in {cooldown} seconds.</Text>
+            <Text color="$boardSuccessText">
+              You can request another email in {cooldown} seconds.
+            </Text>
           ) : null}
         </YStack>
       ) : null}
 
-      <Button
+      <BoardActionButton
+        width="100%"
+        type="submit"
+        tone="accent"
         disabled={sendReset.isPending || cooldown > 0}
-        backgroundColor="$blue10"
-        pressStyle={{ backgroundColor: "$blue11" }}
-        color="$color1"
       >
         {sendReset.isPending ? "Sending..." : "Send reset email"}
-      </Button>
+      </BoardActionButton>
 
       <Button
         chromeless
@@ -185,7 +192,7 @@ export function ResetPasswordForm({ redirectTo, formHeadingRef }: ResetPasswordF
           });
         }}
       >
-        <Text color="$blue10" textDecorationLine="underline">
+        <Text color="$boardAccent" textDecorationLine="underline">
           Back to sign in
         </Text>
       </Button>

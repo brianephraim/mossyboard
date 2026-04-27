@@ -28,7 +28,7 @@ export function VerifyEmailScreen({
 
   const sendVerification = trpc.authEmail.sendVerification.useMutation({
     onSuccess: () => {
-      setStatus("Verification email sent.");
+      setStatus("Verification email sent. Check your inbox for the link.");
       announce?.announce("Verification email sent.");
     },
     onError: () => {
@@ -95,8 +95,8 @@ export function VerifyEmailScreen({
 
   return (
     <CenteredBoardState
-      title="Verify your email to continue"
-      description="Check your inbox for a verification link. Once your email is verified, you can continue to your boards."
+      title="Verify your email to enter Mossyboard"
+      description="Check your inbox for a verification link. Once you confirm your address, we'll bring you back to your boards."
       actions={
         <>
           <BoardActionButton
@@ -107,7 +107,7 @@ export function VerifyEmailScreen({
               void sendVerification.mutateAsync({});
             }}
           >
-            {sendVerification.isPending ? "Sending…" : "Send verification email!!"}
+            {sendVerification.isPending ? "Sending..." : "Send verification email"}
           </BoardActionButton>
           <BoardActionButton
             onPress={() => {
@@ -140,7 +140,7 @@ export function VerifyEmailScreen({
           status.
         </Text>
         <Text color="$boardTextMuted">
-          You can keep this page open while you verify your email.
+          You can keep this page open while you verify your email in another tab.
         </Text>
         {status ? (
           <BoardInlineNotice

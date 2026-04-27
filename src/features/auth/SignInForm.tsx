@@ -8,6 +8,7 @@ import { YStack } from "@tamagui/stacks";
 
 import { signInWithEmail } from "../../auth/client";
 import { FormRoot, FormTextField } from "../../form";
+import { BoardActionButton } from "../boards/ui";
 import { useAuthAnnounceOptional } from "./AuthAnnounceContext";
 import { mapSignInError } from "./firebase-auth-errors";
 
@@ -66,6 +67,11 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
         Sign in
       </Text>
 
+      <Text color="$boardTextMuted" lineHeight="$5">
+        Sign in with the email you use for Mossyboard. Your boards and in-progress work will be
+        right where you left them.
+      </Text>
+
       <YStack gap="$3">
         <FormTextField<SignInValues, "email">
           name="email"
@@ -93,7 +99,8 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
           inputMode="email"
           autoCapitalize="none"
           autoComplete="email"
-          defaultBorderColor="$borderColor"
+          backgroundColor="$boardPanelSurfaceStrong"
+          defaultBorderColor="$boardShellBorder"
         />
 
         <FormTextField<SignInValues, "password">
@@ -108,7 +115,8 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
           labelProps={{ fontWeight: "600", color: "$color12" }}
           type="password"
           autoComplete="current-password"
-          defaultBorderColor="$borderColor"
+          backgroundColor="$boardPanelSurfaceStrong"
+          defaultBorderColor="$boardShellBorder"
         />
       </YStack>
 
@@ -117,27 +125,27 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
           ref={formErrorRef}
           tabIndex={-1}
           borderWidth={1}
-          borderColor="$red8"
-          backgroundColor="$red2"
+          borderColor="rgba(161, 64, 47, 0.18)"
+          backgroundColor="$boardDangerBg"
           padding="$3"
-          borderRadius="$4"
+          borderRadius="$8"
           gap="$2"
         >
-          <Text fontWeight="700" color="$red11">
-            Sign-in failed
+          <Text fontWeight="700" color="$boardDangerText">
+            We couldn't sign you in
           </Text>
-          <Text color="$red11">{form.formState.errors.root.message}</Text>
+          <Text color="$boardDangerText">{form.formState.errors.root.message}</Text>
         </YStack>
       ) : null}
 
-      <Button
+      <BoardActionButton
+        width="100%"
+        type="submit"
+        tone="accent"
         disabled={form.formState.isSubmitting}
-        backgroundColor="$blue10"
-        pressStyle={{ backgroundColor: "$blue11" }}
-        color="$color1"
       >
         {form.formState.isSubmitting ? "Signing in..." : "Sign in"}
-      </Button>
+      </BoardActionButton>
 
       <YStack gap="$2">
         <Button
@@ -154,7 +162,7 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
             });
           }}
         >
-          <Text color="$blue10" textDecorationLine="underline">
+          <Text color="$boardAccent" textDecorationLine="underline">
             Forgot password?
           </Text>
         </Button>
@@ -171,8 +179,8 @@ export function SignInForm({ redirectTo, formHeadingRef }: SignInFormProps) {
             });
           }}
         >
-          <Text color="$blue10" textDecorationLine="underline">
-            Create account
+          <Text color="$boardAccent" textDecorationLine="underline">
+            New here? Create an account.
           </Text>
         </Button>
       </YStack>
