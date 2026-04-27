@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 
 import { describe, it } from "vitest";
 
-import { describeColumnSlice } from "./keys";
+import { describeColumnSlice, sliceQueryInput } from "./keys";
 import type { BoardDetailSearch } from "../types";
 
 const baseSearch: BoardDetailSearch = {
@@ -51,5 +51,25 @@ describe("describeColumnSlice", () => {
       { columnId: "col-1", mode: "priority", priority: "medium" },
       { columnId: "col-1", mode: "priority", priority: "high" },
     ]);
+  });
+});
+
+describe("sliceQueryInput limit", () => {
+  it("uses a 50-card page size for 'all' slices", () => {
+    assert.equal(sliceQueryInput({ columnId: "col", mode: "all" }).limit, 50);
+  });
+
+  it("uses a 50-card page size for 'filtered' slices", () => {
+    assert.equal(
+      sliceQueryInput({ columnId: "col", mode: "filtered", priorities: ["high"] }).limit,
+      50,
+    );
+  });
+
+  it("uses a 50-card page size for 'priority' slices", () => {
+    assert.equal(
+      sliceQueryInput({ columnId: "col", mode: "priority", priority: "high" }).limit,
+      50,
+    );
   });
 });

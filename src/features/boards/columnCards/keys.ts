@@ -32,10 +32,10 @@ export function sliceQueryInput(slice: ColumnCardsSlice): {
   limit: number;
 } {
   if (slice.mode === "priority") {
-    return { columnId: slice.columnId, priority: slice.priority, limit: 100 };
+    return { columnId: slice.columnId, priority: slice.priority, limit: 50 };
   }
   if (slice.mode === "filtered") {
-    return { columnId: slice.columnId, priority: slice.priorities, limit: 100 };
+    return { columnId: slice.columnId, priority: slice.priorities, limit: 50 };
   }
-  return { columnId: slice.columnId, limit: 100 };
+  return { columnId: slice.columnId, limit: 50 };
 }
