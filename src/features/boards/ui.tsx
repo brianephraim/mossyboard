@@ -249,7 +249,7 @@ export function BoardActionButton({
       borderWidth={1}
       paddingHorizontal={media.maxMd ? "$3" : "$4"}
       fontWeight="600"
-      fontSize={media.maxMd ? "$3" : "$4"}
+      fontSize={media.maxMd ? "$5" : "$6"}
       {...styles}
       {...({ form, type } as unknown as ComponentProps<typeof Button>)}
       {...props}

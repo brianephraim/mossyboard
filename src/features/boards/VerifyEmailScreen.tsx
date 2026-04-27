@@ -106,6 +106,7 @@ export function VerifyEmailScreen({
             onPress={() => {
               void sendVerification.mutateAsync({});
             }}
+            fontSize="$3"
           >
             {sendVerification.isPending ? "Sending..." : "Send verification email"}
           </BoardActionButton>
