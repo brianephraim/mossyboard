@@ -363,5 +363,257 @@ describe("card repo", () => {
         );
       }
     }, 20000);
+
+    it("paginates through cards using (position, id) cursor", async () => {
+      if (!canRun) return;
+
+      process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
+
+      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createCard, listCardsByColumn } = await import("./repo");
+
+      const ownerId = randomUUID();
+      const board = await createBoard({ ownerId, name: "Cursor pagination board" });
+      const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+      const columnId = loadedBoard?.columns[0]?.id;
+      assert.ok(columnId, "expected a starter column");
+
+      const seeded: Array<{ id: string }> = [];
+      for (let i = 0; i < 7; i++) {
+        seeded.push(
+          await createCard({
+            ownerId,
+            columnId,
+            title: `card-${i}`,
+            description: "",
+            priority: "none",
+          }),
+        );
+      }
+
+      const page1 = await listCardsByColumn({ ownerId, columnId, limit: 3 });
+      assert.equal(page1.items.length, 3);
+      assert.deepEqual(
+        page1.items.map((row) => row.id),
+        seeded.slice(0, 3).map((row) => row.id),
+      );
+      const page1Last = page1.items[2]!;
+      assert.deepEqual(page1.nextCursor, {
+        position: page1Last.position,
+        cardId: page1Last.id,
+      });
+
+      const page2 = await listCardsByColumn({
+        ownerId,
+        columnId,
+        limit: 3,
+        cursor: page1.nextCursor,
+      });
+      assert.equal(page2.items.length, 3);
+      assert.deepEqual(
+        page2.items.map((row) => row.id),
+        seeded.slice(3, 6).map((row) => row.id),
+      );
+      const page2Last = page2.items[2]!;
+      assert.deepEqual(page2.nextCursor, {
+        position: page2Last.position,
+        cardId: page2Last.id,
+      });
+
+      const page3 = await listCardsByColumn({
+        ownerId,
+        columnId,
+        limit: 3,
+        cursor: page2.nextCursor,
+      });
+      assert.equal(page3.items.length, 1);
+      assert.equal(page3.items[0]!.id, seeded[6]!.id);
+      assert.equal(page3.nextCursor, null);
+    }, 20000);
+
+    it("filters to a single priority value", async () => {
+      if (!canRun) return;
+
+      process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
+
+      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createCard, listCardsByColumn } = await import("./repo");
+
+      const ownerId = randomUUID();
+      const board = await createBoard({ ownerId, name: "Single priority filter board" });
+      const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+      const columnId = loadedBoard?.columns[0]?.id;
+      assert.ok(columnId, "expected a starter column");
+
+      const interleaved: Array<{ priority: "high" | "medium" | "low" }> = [
+        { priority: "high" },
+        { priority: "medium" },
+        { priority: "low" },
+        { priority: "high" },
+        { priority: "medium" },
+        { priority: "low" },
+      ];
+      const seeded: Array<{ id: string; priority: "high" | "medium" | "low" }> = [];
+      for (const spec of interleaved) {
+        const created = await createCard({
+          ownerId,
+          columnId,
+          title: `c-${spec.priority}-${seeded.length}`,
+          description: "",
+          priority: spec.priority,
+        });
+        seeded.push({ id: created.id, priority: spec.priority });
+      }
+
+      const onlyHigh = await listCardsByColumn({
+        ownerId,
+        columnId,
+        priority: "high",
+        limit: 10,
+      });
+      assert.equal(onlyHigh.nextCursor, null);
+      const expectedHighIds = seeded.filter((row) => row.priority === "high").map((row) => row.id);
+      assert.deepEqual(
+        onlyHigh.items.map((row) => row.id),
+        expectedHighIds,
+      );
+      assert.deepEqual(
+        onlyHigh.items.map((row) => row.priority),
+        ["high", "high"],
+      );
+    }, 20000);
+
+    it("filters to a list of priorities and short-circuits on empty list", async () => {
+      if (!canRun) return;
+
+      process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
+
+      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createCard, listCardsByColumn } = await import("./repo");
+
+      const ownerId = randomUUID();
+      const board = await createBoard({ ownerId, name: "Priority list filter board" });
+      const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+      const columnId = loadedBoard?.columns[0]?.id;
+      assert.ok(columnId, "expected a starter column");
+
+      const interleaved: Array<{ priority: "high" | "medium" | "low" }> = [
+        { priority: "high" },
+        { priority: "medium" },
+        { priority: "low" },
+        { priority: "high" },
+        { priority: "medium" },
+        { priority: "low" },
+      ];
+      const seeded: Array<{ id: string; priority: "high" | "medium" | "low" }> = [];
+      for (const spec of interleaved) {
+        const created = await createCard({
+          ownerId,
+          columnId,
+          title: `c-${spec.priority}-${seeded.length}`,
+          description: "",
+          priority: spec.priority,
+        });
+        seeded.push({ id: created.id, priority: spec.priority });
+      }
+
+      const highMedium = await listCardsByColumn({
+        ownerId,
+        columnId,
+        priority: ["high", "medium"],
+        limit: 10,
+      });
+      assert.equal(highMedium.nextCursor, null);
+      const expectedIds = seeded
+        .filter((row) => row.priority === "high" || row.priority === "medium")
+        .map((row) => row.id);
+      assert.deepEqual(
+        highMedium.items.map((row) => row.id),
+        expectedIds,
+      );
+
+      const empty = await listCardsByColumn({
+        ownerId,
+        columnId,
+        priority: [],
+        limit: 10,
+      });
+      assert.deepEqual(empty, { items: [], nextCursor: null });
+    }, 20000);
+
+    it("rejects with NOT_FOUND when called by a different owner", async () => {
+      if (!canRun) return;
+
+      process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
+
+      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createCard, listCardsByColumn } = await import("./repo");
+
+      const ownerA = randomUUID();
+      const ownerB = randomUUID();
+      const board = await createBoard({ ownerId: ownerA, name: "Owner A board" });
+      const loadedBoard = await getBoardWithColumnsAndCards({
+        ownerId: ownerA,
+        boardId: board.id,
+      });
+      const columnId = loadedBoard?.columns[0]?.id;
+      assert.ok(columnId, "expected a starter column");
+
+      for (let i = 0; i < 3; i++) {
+        await createCard({
+          ownerId: ownerA,
+          columnId,
+          title: `a-${i}`,
+          description: "",
+          priority: "none",
+        });
+      }
+
+      await assert.rejects(
+        () => listCardsByColumn({ ownerId: ownerB, columnId, limit: 10 }),
+        (err: unknown) => (err as { code?: string })?.code === "NOT_FOUND",
+      );
+    }, 20000);
+
+    it("excludes soft-deleted cards", async () => {
+      if (!canRun) return;
+
+      process.env.DATABASE_URL = requireSsl(getTestDatabaseUrl());
+
+      const { createBoard, getBoardWithColumnsAndCards } = await import("../board/repo");
+      const { createCard, listCardsByColumn } = await import("./repo");
+      const { db } = await import("../db/client");
+      const { cards } = await import("../db/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const ownerId = randomUUID();
+      const board = await createBoard({ ownerId, name: "Soft delete board" });
+      const loadedBoard = await getBoardWithColumnsAndCards({ ownerId, boardId: board.id });
+      const columnId = loadedBoard?.columns[0]?.id;
+      assert.ok(columnId, "expected a starter column");
+
+      const seeded: Array<{ id: string }> = [];
+      for (let i = 0; i < 3; i++) {
+        seeded.push(
+          await createCard({
+            ownerId,
+            columnId,
+            title: `s-${i}`,
+            description: "",
+            priority: "none",
+          }),
+        );
+      }
+
+      await db.update(cards).set({ deletedAt: new Date() }).where(eq(cards.id, seeded[1]!.id));
+
+      const listed = await listCardsByColumn({ ownerId, columnId, limit: 10 });
+      assert.equal(listed.nextCursor, null);
+      assert.equal(listed.items.length, 2);
+      assert.deepEqual(
+        listed.items.map((row) => row.id),
+        [seeded[0]!.id, seeded[2]!.id],
+      );
+    }, 20000);
   });
 });
