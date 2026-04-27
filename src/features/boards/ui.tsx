@@ -142,16 +142,16 @@ export function BoardSectionHeading({
   actions?: ReactNode;
 }>) {
   return (
-    <YStack gap="$2">
+    <YStack gap="$2" width="100%" minWidth={0}>
       {eyebrow ? (
         <Text textTransform="uppercase" letterSpacing={1.5} fontSize="$2" color="$boardTextSubtle">
           {eyebrow}
         </Text>
       ) : null}
-      <YStack gap="$2" maxWidth={760} minWidth={0}>
+      <YStack gap="$2" width="100%" minWidth={0}>
         {actions ? (
-          <XStack alignItems="center" gap="$3" minWidth={0} flexWrap="nowrap">
-            <Stack flexShrink={1} minWidth={0}>
+          <XStack alignItems="center" gap="$2" width="100%">
+            <Stack flexGrow={1} minWidth={0}>
               {typeof title === "string" ? (
                 <Text
                   tag="h1"
@@ -160,6 +160,7 @@ export function BoardSectionHeading({
                   color="$boardHeading"
                   lineHeight="$9"
                   numberOfLines={1}
+                  minWidth={0}
                 >
                   {title}
                 </Text>
@@ -167,9 +168,7 @@ export function BoardSectionHeading({
                 title
               )}
             </Stack>
-            <XStack flexShrink={0} alignItems="center">
-              {actions}
-            </XStack>
+            {actions}
           </XStack>
         ) : typeof title === "string" ? (
           <Text tag="h1" fontSize="$10" fontWeight="800" color="$boardHeading" lineHeight="$9">
@@ -179,7 +178,7 @@ export function BoardSectionHeading({
           title
         )}
         {subtitle ? (
-          <Text fontSize="$5" color="$boardTextMuted" maxWidth={760}>
+          <Text fontSize="$5" color="$boardTextMuted">
             {subtitle}
           </Text>
         ) : null}
