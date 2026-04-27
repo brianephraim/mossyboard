@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef } from "react";
+import { useId, useLayoutEffect, useRef } from "react";
 import type { ComponentProps } from "react";
 import { TextArea } from "@tamagui/input";
 import {
@@ -10,6 +10,13 @@ import {
   useWatch,
 } from "react-hook-form";
 
+// Side-effect import: installs a single window-level capture listener for
+// `keydown` (Space) and `mousedown` that beats `@hello-pangea/dnd`'s
+// sensors for any focused editable inside a dnd drag handle. See
+// `dndInputSpaceGuard.ts` and `FormInlineTextField.tsx` for the full
+// rationale on why this must be a module-level installer rather than a
+// per-component layout effect.
+import "./dndInputSpaceGuard";
 import { joinAriaIds } from "./joinAriaIds";
 import { readTamaguiTextInputValue } from "./tamaguiFieldAdapters";
 
@@ -119,39 +126,9 @@ export function FormInlineAutoGrowTextAreaField<
     runResize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedValue, minHeightPx, maxHeightPx]);
-
-  // While focused, prevent dnd from acquiring a drag lock on capture-phase
-  // mousedown so native textarea selection / cursor placement continues working.
-  useEffect(() => {
-    if (!focusOnMouseUp || typeof window === "undefined") return;
-    const onWindowCaptureMouseDown = (event: globalThis.MouseEvent) => {
-      const node = localRef.current;
-      if (!node) return;
-      const target = event.target;
-      if (!(target instanceof Node)) return;
-      if (!node.contains(target)) return;
-      if (document.activeElement !== node) return;
-      event.stopImmediatePropagation();
-    };
-    window.addEventListener("mousedown", onWindowCaptureMouseDown, true);
-    return () => window.removeEventListener("mousedown", onWindowCaptureMouseDown, true);
-  }, [focusOnMouseUp]);
-
-  // Prevent @hello-pangea/dnd's keyboard sensor from intercepting Space while
-  // the textarea is focused (it uses Space to initiate keyboard dragging).
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onWindowCaptureKeyDown = (event: globalThis.KeyboardEvent) => {
-      const node = localRef.current;
-      if (!node) return;
-      if (document.activeElement !== node) return;
-      if (event.key === " " || event.code === "Space" || event.keyCode === 32) {
-        event.stopImmediatePropagation();
-      }
-    };
-    window.addEventListener("keydown", onWindowCaptureKeyDown, true);
-    return () => window.removeEventListener("keydown", onWindowCaptureKeyDown, true);
-  }, []);
+  // The window-level keydown + mousedown guards live in `dndInputSpaceGuard`
+  // (imported above for its side effect). They cover this textarea without
+  // per-instance setup.
 
   const handleMouseDown = (event: unknown) => {
     (onMouseDownProp as unknown as ((e: unknown) => void) | undefined)?.(event);

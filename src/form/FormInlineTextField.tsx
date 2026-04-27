@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+import { useId, useRef } from "react";
 import type { ComponentProps, MouseEvent as ReactMouseEvent } from "react";
 import { Input } from "@tamagui/input";
 import {
@@ -9,6 +9,16 @@ import {
   type RegisterOptions,
 } from "react-hook-form";
 
+// Side-effect import: installs a single window-level capture listener for
+// `keydown` (Space) and `mousedown` that wins the registration-order race
+// against `@hello-pangea/dnd`'s sensors for any focused editable inside a
+// dnd drag handle. A per-component layout-effect guard is fundamentally
+// racy — fields that mount after `DragDropContext` (virtualized cards
+// scrolled in, freshly created cards, HMR remounts) get their listener
+// appended *after* dnd's, so dnd fires first and steals focus. Module-level
+// installation runs before any React commit and therefore strictly before
+// dnd ever installs its sensors. See `dndInputSpaceGuard.ts` for details.
+import "./dndInputSpaceGuard";
 import { joinAriaIds } from "./joinAriaIds";
 import { readTamaguiTextInputValue } from "./tamaguiFieldAdapters";
 
@@ -93,55 +103,10 @@ export function FormInlineTextField<
   } = inputProps;
   const registration = register(name, rules);
   const localInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Prevent @hello-pangea/dnd's keyboard sensor from intercepting Space while
-  // the input is focused (it uses Space to initiate keyboard dragging).
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onWindowCaptureKeyDown = (event: globalThis.KeyboardEvent) => {
-      const node = localInputRef.current;
-      if (!node) return;
-      if (document.activeElement !== node) return;
-      if (event.key === " " || event.code === "Space" || event.keyCode === 32) {
-        event.stopImmediatePropagation();
-      }
-    };
-    window.addEventListener("keydown", onWindowCaptureKeyDown, true);
-    return () => window.removeEventListener("keydown", onWindowCaptureKeyDown, true);
-  }, []);
-
-  // While the input is focused, prevent dnd from acquiring a drag lock on
-  // mousedown so the browser's native cursor-positioning and drag-to-select
-  // text behavior keeps working.
-  //
-  // dnd's mouse sensor listens at window-level capture phase. We attach our
-  // own window-level capture listener here. Because React effects fire
-  // child-first and `FormInlineTextField` lives inside `DragDropContext`,
-  // our listener is registered before dnd's and runs first; calling
-  // `stopImmediatePropagation` skips dnd's handler entirely. We do *not*
-  // call `preventDefault` — that would also kill the browser's text-select
-  // behavior we're trying to preserve.
-  useEffect(() => {
-    if (!focusOnMouseUp || typeof window === "undefined") {
-      return;
-    }
-    const onWindowCaptureMouseDown = (event: globalThis.MouseEvent) => {
-      const node = localInputRef.current;
-      if (!node) return;
-      const target = event.target;
-      if (!(target instanceof Node)) return;
-      if (!node.contains(target)) return;
-      if (document.activeElement !== node) return;
-      event.stopImmediatePropagation();
-      debugFocus("window-capture mousedown stopped (input focused)", {
-        target: describeNode(target as Element),
-      });
-    };
-    window.addEventListener("mousedown", onWindowCaptureMouseDown, true);
-    return () => {
-      window.removeEventListener("mousedown", onWindowCaptureMouseDown, true);
-    };
-  }, [focusOnMouseUp]);
+  // The window-level keydown + mousedown guards live in `dndInputSpaceGuard`
+  // (imported above for its side effect). They fire for any focused
+  // input/textarea/contenteditable inside a `[data-rfd-drag-handle-*]`
+  // ancestor, so they cover this field without per-instance setup.
 
   const handleMouseDown = (event: ReactMouseEvent<HTMLInputElement>) => {
     onMouseDownProp?.(event);
