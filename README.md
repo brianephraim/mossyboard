@@ -2,6 +2,8 @@
 
 A small Kanban product: boards with columns and cards, drag-and-drop reordering, filtering, grouping, tags, and per-user persistence. Built as a single TypeScript codebase that ships both the React frontend and the API server.
 
+**Live demo:** <https://kanban-seven-gamma.vercel.app/>
+
 For broader product context see [`docs/kanban-app-requirements.md`](docs/kanban-app-requirements.md). For internal architectural rationale see [`docs/app-architecture-overview.md`](docs/app-architecture-overview.md).
 
 ## Setup and run
@@ -49,6 +51,15 @@ npm run test
 
 Vitest runs unit, service, and component tests against the local `kanban_test` database. Test migrations are applied automatically by the test setup. Type checking is `npm run typecheck`; linting is `npm run lint`.
 
+The suite explicitly covers each of the spec's required core-logic areas:
+
+- **Create.** [`card/repo.test.ts`](src/server/card/repo.test.ts) — `"creates, updates, lists, and soft-deletes cards with priority-aware reads"`. [`card/router.test.ts`](src/server/card/router.test.ts) — `"validates create/update payloads and priority enum values"`.
+- **Move.** [`card/repo.test.ts`](src/server/card/repo.test.ts) — `"moves and reorders cards with priority changes and version conflicts"` (covers the optimistic-lock conflict path). [`board/repo.test.ts`](src/server/board/repo.test.ts) and [`column/repo.test.ts`](src/server/column/repo.test.ts) cover column reorder.
+- **Filter.** [`card/repo.test.ts`](src/server/card/repo.test.ts) — `"filters cards by tags (OR semantics across the array) and hydrates tag rows"`, plus the `listCardsByColumn` block: `"filters to a single priority value"`, `"filters to a list of priorities and short-circuits on empty list"`, `"paginates through cards using (position, id) cursor"`, and `"excludes soft-deleted cards"`.
+- **Group.** [`BoardCanvas.priority-grouping.test.tsx`](src/features/boards/BoardCanvas.priority-grouping.test.tsx) — group-by-priority mode keeps real columns, adds priority headers, and gates the reorder opt-in correctly.
+
+Other notable coverage: ownership-boundary tests (`"rejects with NOT_FOUND when called by a different owner"`), the `keyBetween` ordering helper ([`key-between.test.ts`](src/lib/ordering/key-between.test.ts)), the position-key exhaustion + rebalance fallback path, inline-edit gesture handling ([`FormInlineTextField.test.tsx`](src/form/FormInlineTextField.test.tsx)), and the auth/sign-in flow ([`SignInForm.test.tsx`](src/features/auth/SignInForm.test.tsx)).
+
 ### Deploy
 
 ```bash
@@ -74,6 +85,7 @@ One TypeScript codebase, deployed to Vercel. The frontend and the tRPC server sh
 - **Email**: Resend, behind a server-side mail module (verification, password reset).
 - **Logging**: pino + `pino-http` at the HTTP boundary. A tRPC middleware logs `{ path, type, durationMs, ok, requestId, userId? }` per procedure call.
 - **Styling**: Tamagui primitives (`Stack`, `XStack`, `YStack`, `Text`, `Button`, `Input`) with theme tokens. No raw HTML in feature components.
+- **Forms**: `react-hook-form` (RHF) wired through reusable Tamagui-bound fields in `src/form/` (e.g. `FormInlineTextField`, `FormInlineRenameField`). Fields bind by `name` through form context rather than inline `Controller` wiring at every call site.
 
 ### Folder layout
 
@@ -98,7 +110,7 @@ src/
     db/                 # Drizzle schema and client singleton
     logging/            # pino logger
   Modal/                # PrettyModalWrap (focus-trapping, Esc-to-close)
-  form/                 # RHF + Tamagui form fields
+  form/                 # react-hook-form + Tamagui form fields
   tamagui/              # design tokens and theme config
 drizzle/pg/             # generated SQL migrations
 scripts/                # dev-setup, db-migrate, db-seed, vercel-build
@@ -179,8 +191,9 @@ A single tRPC router mounted at `/api/trpc/$`. Every procedure declares a zod `.
 ## Key UX decisions
 
 - **Drag-and-drop with a button alternative.** Cards reorder via `@hello-pangea/dnd` for pointer users. Every rendered card also exposes four edge-mounted buttons — `aria-label="Move card up"`, `"Move card down"` (reorder within the column) and `"Move card left"`, `"Move card right"` (move to the adjacent column) — that reveal on hover or focus and act on a single press. Columns get the same treatment with `aria-label="Move column left"` / `"Move column right"`. Each button is a real `<button>` (via Tamagui `Button`), so it's in the tab order, announces its `aria-label` to screen readers, and activates on Enter/Space — reordering does not depend on drag.
-- **Virtualized columns** (`react-virtuoso`) keep the DOM small for boards with hundreds of cards. Off-screen cards aren't reachable by Tab or browser find; the keyboard move-buttons on the visible cards are how a screen-reader user navigates the column.
+- **The killer feature: drag cards between two boards via the side drawer.** Open a board in the main pane, then in the sidebar list of boards click "Open in drawer" on a _different_ board — that second board renders side-by-side in a resizable drawer. Both boards are live: every column on either side is a valid drop target for any card on either side, so a card can be moved across boards with the same drag gesture used to move it between columns. The shared dnd context is wired in [`useDualBoardDnd`](src/features/boards/useDualBoardDnd.ts), which scopes draggable IDs by `main` / `drawer` so the destination pane (and therefore the destination board) is unambiguous on drop. The drawer's open state is encoded in the URL's `drawer` search param, so the two-board layout is link-shareable and survives refresh.
 - **Optimistic moves and reorders.** The card snaps to its new position immediately; on a `version` conflict the client refetches and retries against the latest state.
+- **Virtualized columns** (`react-virtuoso`) keep the DOM small for boards with hundreds of cards. Off-screen cards aren't reachable by Tab or browser find; the keyboard move-buttons on the visible cards are how a screen-reader user navigates the column.
 - **Inline edit, not modals, for titles and descriptions.** Card title, card description, board title, and column titles all edit in place via Tamagui `Input`s. Modals are reserved for full card detail (tags, priority, delete confirmation). The tricky part is that those inputs sit inside the card's drag handle, so a naive click-to-focus would race the drag start. The custom solution lives in two pieces:
   - **Inputs (`focusOnMouseUp` in [`FormInlineTextField`](src/form/FormInlineTextField.tsx)).** `@hello-pangea/dnd` registers a window-capture `mousedown` listener that calls `preventDefault()` to claim the gesture, which would normally also block native focus on the input. Instead of focusing on `mousedown`, the field starts a window-level `mousemove` + `mouseup` watcher. If the pointer is released within a 5px drag threshold, the input is focused manually on `mouseup`; if the threshold is exceeded the gesture is treated as a drag and focus is suppressed entirely. The same field skips this dance when it's already focused (so cursor positioning and drag-select keep working natively).
   - **In-card buttons ([`useDragSafePress`](src/features/boards/BoardCanvas/useDragSafePress.ts)).** The priority button and tag-chip controls bind their click to `mousedown` + tracked `mouseup` rather than the native `onClick`, and only fire `onActivate()` if the pointer was released without crossing the same 5px threshold. Cross the threshold and the press is suppressed so the outer drag handle takes over.
@@ -198,10 +211,13 @@ A single tRPC router mounted at `/api/trpc/$`. Every procedure declares a zod `.
 
 - **Firebase for auth, not a homegrown identity stack.** Faster to build correctly, with email/password + verification + password reset working out of the box. The cost is the local Firebase Auth Emulator dependency (Java runtime, extra setup wizard step) and a Firebase-shaped session model on the client.
 - **tRPC instead of REST/OpenAPI.** Picked primarily for `httpBatchLink` — the board canvas, drawer, and card detail panel all fire several queries on the same render, and batching coalesces them into a single HTTP request automatically with no hand-written client-side batcher. End-to-end type safety comes along for free. The cost is that non-TypeScript clients can't consume the API without `trpc-openapi`, which is acceptable while the only client is the bundled web app.
+- **Server-side filtering and grouping, not client-side.** Filter and group settings are encoded in the URL and pushed into `card.listByColumn` / `card.listByBoard` as part of the query input, so the server returns the already-filtered, already-correctly-ordered set. The reason we can't do this purely on the client is pagination: a board with hundreds of cards never holds its full card set in memory at once (Virtuoso streams pages in via the column-level cursor), so a client-side filter would only filter the slice that happens to be loaded — wrong answer. Same story for grouping: if the user groups by priority, every card with that priority must be reachable, including ones that haven't been paged in yet. The trade-off is that changing a filter or grouping mode triggers a network refetch instead of being an instant in-memory transform; we accept that latency in exchange for correct, complete results on arbitrarily large boards.
 - **SPA mode over SSR.** TanStack Start is configured as a single-page app rather than server-rendered. The motivation was development velocity — SSR introduces a class of hydration mismatches (timezone drift, theme/auth state that's only known on the client, third-party widgets that don't render server-side) that eat real time to chase down. The trade-off is that the first paint waits on the JS bundle and the initial query, so the app isn't instant on a cold load. SEO isn't a concern because the entire product lives behind auth — there's nothing for a crawler to index — so the usual reason to pay the SSR tax doesn't apply here.
 
 **Future improvements:**
 
+- **More robust testing to surface bugs.** Coverage today leans on Vitest unit/service tests and a handful of component tests. Adding broader Playwright E2E coverage (drag flows, optimistic-update conflict paths, mobile menu, auth flows), property-based tests around the ordering/`keyBetween` helper, and a contract-style test that exercises every tRPC procedure against a real Postgres would catch regressions that the current suite can miss — especially around concurrent reorders and gesture-collision edge cases.
+- **Intensive code-quality passes and housekeeping.** Several large feature components (`BoardWorkspaceScreen`, `BoardPane`, `BoardCanvas`) have grown past the soft-cap targets in `AGENTS.md` and would benefit from being broken into smaller cohesive modules. A focused sweep to extract reusable helpers, deduplicate near-identical patterns across feature folders (e.g. inline-rename wiring, mutation-then-invalidate plumbing), prune dead branches left behind during pivots, and tighten lingering `as unknown as` escape hatches into precise types would pay off both in readability and in lowering the risk surface for future changes.
 - **Realtime collaboration.** Multi-user boards currently rely on `version` conflicts surfacing on the next mutation. Supabase Realtime or a WebSocket channel could push cache invalidations to other connected clients.
 - **Tag autocomplete and bulk assignment.** Tag assignment is one-at-a-time today; an autocomplete picker driven by `tag.list` would scale better past a dozen tags.
 - **Search.** No full-text search yet. A `tsvector` column on `cards.title || cards.description` plus a trigram index would unlock card search at acceptable cost.
