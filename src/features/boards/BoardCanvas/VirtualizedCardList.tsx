@@ -77,9 +77,10 @@ const VIRTUOSO_STYLE: CSSProperties = {
 // `@hello-pangea/dnd`'s sibling-displacement math — which sums each
 // Draggable's border-box height **plus** computed margins — shifts the
 // neighbouring card by the full slot distance.
-function HeightPreservingItem({ children, style, item: _item, ...rest }: ItemProps<CardItem>) {
+function HeightPreservingItem({ children, style, item, ...rest }: ItemProps<CardItem>) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [childHeight, setChildHeight] = useState(0);
+  const itemId = item?.id;
 
   useLayoutEffect(() => {
     const wrapper = wrapperRef.current;
@@ -95,12 +96,23 @@ function HeightPreservingItem({ children, style, item: _item, ...rest }: ItemPro
       }
     };
 
+    // Re-measure synchronously before paint so a slot that just had its card
+    // swapped (e.g. the card above was dragged to another column, shifting
+    // this slot's contents to a different, shorter card) gets its retained
+    // `min-height` corrected in the same commit. Without this the wrapper
+    // would stay at the previous card's taller height until the next
+    // ResizeObserver tick, leaving a visible gap under the new occupant.
     measure();
 
     const observer = new ResizeObserver(measure);
     observer.observe(child);
     return () => observer.disconnect();
-  }, []);
+    // The Draggable inside `itemContent` is keyed by `card.id`, so when this
+    // slot's card identity changes React replaces the wrapper's first child
+    // DOM node. The previous observer was attached to the old (now detached)
+    // node and would never fire for the new one — re-run the effect to
+    // observe the new child.
+  }, [itemId]);
 
   return (
     <div
