@@ -343,6 +343,14 @@ function runProgrammaticDrag(
     return;
   }
 
+  // For cross-axis moves, ensure the destination column is at least partially
+  // in the viewport. Hello-pangea's getBestCrossAxisDroppable filters
+  // candidate droppables through isPartiallyVisibleThroughFrame(viewport.frame)
+  // and silently no-ops the move if every candidate is scrolled off-screen.
+  if (direction === "left" || direction === "right") {
+    scrollAdjacentColumnIntoView(draggableId, direction);
+  }
+
   const preDrag = api.tryGetLock(draggableId);
   if (!preDrag) {
     return;
@@ -364,4 +372,54 @@ function runProgrammaticDrag(
   window.setTimeout(() => {
     drag.drop({ shouldBlockNextClick: true });
   }, 120);
+}
+
+// Scroll the column adjacent to the source draggable's column into view, in
+// the cross-axis direction of an upcoming programmatic move. The source can
+// be either a column draggable (for column reorders) or a card draggable
+// nested inside a column. We locate the column-level draggables as direct
+// children of the COLUMN-typed Droppable container, then scroll the next or
+// previous sibling so it becomes a valid cross-axis candidate.
+function scrollAdjacentColumnIntoView(scopedDraggableId: string, direction: "left" | "right") {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const cssEscape =
+    typeof CSS !== "undefined" && typeof CSS.escape === "function"
+      ? CSS.escape
+      : (value: string) => value.replace(/"/g, '\\"');
+
+  const sourceEl = document.querySelector(
+    `[data-rfd-draggable-id="${cssEscape(scopedDraggableId)}"]`,
+  );
+  if (!(sourceEl instanceof HTMLElement)) {
+    return;
+  }
+
+  // The columns Droppable's droppableId always ends with "board-columns"
+  // (it may be scope-prefixed like "main::board-columns" or "drawer::board-columns").
+  // Hello-pangea only emits data-rfd-droppable-id (no type attribute), so we
+  // match by id suffix.
+  const columnsContainer = sourceEl.closest('[data-rfd-droppable-id$="board-columns"]');
+  if (!(columnsContainer instanceof HTMLElement)) {
+    return;
+  }
+
+  const columns = Array.from(columnsContainer.children).filter(
+    (el): el is HTMLElement =>
+      el instanceof HTMLElement && el.hasAttribute("data-rfd-draggable-id"),
+  );
+
+  const sourceIndex = columns.findIndex((col) => col === sourceEl || col.contains(sourceEl));
+  if (sourceIndex < 0) {
+    return;
+  }
+
+  const target = columns[direction === "right" ? sourceIndex + 1 : sourceIndex - 1];
+  if (!target) {
+    return;
+  }
+
+  target.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
