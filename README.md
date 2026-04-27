@@ -1,4 +1,4 @@
-# Kanban
+# MOSSYBOARD - a Kanban app
 
 A small Kanban product: boards with columns and cards, drag-and-drop reordering, filtering, grouping, tags, and per-user persistence. One TypeScript codebase ships both the React frontend and the API server.
 
