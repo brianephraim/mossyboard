@@ -4,10 +4,10 @@ import { Button } from "@tamagui/button";
 import { Stack, Text, useMedia } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
-import mossyboardIconUrl from "../../assets/branding/mossyboard-icon.png";
 import { brandTextFontFamily } from "../../tamagui/fontFamilies";
 import { AccountSignOutControl } from "../auth/AccountSignOutControl";
 import { VerificationSidebarCallout } from "../auth/VerificationSidebarCallout";
+import { MossyboardBrandMark } from "../brand/MossyboardBrandMark";
 import { BoardActionButton, BoardSurface } from "./ui";
 
 export type BoardNavigationItem = Readonly<{
@@ -138,18 +138,10 @@ export function BoardBrandHeader({
 }>) {
   return (
     <XStack alignItems="center" gap="$3">
-      <Stack
-        width={iconSize}
-        height={iconSize}
-        borderRadius={9999}
+      <MossyboardBrandMark
+        size={iconSize}
         backgroundColor="rgba(197, 235, 134, 0.18)"
-        backgroundImage={`url(${mossyboardIconUrl})`}
-        backgroundSize="cover"
-        backgroundPosition="center"
-        backgroundRepeat="no-repeat"
-        alignItems="center"
-        justifyContent="center"
-        aria-hidden
+        focusRingColor="$boardSidebarGlow"
       />
       <YStack gap="$1">
         <Text

@@ -3,10 +3,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { Stack, Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 
-import mossyboardIconUrl from "../../assets/branding/mossyboard-icon.png";
 import { parseSafeRedirectTo } from "../../auth/searchParams";
 import { useAuthSession, useRequiresEmailVerification } from "../../auth/session";
 import { brandTextFontFamily } from "../../tamagui/fontFamilies";
+import { MossyboardBrandMark } from "../brand/MossyboardBrandMark";
 import { BoardActionButton, BoardPageChrome, BoardPill, BoardSurface } from "../boards/ui";
 
 type PublicAuthLandingProps = Readonly<{
@@ -95,17 +95,7 @@ export function PublicAuthLanding({ redirectTo }: PublicAuthLandingProps) {
             </XStack>
 
             <XStack alignItems="center" gap="$3" flexWrap="wrap">
-              <Stack
-                width={72}
-                height={72}
-                borderRadius={9999}
-                backgroundColor="$boardAccentSoft"
-                backgroundImage={`url(${mossyboardIconUrl})`}
-                backgroundSize="cover"
-                backgroundPosition="center"
-                backgroundRepeat="no-repeat"
-                aria-hidden
-              />
+              <MossyboardBrandMark size={72} />
               <YStack gap="$1">
                 <Text
                   fontFamily={brandTextFontFamily}
@@ -240,17 +230,7 @@ function LandingStatusState({
       <YStack tag="main" minHeight="100vh" padding="$5" justifyContent="center">
         <BoardSurface width="100%" maxWidth={460} alignSelf="center" padding="$6">
           <XStack alignItems="center" gap="$3">
-            <Stack
-              width={64}
-              height={64}
-              borderRadius={9999}
-              backgroundColor="$boardAccentSoft"
-              backgroundImage={`url(${mossyboardIconUrl})`}
-              backgroundSize="cover"
-              backgroundPosition="center"
-              backgroundRepeat="no-repeat"
-              aria-hidden
-            />
+            <MossyboardBrandMark size={64} />
             <YStack gap="$1">
               <Text
                 fontFamily={brandTextFontFamily}

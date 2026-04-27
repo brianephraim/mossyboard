@@ -4,9 +4,9 @@ import { Stack, Text } from "@tamagui/core";
 import { XStack, YStack } from "@tamagui/stacks";
 import { useNavigate } from "@tanstack/react-router";
 
-import mossyboardIconUrl from "../../assets/branding/mossyboard-icon.png";
 import type { AuthMode } from "../../auth/searchParams";
 import { brandTextFontFamily } from "../../tamagui/fontFamilies";
+import { MossyboardBrandMark } from "../brand/MossyboardBrandMark";
 import { BoardPageChrome, BoardPill, BoardSurface } from "../boards/ui";
 import { AuthModeSwitch } from "./AuthModeSwitch";
 
@@ -90,17 +90,7 @@ export function AuthPageShell({
         >
           <YStack flex={1} gap="$5" minWidth={0}>
             <XStack alignItems="center" gap="$3" flexWrap="wrap">
-              <Stack
-                width={72}
-                height={72}
-                borderRadius={9999}
-                backgroundColor="$boardAccentSoft"
-                backgroundImage={`url(${mossyboardIconUrl})`}
-                backgroundSize="cover"
-                backgroundPosition="center"
-                backgroundRepeat="no-repeat"
-                aria-hidden
-              />
+              <MossyboardBrandMark size={72} />
               <YStack gap="$1">
                 <Text
                   fontFamily={brandTextFontFamily}
