@@ -209,18 +209,16 @@ export function BoardShell({
   }, [media.maxMd]);
 
   const boardList = boardsQuery.data?.boards ?? [];
+  const desktopRailHeight = "calc(100vh - 4 * var(--c-space-4) - 2px)";
   const boardRail = (
-    <BoardSurface padding="$4" flex={1} minHeight={0}>
-      <YStack
-        gap="$4"
-        flex={1}
-        minHeight={
-          media.maxMd
-            ? "auto"
-            : // BoardResponsiveColumns desktop XStack: $4 top+bottom. BoardSurface: $4 padding + 1px border each vertical side.
-              "calc(100vh - 4 * var(--c-space-4) - 2px)"
-        }
-      >
+    <BoardSurface
+      padding="$4"
+      flex={1}
+      minHeight={0}
+      overflow="hidden"
+      height={media.maxMd ? "auto" : desktopRailHeight}
+    >
+      <YStack gap="$4" flex={1} minHeight={0}>
         <YStack gap="$3">
           <XStack alignItems="center" gap="$3">
             <Stack
@@ -249,9 +247,6 @@ export function BoardShell({
           <BoardActionButton tone="accent" onPress={() => setCreateBoardOpen(true)}>
             + New board
           </BoardActionButton>
-        </YStack>
-
-        <YStack gap="$3">
           <Text
             textTransform="uppercase"
             letterSpacing={1.4}
@@ -260,7 +255,9 @@ export function BoardShell({
           >
             Boards
           </Text>
+        </YStack>
 
+        <YStack flex={1} minHeight={0} overflow="scroll" paddingRight="$1" paddingBottom="$2">
           {boardsQuery.isLoading && boardList.length === 0 ? (
             <Text color="$boardTextMuted">Loading boards…</Text>
           ) : boardsQuery.isError && boardList.length === 0 ? (
@@ -289,7 +286,7 @@ export function BoardShell({
           )}
         </YStack>
 
-        <YStack marginTop="auto" gap="$3">
+        <YStack flexShrink={0} gap="$3">
           <BoardSurface padding="$4">
             <YStack gap="$3">
               {session.user && !session.user.emailVerified && !requiresEmailVerification ? (
