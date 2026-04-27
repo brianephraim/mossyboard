@@ -150,8 +150,8 @@ export function BoardSectionHeading({
       ) : null}
       <YStack gap="$2" maxWidth={760} minWidth={0}>
         {actions ? (
-          <XStack alignItems="center" gap="$3" width="100%" minWidth={0}>
-            <Stack flex={1} minWidth={0}>
+          <XStack alignItems="center" gap="$3" minWidth={0} flexWrap="nowrap">
+            <Stack flexShrink={1} minWidth={0}>
               {typeof title === "string" ? (
                 <Text
                   tag="h1"
@@ -159,6 +159,7 @@ export function BoardSectionHeading({
                   fontWeight="800"
                   color="$boardHeading"
                   lineHeight="$9"
+                  numberOfLines={1}
                 >
                   {title}
                 </Text>

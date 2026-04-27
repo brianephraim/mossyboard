@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { XStack } from "@tamagui/stacks";
+
 import { trpc } from "../../trpc/client";
 import { BoardActionButton, BoardInlineNotice } from "../boards/ui";
 import { useAuthAnnounceOptional } from "./AuthAnnounceContext";
@@ -48,19 +50,22 @@ export function VerificationSidebarCallout({ userEmail }: VerificationSidebarCal
       tone="warning"
       message={message}
       actions={
-        <BoardActionButton
-          tone="ghost"
-          disabled={sendVerification.isPending || cooldown > 0}
-          onPress={() => {
-            void sendVerification.mutateAsync({});
-          }}
-        >
-          {sendVerification.isPending
-            ? "Sending…"
-            : cooldown > 0
-              ? `Send verification email (${cooldown}s)`
-              : "Send verification email"}
-        </BoardActionButton>
+        <XStack width="100%" justifyContent="center">
+          <BoardActionButton
+            tone="ghost"
+            width="auto"
+            disabled={sendVerification.isPending || cooldown > 0}
+            onPress={() => {
+              void sendVerification.mutateAsync({});
+            }}
+          >
+            {sendVerification.isPending
+              ? "Sending…"
+              : cooldown > 0
+                ? `Send verification email (${cooldown}s)`
+                : "Send verification email"}
+          </BoardActionButton>
+        </XStack>
       }
     />
   );

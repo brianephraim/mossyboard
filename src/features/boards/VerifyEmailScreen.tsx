@@ -101,6 +101,7 @@ export function VerifyEmailScreen({
         <>
           <BoardActionButton
             tone="accent"
+            alignSelf="center"
             disabled={sendVerification.isPending}
             onPress={() => {
               void sendVerification.mutateAsync({});
