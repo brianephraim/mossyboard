@@ -19,11 +19,7 @@ vi.mock("../auth/AccountSignOutControl", () => ({
 }));
 
 vi.mock("../auth/VerificationSidebarCallout", () => ({
-  VerificationSidebarCallout: ({
-    userEmail,
-  }: Readonly<{
-    userEmail: string | null | undefined;
-  }>) => <>{`Verification pending for ${userEmail}. Check your inbox to verify.`}</>,
+  VerificationSidebarCallout: () => <>Verification pending. Check your inbox to verify.</>,
 }));
 
 describe("BoardMobileMenuContent", () => {
@@ -81,9 +77,7 @@ describe("BoardMobileMenuContent", () => {
     expect(screen.getByText("Group by")).toBeTruthy();
     expect(screen.getByText("Priority filter")).toBeTruthy();
     expect(screen.getByText("Launch board")).toBeTruthy();
-    expect(
-      screen.getByText("Verification pending for moss@example.com. Check your inbox to verify."),
-    ).toBeTruthy();
+    expect(screen.getByText("Verification pending. Check your inbox to verify.")).toBeTruthy();
 
     const currentBoard = screen.getByText("Current board");
     const newBoard = screen.getByRole("button", { name: /\+ new board/i });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { YStack } from "@tamagui/stacks";
 
@@ -6,11 +6,9 @@ import { trpc } from "../../trpc/client";
 import { BoardActionButton, BoardInlineNotice } from "../boards/ui";
 import { useAuthAnnounceOptional } from "./AuthAnnounceContext";
 
-type VerificationSidebarCalloutProps = Readonly<{
-  userEmail: string | null | undefined;
-}>;
+const VERIFICATION_PENDING_MESSAGE = "Verification pending. Check your inbox to verify.";
 
-export function VerificationSidebarCallout({ userEmail }: VerificationSidebarCalloutProps) {
+export function VerificationSidebarCallout() {
   const announce = useAuthAnnounceOptional();
   const [cooldown, setCooldown] = useState(0);
 
@@ -26,14 +24,6 @@ export function VerificationSidebarCallout({ userEmail }: VerificationSidebarCal
     return () => window.clearInterval(id);
   }, [cooldown]);
 
-  const message = useMemo(() => {
-    if (!userEmail) {
-      return "Verification pending. Please check your inbox to verify your email.";
-    }
-
-    return `Verification pending for ${userEmail}. Check your inbox to verify.`;
-  }, [userEmail]);
-
   const sendVerification = trpc.authEmail.sendVerification.useMutation({
     retry: false,
     onSuccess: () => {
@@ -48,7 +38,7 @@ export function VerificationSidebarCallout({ userEmail }: VerificationSidebarCal
   return (
     <BoardInlineNotice
       tone="warning"
-      message={message}
+      message={VERIFICATION_PENDING_MESSAGE}
       actions={
         <YStack width="100%" alignItems="center" paddingHorizontal="$1">
           <BoardActionButton

@@ -247,7 +247,7 @@ export function BoardAccountPanel({
       boxShadow="none"
     >
       <YStack gap="$3">
-        {showVerificationCallout ? <VerificationSidebarCallout userEmail={userEmail} /> : null}
+        {showVerificationCallout ? <VerificationSidebarCallout /> : null}
         <YStack gap="$1">
           <Text fontWeight="700" color="$boardSidebarText" numberOfLines={1}>
             {userEmail ?? "Signed in"}
